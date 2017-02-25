@@ -1,0 +1,4 @@
+#!/bin/sh
+source .env
+cd "$REDIS_DATABASE_PATH"
+redis-server &

@@ -1,0 +1,21 @@
+{
+  "name": "amccabe/worklog",
+  "description": "Command line interface tool for logging daily work.",
+  "authors": [
+    {
+      "name": "Allen McCabe",
+      "email": "amccabe@csatf.org"
+    }
+  ],
+  "require": {
+    "predis/predis": "^1.1",
+    "vlucas/phpdotenv": "^2.4",
+    "nesbot/carbon": "^1.22"
+  },
+  "autoload": {
+    "psr-4": {
+      "CSATF\\": "../CSATF/src/",
+      "Worklog\\": "src/"
+    }
+  }
+}

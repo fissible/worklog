@@ -1,0 +1,237 @@
+<?php
+
+namespace Worklog\Services;
+
+use Carbon\Carbon;
+use CSATF\Services\ModelService;
+
+/**
+ * Created by PhpStorm.
+ * User: allenmccabe
+ * Date: 2/22/17
+ * Time: 8:56 AM
+ */
+class TaskService extends ModelService
+{
+    protected static $table = 'task';
+
+    protected static $primary_key_field = 'id';
+
+    protected static $fields = [
+        'id' => [
+            'type' => 'integer',
+
+        ],
+        'issue' => [
+            'type' => 'string',
+            'default' => null,
+            'prompt' => 'What is the JIRA Issue key?',
+            'required' => false
+        ],
+        'description' => [
+            'type' => 'string',
+            'default' => null,
+            'prompt' => 'What did you do?',
+            'required' => true
+        ],
+        'date' => [
+            'type' => 'string',
+            'default' => '*now_string',
+            'required' => true
+        ],
+        'start' => [
+            'type' => 'string',
+            'default' => '*DateTime->format(\'H:i\')',
+            'prompt' => 'What time did you start?',
+            'required' => false
+        ],
+        'stop' => [
+            'type' => 'string',
+            'default' => '*DateTime->format(\'H:i\')',
+            'prompt' => 'What time did you stop?',
+            'required' => false
+        ]
+    ];
+
+    protected static $display_headers = [
+        'id' => 'ID',
+        'issue' => 'Issue',
+        'description' => 'Description',
+        'date' => 'Date',
+        'start' => 'Start',
+        'stop' => 'Stop',
+        'duration' => 'Time Spent'
+    ];
+
+    private static $exception_strings = [
+        'time_format' => 'Start/stop times must be a time format: HH:MM'
+    ];
+
+
+    public function lastTask() {
+        $Latest = null;
+        $_record = null;
+        if ($records = $this->select()->result()) {
+            foreach ($records as $record) {
+                if (property_exists($record, 'stop')) {
+                    $stop_parts = explode(':', $record->stop);
+                    $Stop = Carbon::parse($record->date)->hour($stop_parts[0])->minute($stop_parts[1]);
+
+                    if (is_null($Latest) || $Latest->diff($Stop)->i > 0) {
+                        $Latest = $Stop;
+                        $_record = $record;
+                    }
+                }
+            }
+        }
+
+        return $_record;
+    }
+
+    /**
+     * Set calculated field values
+     * @param $Record
+     * @param $field
+     * @param null $value
+     * @return bool|\DateInterval|null
+     */
+    public function calculated_field($Record, $field, $value = null) {
+        $callbacks = $this->calculated_field_callbacks();
+        if (array_key_exists($field, $callbacks)) {
+            if ($_value = $callbacks[$field]($Record)) {
+                $value = $_value;
+            }
+        }
+
+        return $value;
+    }
+
+    /**
+     * Set calculated field values
+     * @return array
+     */
+    protected function calculated_field_callbacks() {
+        return [
+            'duration' => function ($Record) {
+                if (property_exists($Record, 'start') && property_exists($Record, 'stop')) {
+                    if ($Record->start && $Record->stop) {
+                        $start_parts = explode(':', $Record->start); // "08:00"
+                        $stop_parts = explode(':', $Record->stop);   // "16:38"
+                        $Start = Carbon::today()->hour(intval($start_parts[0]))->minute(intval(preg_replace('/[^0-9]/', '', $start_parts[1])));
+                        $Stop = Carbon::today()->hour(intval($stop_parts[0]))->minute(intval(preg_replace('/[^0-9]/', '', $stop_parts[1])));
+                        return $Start->diff($Stop);
+                    }
+                }
+            }
+        ];
+    }
+
+    /**
+     * Format fields for display
+     * @return array
+     */
+    protected function display_format_callbacks() {
+        $time_string = function ($time) {
+            if (false === strpos($time, 'AM') && false === strpos($time, 'PM')) {
+                $ampm = 'AM';
+
+                if (false === strpos($time, ':')) {
+                    if (! is_numeric($time)) {
+                        throw new \Exception(static::$exception_strings['time_format']);
+                    }
+                    $time .= ':00';
+                }
+                $time_parts = explode(':', $time);
+                $time_parts[0] = intval($time_parts[0]);
+
+                if ($time_parts[0] >= 12) {
+                    $ampm = 'PM';
+                    if ($time_parts[0] > 12) {
+                        $time_parts[0] -= 12;
+                    }
+                }
+
+
+                $time_parts[0] = str_pad($time_parts[0], 2, '0', STR_PAD_LEFT);
+                $time = $time_parts[0].':'.$time_parts[1].' '.$ampm;
+            }
+            return $time;
+        };
+
+        return [
+            // description
+            'description' => function ($Record) {
+                return str_replace('\n', "\n", $Record->description);
+            },
+
+            // date: '2017-02-23 09:30:47' -> 'Feb 23, 2017'
+            'date' => function ($Record) {
+                if (property_exists($Record, 'date')) {
+                    $date = new Carbon($Record->date);
+                    return $date->toFormattedDateString();
+                }
+            },
+
+            // duration: '02:00'/'04:00'
+            'duration' => function ($Record) {
+                if (property_exists($Record, 'start') && property_exists($Record, 'stop')) {
+                    if (property_exists($Record, 'duration') && $Record->duration instanceof \DateInterval) {
+                        $DateInterval = $Record->duration;
+                    } else {
+                        $DateInterval = $this->calculated_field($Record, 'duration');
+                    }
+
+                    $output = '';
+                    if ($DateInterval->h) {
+                        $output .= $DateInterval->h.($DateInterval->h > 1 ? ' hrs' : ' hr');
+                    }
+                    if ($DateInterval->i) {
+                        if (strlen($output)) {
+                            $output .= ', ';
+                        }
+                        $output .= $DateInterval->i.($DateInterval->i > 1 ? ' mins' : ' min');
+                    }
+
+                    return $output;
+                }
+            },
+
+            // start/stop: '14:00' -> '02:00 PM'
+            'start' => function ($Record) use ($time_string) {
+                if (property_exists($Record, 'start')) {
+                    return $time_string($Record->start);
+                }
+            },
+            'stop' => function ($Record) use ($time_string) {
+                if (property_exists($Record, 'stop')) {
+                    return $time_string($Record->stop);
+                }
+            }
+        ];
+    }
+
+    /**
+     * Sort records
+     * @param $records
+     * @param string $mode
+     * @return bool
+     */
+    public function sort(array $records, $mode = 'default') {
+        switch ($mode) {
+            case 'default':
+            default:
+                usort($records, function($a, $b) {
+                    if (property_exists($a, 'date') && property_exists($b, 'date')) {
+                        $aDate = Carbon::parse($a->date);
+                        $bDate = Carbon::parse($b->date);
+                        return $aDate->timestamp - $bDate->timestamp;
+                    } else {
+                        return 0;
+                    }
+                });
+                break;
+        }
+
+        return $records;
+    }
+}
