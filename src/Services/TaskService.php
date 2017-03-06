@@ -37,6 +37,7 @@ class TaskService extends ModelService
         'date' => [
             'type' => 'string',
             'default' => '*now_string',
+            'prompt' => 'What was the date (YYYY-MM-DD)?',
             'required' => true
         ],
         'start' => [
@@ -56,7 +57,7 @@ class TaskService extends ModelService
     protected static $display_headers = [
         'id' => 'ID',
         'issue' => 'Issue',
-        'description' => 'Description',
+        'description' => 'Descripti¡n',
         'date' => 'Date',
         'start' => 'Start',
         'stop' => 'Stop',
@@ -68,17 +69,25 @@ class TaskService extends ModelService
     ];
 
 
-    public function lastTask() {
+    public function lastTask($where = []) {
         $Latest = null;
         $_record = null;
-        if ($records = $this->select()->result()) {
+        if ($records = $this->select($where)->result()) {
+            $records = $this->sort($records, 'desc');
+
             foreach ($records as $record) {
                 if (property_exists($record, 'stop')) {
                     $stop_parts = explode(':', $record->stop);
+                    if (! is_numeric($stop_parts[1])) {
+                        if (false !== stripos($stop_parts[1], 'p') && intval($stop_parts[0]) < 12) {
+                            $stop_parts[0] = intval($stop_parts[0]) + 12;
+                        }
+                        $stop_parts[1] = preg_replace('/[^0-9]/', '', $stop_parts[1]);
+                    }
                     $Stop = Carbon::parse($record->date)->hour($stop_parts[0])->minute($stop_parts[1]);
 
-                    if (is_null($Latest) || $Latest->diff($Stop)->i > 0) {
-                        $Latest = $Stop;
+                    if (is_null($Latest) || $Latest->lt($Stop)) {
+                        $Latest = $Stop->copy();
                         $_record = $record;
                     }
                 }
@@ -132,28 +141,9 @@ class TaskService extends ModelService
      */
     protected function display_format_callbacks() {
         $time_string = function ($time) {
-            if (false === strpos($time, 'AM') && false === strpos($time, 'PM')) {
-                $ampm = 'AM';
-
-                if (false === strpos($time, ':')) {
-                    if (! is_numeric($time)) {
-                        throw new \Exception(static::$exception_strings['time_format']);
-                    }
-                    $time .= ':00';
-                }
-                $time_parts = explode(':', $time);
-                $time_parts[0] = intval($time_parts[0]);
-
-                if ($time_parts[0] >= 12) {
-                    $ampm = 'PM';
-                    if ($time_parts[0] > 12) {
-                        $time_parts[0] -= 12;
-                    }
-                }
-
-
-                $time_parts[0] = str_pad($time_parts[0], 2, '0', STR_PAD_LEFT);
-                $time = $time_parts[0].':'.$time_parts[1].' '.$ampm;
+            if (false === stripos($time, 'AM') && false === stripos($time, 'PM')) {
+                $Date = Carbon::parse(date("Y-m-d").' '.$time);
+                $time = $Date->format('g:i a');
             }
             return $time;
         };
@@ -213,22 +203,26 @@ class TaskService extends ModelService
     /**
      * Sort records
      * @param $records
+     * @param $dir The sorting direction
      * @param string $mode
      * @return bool
      */
-    public function sort(array $records, $mode = 'default') {
+    public function sort(array $records = [], $dir = 'asc', $mode = 'default') {
         switch ($mode) {
             case 'default':
             default:
                 usort($records, function($a, $b) {
                     if (property_exists($a, 'date') && property_exists($b, 'date')) {
-                        $aDate = Carbon::parse($a->date);
-                        $bDate = Carbon::parse($b->date);
+                        $aDate = Carbon::parse(substr($a->date, 0, 10).' '.$a->start);
+                        $bDate = Carbon::parse(substr($b->date, 0, 10).' '.$b->start);
                         return $aDate->timestamp - $bDate->timestamp;
                     } else {
                         return 0;
                     }
                 });
+                if (strtolower($dir) == 'desc') {
+                    $records = array_reverse($records, true);
+                }
                 break;
         }
 

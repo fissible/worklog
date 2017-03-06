@@ -50,6 +50,6 @@ class DeleteCommand extends Command {
             throw new \InvalidArgumentException(static::$exception_strings['invalid_argument']);
         }
 
-        return $TaskService->ascii_table();
+        return (new ListCommand($this->App()))->run();
     }
 }

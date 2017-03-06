@@ -17,9 +17,7 @@ class DetailCommand extends Command {
     public $command_name;
 
     public static $description = 'Show work log entry details';
-    public static $options = [
-//        'i' => ['req' => true, 'description' => 'The JIRA Issue key']
-    ];
+    public static $options = [];
     public static $arguments = [ 'id' ];
     public static $menu = true;
 
@@ -34,6 +32,7 @@ class DetailCommand extends Command {
     public function run() {
         parent::run();
 
+        $this->expectData('id', static::$exception_strings['invalid_argument']);
         $TaskService = new TaskService(App()->db());
         $id = $this->getData('id');
 

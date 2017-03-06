@@ -1,4 +1,18 @@
 #!/bin/sh
+cd "/Users/allenmccabe/scripts/worklog"
 source .env
+echo "$REDIS_DATABASE_PATH"
+if [ ! -d "$REDIS_DATABASE_PATH" ]; then
+    if [ $EUID -ne 0 ]; then
+        echo "Please run as root"
+        exit
+    fi
+    sudo mkdir "$REDIS_DATABASE_PATH"
+    if [ ! -d "$REDIS_DATABASE_PATH" ]; then
+        echo "Redis data path not found: $REDIS_DATABASE_PATH"
+        exit 1
+    fi
+    sudo chmod 755 "$REDIS_DATABASE_PATH"
+fi
 cd "$REDIS_DATABASE_PATH"
 redis-server &

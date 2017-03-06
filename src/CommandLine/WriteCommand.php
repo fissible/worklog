@@ -1,6 +1,8 @@
 <?php
 namespace Worklog\CommandLine;
 
+use Carbon\Carbon;
+use CSATF\CommandLine\Output;
 use Worklog\Services\TaskService;
 use CSATF\CommandLine\Command as Command;
 
@@ -18,7 +20,7 @@ class WriteCommand extends Command {
     public static $options = [
         'i' => ['req' => true, 'description' => 'The JIRA Issue key'],
         'd' => ['req' => true, 'description' => 'The task description'],
-//        't' => ['req' => true, 'description' => 'Test flag: requires value']
+        'e' => ['req' => true, 'description' => 'The task ID to edit']
     ];
     public static $arguments = [ 'issue', 'description' ];
 //    public static $usage = '%s [-ls] [opt1]';
@@ -27,89 +29,109 @@ class WriteCommand extends Command {
     private $Task;
 
     private static $exception_strings = [
+        'date_format' => 'Date must be a valid format, eg. YYYY-MM-DD',
         'time_format' => 'Start/stop times must be a time format: HH:MM'
     ];
+
+    const TYPE_UPDATE = 0;
+    const TYPE_INSERT = 1;
 
 
     public function run() {
         parent::run();
 
-        $LastTask = $description = null;
         $Tasks = new TaskService(App()->db());
-        $LastTask = $Tasks->lastTask();
-        $this->Task = $Tasks->make();//new \stdClass();
-        $this->Task->date = $Tasks->field_default_value('date');
+        $type = $LastTask = $description = null;
 
+        // Get a Task instance
+        if (($id = $this->option('e')) || ($id = $this->getData('id'))) {
+            $type = self::TYPE_UPDATE;
+            $this->Task = $Tasks->select([ 'id' => $id ])->first();
+        } else {
+            $type = self::TYPE_INSERT;
+            $this->Task = $Tasks->make();
+            $this->Task->date = $Tasks->field_default_value('date');
+            $LastTask = $Tasks->lastTask([ 'date' => Carbon::now()->toDateString() ]);
+        }
+
+        // Parse flags/params
+
+        // cache file
+        $start_cache_file = $this->getData('start_cache_file');
+
+        // issue key
         if (($issue = $this->option('i', false)) || ($issue = $this->getData('issue'))) {
             $this->Task->issue = $issue;
         }
 
-        if ($description = $this->option('d') || $description = $this->getData('description')) {
+        // description
+        if (($description = $this->option('d')) || ($description = $this->getData('description'))) {
             $this->Task->description = $description;
         }
 
+        // date
+        if ($date = $this->getData('date')) {
+            $this->Task->date = static::parse_date_input($date);
+        }
+
+        // start
+        if ($start = $this->getData('start')) {
+            $this->Task->start = $start;//static::parse_time_input($start);
+        }
+
+        // stop
+        if ($stop = $this->getData('stop')) {
+            $this->Task->stop = $stop;//static::parse_time_input($stop);
+        }
 
         if (IS_CLI) {
             do {
                 foreach (TaskService::fields() as $field => $config) {
-                    // Provide option to update existing
-//                    Probably should not allow this
-//                    if (isset($this->Task)) {
-//                        if ($field == 'start') {
-//                            continue;
-//                        }
-//                    }
-//                    if (property_exists($Task, 'issue') && ! isset($this->Task)) {
-//                        if ($_Tasks = App()->db()->get('task')) {
-//                            foreach ($_Tasks as $_id => $_Task) {
-//                                if ($_Task->issue == $Task->issue) {
-//                                    if ('y' == strtolower(readline(sprintf('Modify existing Task %d? [Y/n]: ', $_Task->id)))) {
-//                                        $this->Task = $Task = $_Task;
-//                                        break;
-//                                    }
-//                                }
-//                            }
-//                        }
-//                    }
+                    $prompt_default = '';
+                    $default = null;
 
-                    if (! property_exists($this->Task, $field)) {
-                        if ($field == 'start' && $LastTask) {
-                            $stop = $LastTask->stop;
-                            $stop_parts = explode(':', $stop);
-                            $default = $stop_parts[0].':'.str_pad((intval($stop_parts[1]) + 1), 2, '0', STR_PAD_LEFT);
+                    // HYDRATE TASK
+                    if (! property_exists($this->Task, $field) || $type == self::TYPE_UPDATE) {
+                        if ($type == self::TYPE_UPDATE) {
+                            $default = $this->Task->{$field};
+                            $prompt_default = $default;
+
+                            if (in_array($field, [ 'start', 'stop' ])) {
+                                $prompt_default = static::get_twelve_hour_time($default);
+                            } elseif ($field == 'date') {
+                                $prompt_default = Carbon::parse($default)->toDateString();
+                            }
+
+                        } elseif ($field == 'start') {
+                            if ($LastTask) {
+                                $default = $LastTask->stop;
+                            } else {
+                                $default = $Tasks->field_default_value($field);
+                            }
+                            $prompt_default = static::get_twelve_hour_time($default);
+                        } elseif ($field == 'stop') {
+                            $default = $Tasks->field_default_value($field);
+                            $prompt_default = static::get_twelve_hour_time($default);
                         } else {
                             $default = $Tasks->field_default_value($field);
+                            $prompt_default = $default;
                         }
 
-                        if ($prompt = $Tasks->field_prompt($field, $default)) {
-                            if ($response = readline($prompt)) {
+                        // PROMPT USER
+                        if ($prompt = $Tasks->field_prompt($field, $prompt_default)) {
+                            $response = readline($prompt);
+
+                            if (strlen($response) > 0) {
                                 $response = trim($response);
-                                if ($field == 'description' && property_exists($this->Task, 'description')) {
+
+                                if ($type == self::TYPE_INSERT && $field == 'description' && property_exists($this->Task, 'description')) {
                                     $this->Task->description .= "\n" . $response;
                                 } else {
                                     if ($field == 'issue' && is_null($issue)) {
                                         $issue = $response;
                                     }
                                     if (in_array($field, ['start', 'stop'])) {
-                                        if (false === strpos($response, ':')) {
-                                            if (!is_numeric($response)) {
-                                                throw new \Exception(static::$exception_strings['time_format']);
-                                            }
-                                            $response .= ':00';
-                                        }
-                                        $response_parts = explode(':', $response);
-                                        $response_parts[0] = intval($response_parts[0]);
-                                        if (!is_numeric($response_parts[0])) {
-                                            throw new \Exception(static::$exception_strings['time_format']);
-                                        }
-                                        if ($response_parts[0] < 12) {
-                                            $ampm_response = readline(sprintf('%02d:%02d AM or PM? [a/p]: ', $response_parts[0], $response_parts[1]));
-                                            if (strtolower($ampm_response[0]) == 'p') {
-                                                $response_parts[0] += 12;
-                                            }
-                                        }
-                                        $response_parts[0] = str_pad($response_parts[0], 2, '0', STR_PAD_LEFT);
-                                        $response = $response_parts[0] . ':' . $response_parts[1];
+                                        $response = static::parse_time_input($response);
                                     }
                                     $this->Task->{$field} = $response;
                                 }
@@ -123,14 +145,21 @@ class WriteCommand extends Command {
             } while (! $this->TaskValid($this->Task));
         }
 
-//        print '$this->Task: ';
-//        var_dump($this->Task);
+        unset($this->Task->duration);
 
         $Tasks->write($this->Task);
 
-        $Command = new ListCommand($this->App());
+        if (! is_null($start_cache_file)) {
+            $this->App()->Cache()->clear($start_cache_file);
+        }
 
-        if ($issue) {
+        $Command = new TodayCommand($this->App());
+
+        if ($type == self::TYPE_UPDATE) {
+            $Command = new DetailCommand($this->App());
+            $Command->setData('id', $id);
+        } elseif ($issue) {
+            $Command = new ListCommand($this->App());
             $Command->setData('issue', $issue);
         }
 

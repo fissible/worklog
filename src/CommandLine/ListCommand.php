@@ -1,6 +1,7 @@
 <?php
 namespace Worklog\CommandLine;
 
+use Carbon\Carbon;
 use CSATF\CommandLine\Output;
 use Worklog\Services\TaskService;
 use CSATF\CommandLine\Command as Command;
@@ -17,7 +18,8 @@ class ListCommand extends Command {
 
     public static $description = 'Show work log entries';
     public static $options = [
-        'i' => ['req' => true, 'description' => 'The JIRA Issue key']
+        'i' => ['req' => true, 'description' => 'The JIRA Issue key'],
+        'l' => ['req' => null, 'description' => 'Entries from last week']
     ];
     public static $arguments = [ 'issue' ];
     public static $menu = true;
@@ -29,12 +31,25 @@ class ListCommand extends Command {
         $where = [];
         $issue = null;
         $TaskService = new TaskService(App()->db());
-//        TaskService::set_cli_max_line_length(250);
+        $DateStart = Carbon::today()->startOfWeek();
+        $DateEnd = Carbon::today()->endOfWeek();
         Output::set_line_length(250);
 
         if (($issue = $this->option('i', false)) || ($issue = $this->getData('issue'))) {
             $where['issue'] = $issue;
         }
+
+        if ($this->option('l')) {
+            $DateStart->subWeek();
+            $DateEnd->subWeek();
+        }
+
+        // Change Sunday to Saturday
+        $DateStart->setTime(6, 0);
+        $DateEnd->subDay()->endOfDay();
+
+        $where['date>='] = $DateStart->toDateTimeString();
+        $where['date<='] = $DateEnd->toDateTimeString();
 
         $Tasks = $TaskService->select($where)->result();
 
