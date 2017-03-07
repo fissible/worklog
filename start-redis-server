@@ -1,5 +1,5 @@
 #!/bin/sh
-cd "/Users/allenmccabe/scripts/worklog"
+cd "~/scripts/worklog"
 source .env
 echo "$REDIS_DATABASE_PATH"
 if [ ! -d "$REDIS_DATABASE_PATH" ]; then
