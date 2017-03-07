@@ -65,8 +65,8 @@ class StartCommand extends Command {
             $this->Task->description = $description;
         }
 
-        $this->Task->date = $Tasks->default('date');
-        $this->Task->start = $Tasks->default('start');
+        $this->Task->date = $Tasks->default_val('date');
+        $this->Task->start = $Tasks->default_val('start');
 
         return static::get_twelve_hour_time($this->App()->Cache()->data(
             self::CACHE_TAG.self::CACHE_NAME_DELIMITER.($last_index + 1),
