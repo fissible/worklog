@@ -64,7 +64,7 @@ class StopCommand extends Command {
             if (is_object($this->Task) && property_exists($this->Task, 'start')) {
                 if (IS_CLI) {
                     $prompt = sprintf('Complete work item started at %s [Y/n]: ', static::get_twelve_hour_time($this->Task->start));
-                    $response = trim(strtolower(readline($prompt))) ?: 'n';
+                    $response = trim(strtolower(readline($prompt))) ?: 'y';
                     if ($response[0] !== 'y') {
                         print "Stop aborted.\n";
                         return false;

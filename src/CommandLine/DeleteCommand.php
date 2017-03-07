@@ -39,7 +39,7 @@ class DeleteCommand extends Command {
             if ($Task = $TaskService->select($where, 1)->first()) {
                 $prompt = sprintf('Delete Task %d%s? [Y/n]: ', $Task->id, ($Task->description ? ' ('.$Task->description.')' : ''));
 
-                if (! IS_CLI || $this->option('f') || 'y' == strtolower(readline($prompt))) {
+                if (! IS_CLI || $this->option('f') || 'n' !== strtolower(readline($prompt))) {
                     $TaskService->delete($where, 1);
                 }
 
