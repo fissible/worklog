@@ -57,7 +57,7 @@ class TaskService extends ModelService
     protected static $display_headers = [
         'id' => 'ID',
         'issue' => 'Issue',
-        'description' => 'Descripti¡n',
+        'description' => 'Description',
         'date' => 'Date',
         'start' => 'Start',
         'stop' => 'Stop',

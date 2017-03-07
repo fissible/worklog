@@ -84,7 +84,7 @@ class StopCommand extends Command {
                     $this->Task->description = $description;
                 }
 
-                $this->Task->stop = $Tasks->default('stop');
+                $this->Task->stop = $Tasks->default_val('stop');
 
                 $fields = [ 'issue', 'description', 'date', 'start', 'stop' ];
 
