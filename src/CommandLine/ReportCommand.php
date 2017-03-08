@@ -2,6 +2,7 @@
 namespace Worklog\CommandLine;
 
 use Carbon\Carbon;
+use Worklog\Duration;
 use CSATF\CommandLine\Output;
 use Worklog\Services\TaskService;
 use CSATF\CommandLine\Command as Command;
@@ -38,7 +39,6 @@ class ReportCommand extends Command {
         parent::run();
 
         $TaskService = new TaskService(App()->db());
-        ;
         $DateStart = Carbon::today()->startOfWeek();
         $DateEnd = Carbon::today()->endOfWeek()->subDay();
         $DateNow = Carbon::now();
@@ -83,13 +83,11 @@ class ReportCommand extends Command {
         if ($Tasks) {
             $Tasks = $TaskService->sort($Tasks);
             $last_date = $last_issue = null;
-            $issue_task_index = 0;
 
             foreach ($Tasks as $key => $Task) {
                 $_issue = (property_exists($Task, 'issue') && $Task->issue ? $Task->issue : 'NA');
 
                 if (! array_key_exists($_issue, $issues)) {
-                    $issue_task_index = 0;
                     $issues[$_issue] = [
                         'descriptions' => [],
                         'durations' => [],
@@ -98,14 +96,16 @@ class ReportCommand extends Command {
                     ];
                 }
                 if (property_exists($Task, 'duration') && ! empty($Task->duration)) {
-                    $issues[$_issue]['durations'][$issue_task_index] = $Task->duration;
+                    $issues[$_issue]['durations'][$key] = $Task->duration;
                 }
+
                 $TaskService->formatFieldsForDisplay($Task);
+
                 if (property_exists($Task, 'description') && ! empty($Task->description)) {
-                    $issues[$_issue]['descriptions'][$issue_task_index] = $Task->description;
+                    $issues[$_issue]['descriptions'][$key] = $Task->description;
                 }
                 if (property_exists($Task, 'date') && ! empty($Task->date)) {
-                    $issues[$_issue]['dates'][$issue_task_index] = Carbon::parse($Task->date);
+                    $issues[$_issue]['dates'][$key] = Carbon::parse($Task->date);
                 }
 
                 if ($today) {
@@ -121,61 +121,34 @@ class ReportCommand extends Command {
                             $time .= static::get_twelve_hour_time($Task->stop);
                         }
 
-                        $issues[$_issue]['times'][$issue_task_index] = $time;
+                        $issues[$_issue]['times'][$key] = $time;
                     }
                 }
-
-                $issue_task_index++;
             }
 
             if (IS_CLI) {
                 if (! empty($issues)) {
                     Output::set_line_length(static::$output_line_length);
+                    $TotalDuration = new Duration();
                     $hline = '+' . str_repeat('-', static::$output_line_length - 2) . '+';
 
                     // Print date (or date range)
                     Output::line($hline);
                     if ($DateStart->toDateString() === $DateEnd->toDateString()) {
-                        Output::line($DateStart->format('l').', '.$DateStart->toFormattedDateString(), $border);
+                        $header = $DateStart->format('l').', '.$DateStart->toFormattedDateString();
                     } else {
-                        Output::line($DateStart->toFormattedDateString().' - '.$DateEnd->toFormattedDateString(), $border);
+                        $header = $DateStart->toFormattedDateString().' - '.$DateEnd->toFormattedDateString();
                     }
-//                    Output::line($hline);
+
+                    Output::line("\033[1m".$header."\033[0m", $border);
                     Output::line('+' . str_repeat('=', static::$output_line_length - 2) . '+');
 
                     foreach ($issues as $_issue => $data) {
-                        $duration = '';
-                        $DateInterval = Carbon::now();
-
-                        if ($_issue !== $last_issue) {
-                            $last_issue = $_issue;
-                            $last_date = null;
-                        }
-
-                        foreach ($data['durations'] as $_duration) {
-                            $DateInterval->add($_duration);
-                        }
-                        $DiffInterval = $DateNow->diff($DateInterval);
-                        if ($DiffInterval->d) {
-                            $duration .= $DiffInterval->d.' days';
-                        }
-                        if ($DiffInterval->h) {
-                            if (strlen($duration)) $duration .= ', ';
-                            $duration .= $DiffInterval->h.' hours';
-                        }
-                        if ($DiffInterval->i) {
-                            if (strlen($duration)) $duration .= ', ';
-                            $duration .= $DiffInterval->i.' mins';
-                        }
+                        $Duration = new Duration();
                         $pad_length = static::$output_line_length - 4;
-                        $duration = str_pad($duration, $pad_length, ' ', STR_PAD_LEFT);
-
-
-//                        Output::line($hline);
 
                         if ($_issue !== 'NA') {
-                            Output::line($_issue, $border);
-                            Output::line($hline);
+                            Output::line("\033[1m".$_issue."\033[0m", $border);
                         }
 
                         foreach ($data['descriptions'] as $issue_task_index => $description) {
@@ -186,7 +159,7 @@ class ReportCommand extends Command {
                                 if ($date !== $last_date && ! is_null($last_date)) {
                                     Output::line('', '|');
                                 }
-                                $_datetime_display = ($date === $last_date ? str_repeat(' ', strlen($date) + 3) : '['.$date.'] ');
+                                $_datetime_display = ($date === $last_date ? str_repeat(' ', mb_strlen($date) + 3) : '['.$date.'] ');
                             }
                             if ($today) {
                                 if (isset($data['times']) && isset($data['times'][$issue_task_index])) {
@@ -198,12 +171,24 @@ class ReportCommand extends Command {
                                 $last_date = $date;
                             }
                         }
-//                        Output::line($hline);
-                        Output::line($duration, $border);
+
+                        foreach ($data['durations'] as $_duration) {
+                            $Duration->add($_duration);
+                            $TotalDuration->add($_duration);
+                        }
+
+                        Output::line(str_pad($Duration->asString(), $pad_length, ' ', STR_PAD_LEFT), $border);
                         Output::line($hline);
-
-
                     }
+
+                    if (count($issues) > 1) {
+                        Output::line($hline);
+                        $prefix = 'Total Duration:';
+                        Output::line($prefix.str_pad($TotalDuration->asString(), ($pad_length - strlen($prefix)), ' ', STR_PAD_LEFT), $border);
+                        Output::line($hline);
+                    }
+
+
                 } else {
                     throw new \Exception(static::$exception_strings['no_records_found']);
                 }

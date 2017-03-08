@@ -68,6 +68,8 @@ class TaskService extends ModelService
         'time_format' => 'Start/stop times must be a time format: HH:MM'
     ];
 
+    const CACHE_TAG = 'start';
+
 
     public function lastTask($where = []) {
         $Latest = null;
@@ -95,6 +97,63 @@ class TaskService extends ModelService
         }
 
         return $_record;
+    }
+
+    public function cached($disable_purge = false) {
+        $last_index = 0;
+        $cache_name = null;
+        $filename = null;
+        $Task = false;
+        $Cache = App()->Cache();
+
+        if ($disable_purge) {
+            $Cache->disable_purge();
+        }
+
+        // Get the latest index
+        if ($cached_start_times = $Cache->load_tags(self::CACHE_TAG)) {
+            foreach ($cached_start_times as $name => $file) {
+                $parts = explode('_', $name);
+                if ($parts[1] > $last_index) {
+                    $last_index = $parts[1];
+                    $cache_name = $name;
+                    $filename = $file;
+                }
+            }
+        }
+
+        if (! is_null($cache_name)) {
+            $Task = json_decode(json_encode($Cache->load($cache_name)));
+        }
+
+        return [ $filename, $Task ];
+    }
+
+    /**
+     * Return true if all required fields have values
+     * @param $Task
+     * @return bool
+     * @throws \Exception
+     */
+    public function valid($Task) {
+        $valid = true;
+        foreach (static::fields() as $field => $config) {
+            if (isset($config['required']) && $config['required']) {
+                if ($Task instanceof \stdClass) {
+                    if (! property_exists($Task, $field)) {
+                        $valid = false;
+                    }
+                } elseif (is_array($Task)) {
+                    if (! array_key_exists($field, $Task)) {
+                        $valid = false;
+                    }
+                } else {
+                    throw new \Exception('TaskValid() expects an array or \stdClass instance');
+                }
+            }
+        }
+
+        return $valid;
     }
 
     /**
@@ -131,6 +190,26 @@ class TaskService extends ModelService
                         return $Start->diff($Stop);
                     }
                 }
+            },
+            'start_datetime' => function($Record) {
+                if (property_exists($Record, 'start') && property_exists($Record, 'date')) {
+                    return Carbon::parse(substr($Record->date, 0, 10).' '.$Record->start)->toTimeString();
+                }
+            },
+            'stop_datetime' => function($Record) {
+                if (property_exists($Record, 'stop') && property_exists($Record, 'date')) {
+                    return Carbon::parse(substr($Record->date, 0, 10).' '.$Record->stop)->toTimeString();
+                }
+            },
+            'start_time' => function($Record) {
+                if (property_exists($Record, 'start') && property_exists($Record, 'date')) {
+                    return Carbon::parse(substr($Record->date, 0, 10).' '.$Record->start)->format('g:i a');
+                }
+            },
+            'stop_time' => function($Record) {
+                if (property_exists($Record, 'stop') && property_exists($Record, 'date')) {
+                    return Carbon::parse(substr($Record->date, 0, 10).' '.$Record->stop)->format('g:i a');
+                }
             }
         ];
     }
@@ -151,7 +230,11 @@ class TaskService extends ModelService
         return [
             // description
             'description' => function ($Record) {
-                return str_replace('\n', "\n", $Record->description);
+                $str = '';
+                if (property_exists($Record, 'description')) {
+                    $str = str_replace('\n', "\n", $Record->description);
+                }
+                return $str;
             },
 
             // date: '2017-02-23 09:30:47' -> 'Feb 23, 2017'
@@ -211,8 +294,9 @@ class TaskService extends ModelService
         switch ($mode) {
             case 'default':
             default:
-                usort($records, function($a, $b) {
-                    if (property_exists($a, 'date') && property_exists($b, 'date')) {
+                uasort($records, function($a, $b) {
+                    if (property_exists($a, 'date') && property_exists($b, 'date') &&
+                        property_exists($a, 'start') && property_exists($b, 'start')) {
                         $aDate = Carbon::parse(substr($a->date, 0, 10).' '.$a->start);
                         $bDate = Carbon::parse(substr($b->date, 0, 10).' '.$b->start);
                         return $aDate->timestamp - $bDate->timestamp;

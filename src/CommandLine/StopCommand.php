@@ -24,46 +24,37 @@ class StopCommand extends Command {
 //    public static $usage = '%s [-ls] [opt1]';
     public static $menu = true;
 
-    private $Task;
-
     private static $exception_strings = [
         'not_found' => 'No open work items found.'
     ];
-
-    const CACHE_TAG = 'start';
-
-    const CACHE_NAME_DELIMITER = '_';
 
 
     public function run() {
         parent::run();
 
-        $Now = Carbon::now();
-        $EndOfDay = $Now->copy()->hour(18); // 6:00 pm
         $Tasks = new TaskService(App()->db());
-        $last_index = 0;
         $cache_name = null;
         $filename = null;
 
-        // Get the latest index
-        if ($cached_start_times = $this->App()->Cache()->load_tags(self::CACHE_TAG)) {
-            foreach ($cached_start_times as $name => $file) {
-                $parts = explode(self::CACHE_NAME_DELIMITER, $name);
-                if ($parts[1] > $last_index) {
-                    $last_index = $parts[1];
-                    $cache_name = $name;
-                    $filename = $file;
-                }
-            }
-        }
+        list($filename, $Task) = $Tasks->cached();
 
-        if (! is_null($cache_name)) {
-            $Command = new WriteCommand($this->App());
-            $this->Task = json_decode(json_encode($this->App()->Cache()->load($cache_name)));
+        if ($Task) {
+            if (property_exists($Task, 'start')) {
+                $Command = new WriteCommand($this->App());
+                $Command->setData('RETURN_RESULT', true);
+                $Command->set_invocation_flag();
 
-            if (is_object($this->Task) && property_exists($this->Task, 'start')) {
-                if (IS_CLI) {
-                    $prompt = sprintf('Complete work item started at %s [Y/n]: ', static::get_twelve_hour_time($this->Task->start));
+                // if stopping a task started today (from CLI)
+                if (IS_CLI && substr($Task->date, 0, 10) !== substr($Tasks->default_val('date'), 0, 10)) {
+                    $description = '';
+                    if (property_exists($Task, 'description') && strlen($Task->description) > 0) {
+                        $description = preg_replace('/\s+/', ' ', $Task->description);
+                        if (strlen($description) > 27) {
+                            $description = substr($description, 0, 24).'...';
+                        }
+                        $description = ' ('.$description.')';
+                    }
+                    $prompt = sprintf('Complete work item%s started at %s [Y/n]: ', $description, static::get_twelve_hour_time($Task->start));
                     $response = trim(strtolower(readline($prompt))) ?: 'y';
                     if ($response[0] !== 'y') {
                         print "Stop aborted.\n";
@@ -72,31 +63,43 @@ class StopCommand extends Command {
                 }
 
                 // cache file
-                $Command->setData('start_cache_file', $filename);
+//                $Command->setData('start_cache_file', $filename);
 
                 // issue key
                 if (($issue = $this->option('i', false)) || ($issue = $this->getData('issue'))) {
-                    $this->Task->issue = $issue;
+                    $Task->issue = $issue;
                 }
 
                 // description
                 if (($description = $this->option('d')) || ($description = $this->getData('description'))) {
-                    $this->Task->description = $description;
+                    $Task->description = $description;
                 }
 
-                $this->Task->stop = $Tasks->default_val('stop');
+                if (IS_CLI && substr($Task->date, 0, 10) !== substr($Tasks->default_val('date'), 0, 10)) {
+                    printl($Task->date);
+                    printl($Tasks->default_val('date'));
+                    printf("WARNING: stopping task started on %s\n", Carbon::parse($Task->date)->toFormattedDateString());
+                } else {
+                    $Task->stop = $Tasks->default_val('stop');
+                }
+
 
                 $fields = [ 'issue', 'description', 'date', 'start', 'stop' ];
 
                 foreach ($fields as $field) {
-                    if (property_exists($this->Task, $field)) {
-                        $Command->setData($field, $this->Task->{$field});
+                    if (property_exists($Task, $field)) {
+                        $Command->setData($field, $Task->{$field});
                     }
                 }
 
-                return $Command->run();
+                if ($Command->run()) {
+                    $this->App()->Cache()->clear($filename);
+                }
             } else {
-                // not found
+                if (! is_null($filename)) {
+                    $this->App()->Cache()->clear($filename);
+                }
+                throw new \Exception(static::$exception_strings['not_found']);
             }
         } else {
             throw new \Exception(static::$exception_strings['not_found']);

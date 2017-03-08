@@ -45,7 +45,11 @@ class StartCommand extends Command {
 //        $LastTask = $Tasks->lastTask([ 'date' => Carbon::now()->toDateString() ]);
         $last_index = 0;
 
-        // Get the latest index
+        $RecoverCommand = new RecoverCommand($this->App());
+        $RecoverCommand->setData('warn', 'start');
+        $RecoverCommand->run();
+
+        // Get the latest cache index (should always be 1 with the RecoverCommand running first)
         if ($cached_start_times = $this->App()->Cache()->load_tags(self::CACHE_TAG)) {
             foreach ($cached_start_times as $name => $file) {
                 $parts = explode(self::CACHE_NAME_DELIMITER, $name);
@@ -61,18 +65,20 @@ class StartCommand extends Command {
         }
 
         // description
-        if ($description = $this->option('d') || $description = $this->getData('description')) {
+        if (($description = $this->option('d')) || ($description = $this->getData('description'))) {
             $this->Task->description = $description;
         }
 
         $this->Task->date = $Tasks->default_val('date');
         $this->Task->start = $Tasks->default_val('start');
 
-        return static::get_twelve_hour_time($this->App()->Cache()->data(
+        $start_time = $this->App()->Cache()->data(
             self::CACHE_TAG.self::CACHE_NAME_DELIMITER.($last_index + 1),
             $this->Task,
             [ self::CACHE_TAG ],
             $Now->diffInSeconds($EndOfDay)
-        )->start);
+        )->start;
+
+        return 'New task started at '.static::get_twelve_hour_time($start_time);
     }
 }

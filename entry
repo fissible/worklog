@@ -64,5 +64,7 @@ Command::bind('report', 'Worklog\CommandLine\ReportCommand');
 Command::bind('today', 'Worklog\CommandLine\TodayCommand');
 Command::bind('start', 'Worklog\CommandLine\StartCommand');
 Command::bind('stop', 'Worklog\CommandLine\StopCommand');
+Command::bind('recover', 'Worklog\CommandLine\RecoverCommand');
+Command::bind('cancel', 'Worklog\CommandLine\CancelCommand');
 
 include(__DIR__.'/src/run.php');

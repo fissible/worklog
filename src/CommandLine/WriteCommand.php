@@ -57,7 +57,7 @@ class WriteCommand extends Command {
         // Parse flags/params
 
         // cache file
-        $start_cache_file = $this->getData('start_cache_file');
+//        $start_cache_file = $this->getData('start_cache_file');
 
         // issue key
         if (($issue = $this->option('i', false)) || ($issue = $this->getData('issue'))) {
@@ -92,49 +92,80 @@ class WriteCommand extends Command {
 
                     // HYDRATE TASK
                     if (! property_exists($this->Task, $field) || $type == self::TYPE_UPDATE) {
+
+                        // UPDATE default values
                         if ($type == self::TYPE_UPDATE) {
-                            $default = $this->Task->{$field};
+                            $default = (property_exists($this->Task, $field) ? $this->Task->{$field} : '');
                             $prompt_default = $default;
 
-                            if (in_array($field, [ 'start', 'stop' ])) {
-                                $prompt_default = static::get_twelve_hour_time($default);
-                            } elseif ($field == 'date') {
-                                $prompt_default = Carbon::parse($default)->toDateString();
+                            switch($field) {
+                                case 'start':
+                                case 'stop':
+                                    $prompt_default = static::get_twelve_hour_time($default);
+                                    break;
+                                case 'date':
+                                    $prompt_default = Carbon::parse($default)->toDateString();
+                                    break;
+                                case 'description':
+                                    $description = '';
+                                    if (property_exists($this->Task, 'description') && strlen($this->Task->description) > 0) {
+                                        $description = preg_replace('/\s+/', ' ', $this->Task->description);
+                                        if (strlen($description) > 27) {
+                                            $description = substr($description, 0, 24) . '...';
+                                        }
+                                    }
+                                    $prompt_default = $description;
+                                    break;
                             }
 
-                        } elseif ($field == 'start') {
-                            if ($LastTask) {
-                                $default = $LastTask->stop;
-                            } else {
-                                $default = $Tasks->field_default_value($field);
-                            }
-                            $prompt_default = static::get_twelve_hour_time($default);
-                        } elseif ($field == 'stop') {
-                            $default = $Tasks->field_default_value($field);
-                            $prompt_default = static::get_twelve_hour_time($default);
+                        // INSERT default values
                         } else {
                             $default = $Tasks->field_default_value($field);
                             $prompt_default = $default;
+
+                            switch($field) {
+                                case 'start':
+                                    if ($LastTask) {
+                                        $default = $LastTask->stop;
+                                    } else {
+                                        $default = $Tasks->field_default_value($field);
+                                    }
+                                    $prompt_default = static::get_twelve_hour_time($default);
+                                    break;
+                                case 'stop':
+                                    $default = $Tasks->field_default_value($field);
+                                    $prompt_default = static::get_twelve_hour_time($default);
+                                    break;
+                            }
                         }
 
-                        // PROMPT USER
+                        // Prompt user for values...
                         if ($prompt = $Tasks->field_prompt($field, $prompt_default)) {
                             $response = readline($prompt);
 
                             if (strlen($response) > 0) {
                                 $response = trim($response);
 
-                                if ($type == self::TYPE_INSERT && $field == 'description' && property_exists($this->Task, 'description')) {
-                                    $this->Task->description .= "\n" . $response;
-                                } else {
-                                    if ($field == 'issue' && is_null($issue)) {
+                                switch($field) {
+                                    case 'issue':
                                         $issue = $response;
-                                    }
-                                    if (in_array($field, ['start', 'stop'])) {
+                                        break;
+                                    case 'description':
+                                        if (substr($response, 0, 1) == '.') {
+                                            $response = trim(ltrim($response, '.'));
+                                            // Append to description?
+                                            if (property_exists($this->Task, 'description')) {
+                                                $response = $this->Task->description .= "\n" . $response;
+                                            }
+                                        }
+                                        break;
+                                    case 'start':
+                                    case 'stop':
                                         $response = static::parse_time_input($response);
-                                    }
-                                    $this->Task->{$field} = $response;
+                                        break;
                                 }
+
+                                $this->Task->{$field} = $response;
 
                             } else {
                                 $this->Task->{$field} = $default;
@@ -142,24 +173,41 @@ class WriteCommand extends Command {
                         }
                     }
                 }
-            } while (! $this->TaskValid($this->Task));
+            } while (! $Tasks->valid($this->Task));
         }
 
         unset($this->Task->duration);
 
-        $Tasks->write($this->Task);
 
-        if (! is_null($start_cache_file)) {
-            $this->App()->Cache()->clear($start_cache_file);
+        $result = $Tasks->write($this->Task);
+
+
+        // Return
+
+
+        if ($this->getData('RETURN_RESULT')) {
+            return $result;
         }
 
+        $Command = new DetailCommand($this->App());
+        $Command->set_invocation_flag();
+        $Command->setData('id', $this->Task->id);
+        return $Command->run();
+
+//        if (! is_null($start_cache_file)) {
+//            $this->App()->Cache()->clear($start_cache_file);
+//        }
+
         $Command = new TodayCommand($this->App());
+        $Command->set_invocation_flag();
 
         if ($type == self::TYPE_UPDATE) {
             $Command = new DetailCommand($this->App());
+            $Command->set_invocation_flag();
             $Command->setData('id', $id);
         } elseif ($issue) {
             $Command = new ListCommand($this->App());
+            $Command->set_invocation_flag();
             $Command->setData('issue', $issue);
         }
 
@@ -171,26 +219,5 @@ class WriteCommand extends Command {
         if (array_key_exists($field, $fields)) {
             return $fields[$field];
         }
-    }
-
-    protected function TaskValid($Task) {
-        $valid = true;
-        foreach (TaskService::fields() as $field => $config) {
-            if (isset($config['required']) && $config['required']) {
-                if ($Task instanceof \stdClass) {
-                    if (! property_exists($Task, $field)) {
-                        $valid = false;
-                    }
-                } elseif (is_array($Task)) {
-                    if (! array_key_exists($field, $Task)) {
-                        $valid = false;
-                    }
-                } else {
-                    throw new \Exception('TaskValid() expects an array or \stdClass instance');
-                }
-            }
-        }
-
-        return $valid;
     }
 }
