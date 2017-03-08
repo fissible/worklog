@@ -151,11 +151,13 @@ class WriteCommand extends Command {
                                         $issue = $response;
                                         break;
                                     case 'description':
-                                        if (substr($response, 0, 1) == '.') {
-                                            $response = trim(ltrim($response, '.'));
-                                            // Append to description?
+                                        $prefix = substr($response, 0, 1);
+                                        if ($prefix == '.' || $prefix == ',') {
+                                            $response = trim(substr($response, 1));
+
                                             if (property_exists($this->Task, 'description')) {
-                                                $response = $this->Task->description .= "\n" . $response;
+                                                $join = ($prefix == '.' ? "\n" : ($prefix == ',' ? ' ' : ''));
+                                                $response = $this->Task->description .= $join . $response;
                                             }
                                         }
                                         break;
