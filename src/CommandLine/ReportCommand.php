@@ -112,7 +112,7 @@ class ReportCommand extends Command {
                     if (property_exists($Task, 'start') || property_exists($Task, 'stop')) {
                         $time = '';
                         if (! empty($Task->start)) {
-                            $time = static::get_twelve_hour_time($Task->start);
+                            $time = str_pad(static::get_twelve_hour_time($Task->start), 8, ' ', STR_PAD_LEFT);
                         }
                         if (! empty($Task->stop)) {
                             if (strlen($time)) {
