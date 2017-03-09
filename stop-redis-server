@@ -1,4 +1,6 @@
 #!/bin/sh
+cd "${0%/*}"
 source .env
 cd "$REDIS_DATABASE_PATH"
+echo "Stopping redis-server"
 redis-cli shutdown

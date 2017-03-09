@@ -10,7 +10,7 @@
  * Bootstrap the application
  */
 define('MINIMUM_PHP_VERSION', '5.5.0');
-define('APPLICATION_PATH', getcwd());
+define('APPLICATION_PATH', __DIR__);
 define('CACHE_DIRECTORY', '/scripts/worklog/cache');
 define('DEVELOPMENT_MODE', false);
 define('DEFAULT_COMMAND', 'today');
@@ -26,33 +26,24 @@ $dotenv->load();
 use CSATF\CommandLine\Command;
 use CSATF\Database\Drivers\RedisDatabaseDriver;
 
-$db = new RedisDatabaseDriver([
-    'database' => (int) getenv('REDIS_DATABASE_INDEX'),
-    'prefix' => basename(__FILE__).':',
-    'schema_path' => getenv('REDIS_DATABASE_SCHEMA_PATH') || '/usr/share/redisdb/redis-0.json',
-    'path' => getenv('REDIS_DATABASE_SCHEMA_PATH') || APPLICATION_PATH
-]);
+function connect_db() {
+    return new RedisDatabaseDriver([
+        'database' => (int)getenv('REDIS_DATABASE_INDEX'),
+        'prefix' => basename(__FILE__) . ':',
+        'schema_path' => getenv('REDIS_DATABASE_SCHEMA_PATH') || '/usr/share/redisdb/redis-0.json',
+        'path' => getenv('REDIS_DATABASE_SCHEMA_PATH') || APPLICATION_PATH
+    ]);
+}
 
-//$data = [];
-//$keys = App()->db()->keys('*');
-//foreach ($keys as $_key => $key) {
-////    $data[$key] = App()->db()->get($key);
-//    $id = preg_replace('/[^0-9]/', '', $key);
-//    $rec = App()->db()->get($key);
-//
-//    foreach ($rec as $_pk => $item) {
-//
-//        if ($item->id == 21) {
-//            dump($item);
-////            dump($key);
-////            print "\n";
-////            dump($id);
-////            print "\n";
-////            die ($id.' != '.$item->id);
-//        }
-//    }
-//}
-//dump($data);
+try {
+    $db = connect_db();
+} catch (Predis\Connection\ConnectionException $e) {
+    passthru('bash '.APPLICATION_PATH.'/start-redis-server > /dev/null');
+    sleep(1);
+    $db = connect_db();
+} catch (\Exception $e) {
+    print get_class($e).' '.$e->getMessage()."\n";
+}
 
 Command::bind('help', 'Worklog\CommandLine\UsageCommand');
 Command::bind('add', 'Worklog\CommandLine\WriteCommand');
