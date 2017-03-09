@@ -49,7 +49,7 @@ class Duration
 
     public function add(\DateInterval $interval) {
         $this->Base->add($interval);
-        return $this/*->recalculate()*/;
+        return $this;
     }
 
     public function diff() {
@@ -57,30 +57,6 @@ class Duration
             $this->DiffInterval = Carbon::now()->diff($this->Base);
         }
         return $this->DiffInterval;
-    }
-
-    public function daysString() {
-        if ($DiffInterval = $this->diff()) {
-            if ($DiffInterval->d) {
-                return $DiffInterval->d.($DiffInterval->d == 1 ? ' day' : ' days');
-            }
-        }
-    }
-
-    public function hoursString() {
-        if ($DiffInterval = $this->diff()) {
-            if ($DiffInterval->h) {
-                return $DiffInterval->h.($DiffInterval->h == 1 ? ' hour' : ' hours');
-            }
-        }
-    }
-
-    public function minutesString() {
-        if ($DiffInterval = $this->diff()) {
-            if ($DiffInterval->i) {
-                return $DiffInterval->i.($DiffInterval->i == 1 ? ' min' : ' mins');
-            }
-        }
     }
 
     public function intervals_exceed_max() {
@@ -126,14 +102,38 @@ class Duration
             }
         }
 
+        return $this;
+    }
+
+    public function daysString() {
+        $this->redistribute();
+        if ($DiffInterval = $this->diff()) {
+            if ($DiffInterval->d) {
+                return $DiffInterval->d.($DiffInterval->d == 1 ? ' day' : ' days');
+            }
+        }
+    }
+
+    public function hoursString() {
+        $this->redistribute();
+        if ($DiffInterval = $this->diff()) {
+            if ($DiffInterval->h) {
+                return $DiffInterval->h.($DiffInterval->h == 1 ? ' hour' : ' hours');
+            }
+        }
+    }
+
+    public function minutesString() {
+        $this->redistribute();
+        if ($DiffInterval = $this->diff()) {
+            if ($DiffInterval->i) {
+                return $DiffInterval->i.($DiffInterval->i == 1 ? ' min' : ' mins');
+            }
+        }
     }
 
     public function asString() {
         $duration = [];
-
-        if (isset($this->maximum_interval)) {
-            $this->redistribute();
-        }
 
         if ($days = $this->daysString()) {
             $duration[] = $days;
