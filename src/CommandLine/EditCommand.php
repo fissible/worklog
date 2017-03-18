@@ -19,7 +19,7 @@ class EditCommand extends Command
     public static $arguments = [ 'id' ];
     public static $menu = true;
 
-    private static $exception_strings = [
+    protected static $exception_strings = [
         'invalid_argument' => 'Command requires a valid ID as the argument',
         'record_not_found' => 'Record %d not found'
     ];

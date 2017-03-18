@@ -22,7 +22,7 @@ class DeleteCommand extends Command {
     public static $arguments = [ 'id' ];
     public static $menu = true;
 
-    private static $exception_strings = [
+    protected static $exception_strings = [
         'invalid_argument' => 'Command requires a valid ID as the argument'
     ];
 
@@ -36,7 +36,7 @@ class DeleteCommand extends Command {
         if (is_numeric($id)) {
             $where = [ 'id' => $id ];
 
-            if ($Task = $TaskService->select($where, 1)->first()) {
+            if ($Task = $TaskService->select($where, 1)/*->first()*/) {
                 $prompt = sprintf('Delete Task %d%s? [Y/n]: ', $Task->id, ($Task->description ? ' ('.$Task->description.')' : ''));
 
                 if (! IS_CLI || $this->option('f') || 'n' !== strtolower(readline($prompt))) {

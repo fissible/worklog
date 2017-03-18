@@ -21,7 +21,7 @@ class DetailCommand extends Command {
     public static $arguments = [ 'id' ];
     public static $menu = true;
 
-    private static $exception_strings = [
+    protected static $exception_strings = [
         'invalid_argument' => 'Command requires a valid ID as the argument',
         'record_not_found' => 'Record %d not found'
     ];
@@ -39,7 +39,8 @@ class DetailCommand extends Command {
         if (is_numeric($id)) {
             $where = [ 'id' => $id ];
 
-            if ($Task = $TaskService->select($where, 1)->first()) {
+            if ($result = $TaskService->select($where, 1)/*->first()*/) {
+                $Task = $result[0];
                 Output::set_line_length(static::$output_line_length);
                 $border = '|';
                 $Date = Carbon::parse($Task->date);

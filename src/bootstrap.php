@@ -73,9 +73,9 @@ if (defined('APPLICATION_PATH')) {
 
 // Change config profile string into the array at that offset in $db
 $db_config = $db[$db_config];
-$db = new CSATF\Database\Drivers\PostgresDatabaseDriver(
-	$db_config['hostname'], $db_config['database'], $db_config['username'], $db_config['password']
-);
+//$db = new CSATF\Database\Drivers\PostgresDatabaseDriver(
+//	$db_config['hostname'], $db_config['database'], $db_config['username'], $db_config['password']
+//);
 
 $errors = [];
 
@@ -149,7 +149,7 @@ function error_exit($error_msg = null, $exit_code = 1) {
 function show_errors() {
 	global $errors;
 	if (count($errors)) {
-		printl(implode("\n", $errors));
+		printl(implode("\n", Output::color($errors, 'red')));
 	}
 }
 
@@ -202,4 +202,93 @@ if (! function_exists('readline')) {
 	    $line = rtrim(fgets($fp, 1024), "\r\n");
 	    return $line;
 	}
+}
+
+function database_config($key = '') {
+    global $db_config;
+    if ($key) {
+        return $db_config[$key];
+    } else {
+        return $db_config;
+    }
+}
+
+/**
+ * @param $driver
+ * @param $config
+ * @return mixed
+ */
+function database($driver, $config, $attempts = 0) {
+    $Handle = null;
+
+    if (false === strpos($driver, 'CSATF\\Database\\Drivers')) {
+        $driver = 'CSATF\\Database\\Drivers\\'.$driver;
+    }
+    if (false === stripos($driver, 'DatabaseDriver')) {
+        $driver .= 'DatabaseDriver';
+    }
+    if (false === stripos($driver, 'Driver')) {
+        $driver .= 'Driver';
+    }
+    try {
+        $Handle = new $driver($config);
+    } catch (Predis\Connection\ConnectionException $e) {
+        if ($attempts < 10) {
+            passthru('bash '.APPLICATION_PATH.'/start-redis-server > /dev/null');
+            sleep(1);
+            return database($driver, $config, ++$attempts);
+        } else {
+            throw $e;
+        }
+    }
+
+    return $Handle;
+}
+
+function redis_to_sqlite($db_config) {
+    $count = 0;
+    try {
+        $redis = database('Redis', $db_config['Redis']);
+        $records = $redis->select('task')->result();
+        $record_count = count($records);
+
+        if ($record_count > 0) {
+            printl('Found '.count($records).' in Redis database...');
+
+            // switch to Sqlite database
+            $db = database('Sqlite', $db_config['Sqlite']);
+
+//            $migration_name = 'create_task_table';
+//            if ($Migration = CSATF\Database\Migration::make($migration_name, $db)) {
+//                $Migration->down();
+//                $Migration->up();
+//            } else {
+//                throw new \Exception('Unable to find Migration "'.$migration_name.'"');
+//            }
+
+            $TaskService = new Worklog\Services\TaskService($db);
+            $fields = array_keys(Worklog\Services\TaskService::fields());
+            $records = $TaskService->sort($records);
+
+            foreach ($records as $record) {
+                foreach ($record as $___field => $___value) {
+                    if (! in_array($___field, $fields)) {
+                        unset($record->{$___field});
+                    }
+                }
+                printl($record);
+                if ($db->insert('task', $record)) {
+                    $count++;
+                }
+            }
+            printl($count.' records inserted.');
+        } else {
+            printl('Found no records to migrate');
+        }
+
+    } catch (\Exception $e) {
+        print get_class($e).' '.$e->getMessage()."\n";
+    }
+
+    return $count;
 }

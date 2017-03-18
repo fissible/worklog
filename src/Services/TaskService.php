@@ -20,7 +20,7 @@ class TaskService extends ModelService
     protected static $fields = [
         'id' => [
             'type' => 'integer',
-
+            'auto_increment' => true
         ],
         'issue' => [
             'type' => 'string',
@@ -54,6 +54,8 @@ class TaskService extends ModelService
         ]
     ];
 
+    protected static $primary_keys = [ 'id' ];
+
     protected static $display_headers = [
         'id' => 'ID',
         'issue' => 'Issue',
@@ -74,7 +76,7 @@ class TaskService extends ModelService
     public function lastTask($where = []) {
         $Latest = null;
         $_record = null;
-        if ($records = $this->select($where)->result()) {
+        if ($records = $this->select($where)/*->result()*/) {
             $records = $this->sort($records, 'desc');
 
             foreach ($records as $record) {
@@ -286,9 +288,9 @@ class TaskService extends ModelService
     /**
      * Sort records
      * @param $records
-     * @param $dir The sorting direction
-     * @param string $mode
-     * @return bool
+     * @param $dir
+     * @param $mode
+     * @return array
      */
     public function sort(array $records = [], $dir = 'asc', $mode = 'default') {
         switch ($mode) {

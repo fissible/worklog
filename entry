@@ -12,6 +12,7 @@
 define('MINIMUM_PHP_VERSION', '5.5.0');
 define('APPLICATION_PATH', __DIR__);
 define('CACHE_DIRECTORY', '/scripts/worklog/cache');
+define('DATABASE_MIGRATIONS', APPLICATION_PATH.'/database/migrations');
 define('DEVELOPMENT_MODE', false);
 define('DEFAULT_COMMAND', 'today');
 include(__DIR__.'/src/bootstrap.php');
@@ -24,26 +25,26 @@ $dotenv->load();
 /*********************************************/
 
 use CSATF\CommandLine\Command;
-use CSATF\Database\Drivers\RedisDatabaseDriver;
 
-function connect_db() {
-    return new RedisDatabaseDriver([
+global $db_config;
+$db_config = [
+    'Redis' => [
         'database' => (int)getenv('REDIS_DATABASE_INDEX'),
         'prefix' => basename(__FILE__) . ':',
-        'schema_path' => getenv('REDIS_DATABASE_SCHEMA_PATH') || '/usr/share/redisdb/redis-0.json',
-        'path' => getenv('REDIS_DATABASE_SCHEMA_PATH') || APPLICATION_PATH
-    ]);
-}
+//        'schema_path' => getenv('REDIS_DATABASE_SCHEMA_PATH') ?: '/usr/share/redisdb/redis-0.json',
+//        'path' => getenv('REDIS_DATABASE_SCHEMA_PATH') ?: APPLICATION_PATH
+    ],
+    'Sqlite' => [
+        'path' => getenv('SQLITE_DATABASE_PATH') ?: APPLICATION_PATH.'/'.basename(__FILE__).'.sqlite.db'
+    ]
+];
 
-try {
-    $db = connect_db();
-} catch (Predis\Connection\ConnectionException $e) {
-    passthru('bash '.APPLICATION_PATH.'/start-redis-server > /dev/null');
-    sleep(1);
-    $db = connect_db();
-} catch (\Exception $e) {
-    print get_class($e).' '.$e->getMessage()."\n";
-}
+$db = database('Sqlite', $db_config['Sqlite']);
+
+Command::bind('migrate', 'CSATF\CommandLine\MigrateCommand');
+Command::bind('migrate:rollback', 'CSATF\CommandLine\MigrateRollbackCommand');
+Command::bind('migrate:status', 'CSATF\CommandLine\MigrationStatusCommand');
+Command::bind('make:migration', 'CSATF\CommandLine\CreateMigrationCommand');
 
 Command::bind('help', 'Worklog\CommandLine\UsageCommand');
 Command::bind('add', 'Worklog\CommandLine\WriteCommand');
@@ -57,5 +58,18 @@ Command::bind('start', 'Worklog\CommandLine\StartCommand');
 Command::bind('stop', 'Worklog\CommandLine\StopCommand');
 Command::bind('recover', 'Worklog\CommandLine\RecoverCommand');
 Command::bind('cancel', 'Worklog\CommandLine\CancelCommand');
+
+
+//function box($size) {
+//    $isize = ($size - 2);
+//    printl(Output::uchar('down_right', 'double').str_repeat(Output::uchar('hor', 'double'), $isize).Output::uchar('down_left', 'double'));
+//    for ($i = 0; $i <= $isize; $i++) {
+//        printl(Output::uchar('ver', 'double').str_repeat(' ', $isize).Output::uchar('ver', 'double'));
+//    }
+//    printl(Output::uchar('up_right', 'double').str_repeat(Output::uchar('hor', 'double'), $isize).Output::uchar('up_left', 'double'));
+//}
+//
+//box(10);
+
 
 include(__DIR__.'/src/run.php');

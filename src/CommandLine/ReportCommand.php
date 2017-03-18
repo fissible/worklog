@@ -23,10 +23,11 @@ class ReportCommand extends Command {
         'l' => ['req' => null, 'description' => 'Entries from last week'],
         't' => ['req' => null, 'description' => 'Entries from today']
     ];
-    public static $arguments = [ 'date' ];
+    public static $arguments = [ 'date', 'date_end' ];
+    public static $usage = '%s [-ilt] [date [end_date]]';
     public static $menu = true;
 
-    private static $exception_strings = [
+    protected static $exception_strings = [
         'invalid_argument' => 'Command requires a valid date as the argument',
         'issue_not_found' => 'Issue %s not found',
         'no_records_found' => 'No entries found'
@@ -57,7 +58,11 @@ class ReportCommand extends Command {
             $today = true;
         } elseif ($date = $this->getData('date')) {
             $DateStart = Carbon::parse($date);
-            $DateEnd = $DateStart->copy();
+            if ($date_end = $this->getData('date_end')) {
+                $DateEnd = Carbon::parse($date_end);
+            } else {
+                $DateEnd = $DateStart->copy();
+            }
         } elseif ($this->option('l')) {
             $DateStart->subWeek();
             $DateEnd->subWeek();
@@ -66,6 +71,10 @@ class ReportCommand extends Command {
         $DateStart->setTime(6, 0);
         $DateEnd->endOfDay();
 
+        if ($DateEnd->lt($DateStart)) {
+            throw new \InvalidArgumentException('End date cannot be before start date.');
+        }
+
         if ($DateStart->toDateString() === $DateEnd->toDateString()) {
             $where['date'] = $DateStart->toDateString();
         } else {
@@ -73,7 +82,7 @@ class ReportCommand extends Command {
             $where['date<='] = $DateEnd->toDateString();
         }
 
-        $Tasks = $TaskService->select($where)->result();
+        $Tasks = $TaskService->select($where)/*->result()*/;
         $task_count = App()->db()->count();
 
         if ($issue && $task_count < 1) {

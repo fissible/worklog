@@ -1,5 +1,6 @@
 <?php
 use CSATF\Application;
+use CSATF\CommandLine\Output;
 
 if (DEVELOPMENT_MODE && IS_CLI)
 	Application::timer();
@@ -8,7 +9,7 @@ try {
 	show_errors();
 	handle_result($result);
 } catch (Exception $e) {
-	error_exit($e->getMessage());
+	error_exit(Output::color($e->getMessage(), 'red'));
 }
 if (DEVELOPMENT_MODE && IS_CLI) {
 	print "\n".Application::timer().' seconds'."\n";

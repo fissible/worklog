@@ -28,11 +28,6 @@ class WriteCommand extends Command {
 
     private $Task;
 
-    private static $exception_strings = [
-        'date_format' => 'Date must be a valid format, eg. YYYY-MM-DD',
-        'time_format' => 'Start/stop times must be a time format: HH:MM'
-    ];
-
     const TYPE_UPDATE = 0;
     const TYPE_INSERT = 1;
 
@@ -46,7 +41,8 @@ class WriteCommand extends Command {
         // Get a Task instance
         if (($id = $this->option('e')) || ($id = $this->getData('id'))) {
             $type = self::TYPE_UPDATE;
-            $this->Task = $Tasks->select([ 'id' => $id ])->first();
+            $_Tasks = $Tasks->select([ 'id' => $id ]);
+            $this->Task = $_Tasks[0];
         } else {
             $type = self::TYPE_INSERT;
             $this->Task = $Tasks->make();

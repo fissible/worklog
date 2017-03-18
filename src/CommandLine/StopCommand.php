@@ -24,7 +24,7 @@ class StopCommand extends Command {
 //    public static $usage = '%s [-ls] [opt1]';
     public static $menu = true;
 
-    private static $exception_strings = [
+    protected static $exception_strings = [
         'not_found' => 'No open work items found.'
     ];
 

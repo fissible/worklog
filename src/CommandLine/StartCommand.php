@@ -26,10 +26,6 @@ class StartCommand extends Command {
 
     private $Task;
 
-    private static $exception_strings = [
-        'time_format' => 'Start/stop times must be a time format: HH:MM'
-    ];
-
     const CACHE_TAG = 'start';
 
     const CACHE_NAME_DELIMITER = '_';

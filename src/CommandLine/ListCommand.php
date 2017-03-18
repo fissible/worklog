@@ -48,10 +48,12 @@ class ListCommand extends Command {
         $DateStart->setTime(6, 0);
         $DateEnd->subDay()->endOfDay();
 
-        $where['date>='] = $DateStart->toDateTimeString();
-        $where['date<='] = $DateEnd->toDateTimeString();
+        if ($this->option('l')) {
+            $where['date>='] = $DateStart->toDateTimeString();
+            $where['date<='] = $DateEnd->toDateTimeString();
+        }
 
-        $Tasks = $TaskService->select($where)->result();
+        $Tasks = $TaskService->select($where)/*->result()*/;
 
         return $TaskService->ascii_table($Tasks);
     }
