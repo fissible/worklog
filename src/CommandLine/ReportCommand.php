@@ -21,7 +21,8 @@ class ReportCommand extends Command {
     public static $options = [
         'i' => ['req' => true, 'description' => 'The JIRA Issue key'],
         'l' => ['req' => null, 'description' => 'Entries from last week'],
-        't' => ['req' => null, 'description' => 'Entries from today']
+        't' => ['req' => null, 'description' => 'Entries from today'],
+        'n' => ['req' => null, 'description' => 'Output without borders']
     ];
     public static $arguments = [ 'date', 'date_end' ];
     public static $usage = '%s [-ilt] [date [end_date]]';
@@ -42,9 +43,9 @@ class ReportCommand extends Command {
         $TaskService = new TaskService(App()->db());
         $DateStart = Carbon::today()->startOfWeek();
         $DateEnd = Carbon::today()->endOfWeek()->subDay();
-        $DateNow = Carbon::now();
         $today = false;
-        $border = '|';
+        $borderless = (bool) $this->option('n');
+        $border = ($borderless ? '' : '|');
         $issues = [];
         $where = [];
 
@@ -144,7 +145,9 @@ class ReportCommand extends Command {
                     $hline = '+' . str_repeat('-', static::$output_line_length - 2) . '+';
 
                     // Print date (or date range)
-                    Output::line($hline);
+                    if (! $borderless) {
+                        Output::line($hline);
+                    }
                     if ($DateStart->toDateString() === $DateEnd->toDateString()) {
                         $header = $DateStart->format('l').', '.$DateStart->toFormattedDateString();
                     } else {
@@ -160,8 +163,14 @@ class ReportCommand extends Command {
 
                         // Print Issue
                         if ($_issue !== 'NA') {
-                            Output::line("\033[1m".$_issue."\033[0m".' |', $border);
-                            Output::line('+'.str_repeat('-', strlen($_issue) + 2).'+'.str_repeat(' ', ($pad_length - (strlen($_issue) + 1))).'|');
+                            if (! $borderless) {
+                                Output::line("\033[1m".$_issue."\033[0m".' |', $border);
+                                Output::line('+'.str_repeat('-', strlen($_issue) + 2).'+'.str_repeat(' ', ($pad_length - (strlen($_issue) + 1))).$border);
+                            } else {
+                                Output::line("\033[1m".$_issue."\033[0m", '');
+                            }
+
+
                         }
 
                         // Print Descriptions
@@ -172,7 +181,7 @@ class ReportCommand extends Command {
                                 $date = $data['dates'][$issue_task_index]->format('D');
                                 // empty line between days/dates (visual grouping of tasks on a given day)
                                 if ($date !== $last_date && ! is_null($last_date)) {
-                                    Output::line('', '|');
+                                    Output::line('', $border);
                                 }
                                 $_datetime_display = ($date === $last_date ? str_repeat(' ', mb_strlen($date) + 3) : '['.$date.'] ');
                             }
@@ -194,7 +203,9 @@ class ReportCommand extends Command {
                         }
 
                         Output::line(str_pad($Duration->asString(), $pad_length, ' ', STR_PAD_LEFT), $border);
-                        Output::line($hline);
+                        if (! $borderless) {
+                            Output::line($hline);
+                        }
 
                         if ($_issue !== $last_issue) {
                             $last_issue = $_issue;
@@ -203,10 +214,12 @@ class ReportCommand extends Command {
                     }
 
                     if (count($issues) > 1) {
-                        Output::line($hline);
+                        Output::line(($borderless ? '' : $hline));
                         $prefix = 'Total Duration:';
                         Output::line($prefix.str_pad($TotalDuration->asString(), ($pad_length - strlen($prefix)), ' ', STR_PAD_LEFT), $border);
-                        Output::line($hline);
+                        if (! $borderless) {
+                            Output::line($hline);
+                        }
                     }
 
 
