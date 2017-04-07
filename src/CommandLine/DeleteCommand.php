@@ -36,11 +36,12 @@ class DeleteCommand extends Command {
         if (is_numeric($id)) {
             $where = [ 'id' => $id ];
 
-            if ($Task = $TaskService->select($where, 1)/*->first()*/) {
+            if ($results = $TaskService->select($where, 1)/*->first()*/) {
+                $Task = $results[0];
                 $prompt = sprintf('Delete Task %d%s? [Y/n]: ', $Task->id, ($Task->description ? ' ('.$Task->description.')' : ''));
 
                 if (! IS_CLI || $this->option('f') || 'n' !== strtolower(readline($prompt))) {
-                    $TaskService->delete($where, 1);
+                    $TaskService->delete($where);
                 }
 
             } else {

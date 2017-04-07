@@ -11,8 +11,8 @@ use CSATF\Services\ModelService;
  * Date: 2/22/17
  * Time: 8:56 AM
  */
-class TaskService extends ModelService
-{
+class TaskService extends ModelService {
+
     protected static $table = 'task';
 
     protected static $primary_key_field = 'id';

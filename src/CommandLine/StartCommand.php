@@ -42,6 +42,7 @@ class StartCommand extends Command {
         $last_index = 0;
 
         $RecoverCommand = new RecoverCommand($this->App());
+        $RecoverCommand->set_invocation_flag();
         $RecoverCommand->setData('warn', 'start');
         $RecoverCommand->run();
 

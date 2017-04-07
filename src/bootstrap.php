@@ -1,6 +1,7 @@
 <?php
 
 use CSATF\CommandLine\Command;
+use CSATF\CommandLine\Output;
 
 $loader = require dirname(__DIR__) . '/vendor/autoload.php';
 if (defined('DEVELOPMENT_MODE') && DEVELOPMENT_MODE) {
@@ -76,6 +77,10 @@ $db_config = $db[$db_config];
 //$db = new CSATF\Database\Drivers\PostgresDatabaseDriver(
 //	$db_config['hostname'], $db_config['database'], $db_config['username'], $db_config['password']
 //);
+
+if (getenv('ALLOW_UNICODE_OUTPUT') === 'true') {
+    Output::set_allow_unicode(true);
+}
 
 $errors = [];
 
@@ -215,11 +220,14 @@ function database_config($key = '') {
 
 /**
  * @param $driver
- * @param $config
+ * @param int $attempts
  * @return mixed
+ * @throws \Predis\Connection\ConnectionException
  */
-function database($driver, $config, $attempts = 0) {
+function database($driver, $attempts = 0) {
     $Handle = null;
+    $db_config = include(DATABASE_PATH.'/config/local.php');
+    $config = $db_config[$driver];
 
     if (false === strpos($driver, 'CSATF\\Database\\Drivers')) {
         $driver = 'CSATF\\Database\\Drivers\\'.$driver;
@@ -245,50 +253,35 @@ function database($driver, $config, $attempts = 0) {
     return $Handle;
 }
 
-function redis_to_sqlite($db_config) {
-    $count = 0;
-    try {
-        $redis = database('Redis', $db_config['Redis']);
-        $records = $redis->select('task')->result();
-        $record_count = count($records);
-
-        if ($record_count > 0) {
-            printl('Found '.count($records).' in Redis database...');
-
-            // switch to Sqlite database
-            $db = database('Sqlite', $db_config['Sqlite']);
-
-//            $migration_name = 'create_task_table';
-//            if ($Migration = CSATF\Database\Migration::make($migration_name, $db)) {
-//                $Migration->down();
-//                $Migration->up();
-//            } else {
-//                throw new \Exception('Unable to find Migration "'.$migration_name.'"');
-//            }
-
-            $TaskService = new Worklog\Services\TaskService($db);
-            $fields = array_keys(Worklog\Services\TaskService::fields());
-            $records = $TaskService->sort($records);
-
-            foreach ($records as $record) {
-                foreach ($record as $___field => $___value) {
-                    if (! in_array($___field, $fields)) {
-                        unset($record->{$___field});
-                    }
-                }
-                printl($record);
-                if ($db->insert('task', $record)) {
-                    $count++;
-                }
-            }
-            printl($count.' records inserted.');
-        } else {
-            printl('Found no records to migrate');
-        }
-
-    } catch (\Exception $e) {
-        print get_class($e).' '.$e->getMessage()."\n";
+function mb_str_pad($str, $pad_len, $pad_str = ' ', $dir = STR_PAD_RIGHT) {
+    $str_len = mb_strlen($str);
+    $pad_str_len = mb_strlen($pad_str);
+    if (!$str_len && ($dir == STR_PAD_RIGHT || $dir == STR_PAD_LEFT)) {
+        $str_len = 1; // @debug
+    }
+    if (!$pad_len || !$pad_str_len || $pad_len <= $str_len) {
+        return $str;
     }
 
-    return $count;
+    $result = null;
+    if ($dir == STR_PAD_BOTH) {
+        $length = ($pad_len - $str_len) / 2;
+        $repeat = ceil($length / $pad_str_len);
+        $result = mb_substr(str_repeat($pad_str, $repeat), 0, floor($length))
+            . $str
+            . mb_substr(str_repeat($pad_str, $repeat), 0, ceil($length));
+    } else {
+        $repeat = ceil($str_len - $pad_str_len + $pad_len);
+        if ($dir == STR_PAD_RIGHT) {
+            $result = $str . str_repeat($pad_str, $repeat);
+            $result = mb_substr($result, 0, $pad_len);
+        } else if ($dir == STR_PAD_LEFT) {
+            $result = str_repeat($pad_str, $repeat);
+            $result = mb_substr($result, 0,
+                    $pad_len - (($str_len - $pad_str_len) + $pad_str_len))
+                . $str;
+        }
+    }
+
+    return $result;
 }

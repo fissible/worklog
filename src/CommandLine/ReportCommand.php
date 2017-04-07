@@ -29,9 +29,7 @@ class ReportCommand extends Command {
     public static $menu = true;
 
     protected static $exception_strings = [
-        'invalid_argument' => 'Command requires a valid date as the argument',
-        'issue_not_found' => 'Issue %s not found',
-        'no_records_found' => 'No entries found'
+        'issue_not_found' => 'Issue %s not found'
     ];
 
     private static $output_line_length = 120;
@@ -40,6 +38,7 @@ class ReportCommand extends Command {
     public function run() {
         parent::run();
 
+        $allow_unicode = Output::allow_unicode();
         $TaskService = new TaskService(App()->db());
         $DateStart = Carbon::today()->startOfWeek();
         $DateEnd = Carbon::today()->endOfWeek()->subDay();
@@ -105,8 +104,13 @@ class ReportCommand extends Command {
                         'times' => []
                     ];
                 }
+
+                $TaskService->setCalculatedFields($Task);
+
                 if (property_exists($Task, 'duration') && ! empty($Task->duration)) {
                     $issues[$_issue]['durations'][$key] = $Task->duration;
+                } else {
+                    printl($Task->id.' NO DURATION');
                 }
 
                 $TaskService->formatFieldsForDisplay($Task);
@@ -139,10 +143,45 @@ class ReportCommand extends Command {
             if (IS_CLI) {
                 $max_metric = 'h';
 
+                $allow_unicode;
+                /*
+function box($size) {
+    $isize = ($size - 2);
+    printl(Output::uchar('down_right', 'double').str_repeat(Output::uchar('hor', 'double'), $isize).Output::uchar('down_left', 'double'));
+    for ($i = 0; $i <= $isize; $i++) {
+        printl(Output::uchar('ver', 'double').str_repeat(' ', $isize).Output::uchar('ver', 'double'));
+    }
+    printl(Output::uchar('up_right', 'double').str_repeat(Output::uchar('hor', 'double'), $isize).Output::uchar('up_left', 'double'));
+}*/
+
                 if (! empty($issues)) {
+                    $u = function ($char, $variant = 'light') {
+                        return Output::uchar($char, $variant);
+                    };
+                    $hline = function ($flags, $variant = 'light') {
+                        return '+' . str_repeat('-', static::$output_line_length - 2) . '+';
+                    };
                     Output::set_line_length(static::$output_line_length);
                     $TotalDuration = new Duration($max_metric);
+
+//                    $char = [
+//                        'top_l' => ($allow_unicode ? Output::uchar('down_right') : '+'),
+//                        'top_r' => ($allow_unicode ? Output::uchar('down_left') : '+'),
+//                        'hor' => ($allow_unicode ? Output::uchar('hor') : '-'),
+//                        'ver' => ($allow_unicode ? Output::uchar('ver') : '|'),
+//                        'mid_l' => ($allow_unicode ? Output::uchar('ver_right') : '+'),
+//                        'mid_r' => ($allow_unicode ? Output::uchar('ver_left') : '+'),
+//                        'bot_l' => ($allow_unicode ? Output::uchar('up_right') : '+'),
+//                        'bot_r' => ($allow_unicode ? Output::uchar('up_left') : '+'),
+//                        'top_ver' => ($allow_unicode ? Output::uchar('down_hor') : '+'),// ┬
+//                        'bot_ver' => ($allow_unicode ? Output::uchar('up_hor') : '+'),// ┴
+//                        'cross' => ($allow_unicode ? Output::uchar('cross') : '+'),
+//                    ];
+                    $char['top_right'] = '';
                     $hline = '+' . str_repeat('-', static::$output_line_length - 2) . '+';
+                    $hline_heavy = '';
+
+
 
                     // Print date (or date range)
                     if (! $borderless) {
@@ -222,15 +261,16 @@ class ReportCommand extends Command {
                         }
                     }
 
+                    Output::line();
 
                 } else {
-                    throw new \Exception(static::$exception_strings['no_records_found']);
+                    return Output::color('No entries found', 'cyan');
                 }
             } else {
                 return $issues;
             }
         } else {
-            throw new \Exception(static::$exception_strings['no_records_found']);
+            return Output::color('No entries found', 'cyan');
         }
     }
 }

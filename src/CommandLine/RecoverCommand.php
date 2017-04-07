@@ -39,7 +39,7 @@ class RecoverCommand extends Command {
                         }
                     }
 
-                    if (! $Tasks->valid($Task)) {
+                    if (! $Tasks->valid($Task) && $this->internally_invoked()) {
                         printl('Please complete the missing details...');
                     }
                 }
@@ -47,10 +47,10 @@ class RecoverCommand extends Command {
                 // Stop the started task
                 $result = (new StopCommand($this->App()))->run();
 
-                if (IS_CLI && ($command = $this->getData('warn'))) {
-                    if ($command == 'start') {
+                if (IS_CLI) {
+                    if ($this->getData('warn') == 'start') {
                         printl('Starting new task...');
-                    } else {
+                    } elseif ($this->internally_invoked()) {
                         printl('Resuming prior command...');
                     }
                 }

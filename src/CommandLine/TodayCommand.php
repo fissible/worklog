@@ -32,13 +32,14 @@ class TodayCommand extends Command
         if ($Task) {
             $Tasks->formatFieldsForDisplay($Task);
             $Tasks->setCalculatedFields($Task);
-            $description = '';
-            if (property_exists($Task, 'description') && strlen($Task->description)) {
-                $description = ' - '.$Task->description;
-            }
+
             Output::line('Started task:');
-            Output::line($Task->start_time.$description, ' ');
-            Output::line();
+            printl(Output::data_grid(
+                [ 'Started', 'Issue', 'Description' ],
+                [[ $Task->start_time, (property_exists($Task, 'issue') ? $Task->issue : ''), $Task->description ]],
+                null,
+                160
+            ));
         }
 
         $Command = new ReportCommand($this->App());

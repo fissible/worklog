@@ -18,12 +18,14 @@ class WriteCommand extends Command {
 
     public static $description = 'Create a work log entry';
     public static $options = [
-        'i' => ['req' => true, 'description' => 'The JIRA Issue key'],
+        'i' => ['req' => true, 'description' => 'The Jira Issue key'],
         'd' => ['req' => true, 'description' => 'The task description'],
         'e' => ['req' => true, 'description' => 'The task ID to edit']
     ];
     public static $arguments = [ 'issue', 'description' ];
-//    public static $usage = '%s [-ls] [opt1]';
+
+    public static $usage = '%s [-ide] [issue[, description]]';
+
     public static $menu = true;
 
     private $Task;
@@ -36,7 +38,7 @@ class WriteCommand extends Command {
         parent::run();
 
         $Tasks = new TaskService(App()->db());
-        $type = $LastTask = $description = null;
+        $LastTask = $description = null;
 
         // Get a Task instance
         if (($id = $this->option('e')) || ($id = $this->getData('id'))) {
