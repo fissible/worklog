@@ -1,7 +1,7 @@
 <?php
 
-use CSATF\CommandLine\Command;
-use CSATF\CommandLine\Output;
+use Worklog\CommandLine\Command;
+use Worklog\CommandLine\Output;
 
 $loader = require dirname(__DIR__) . '/vendor/autoload.php';
 if (defined('DEVELOPMENT_MODE') && DEVELOPMENT_MODE) {
@@ -74,7 +74,7 @@ if (defined('APPLICATION_PATH')) {
 
 // Change config profile string into the array at that offset in $db
 $db_config = $db[$db_config];
-//$db = new CSATF\Database\Drivers\PostgresDatabaseDriver(
+//$db = new Worklog\Database\Drivers\PostgresDatabaseDriver(
 //	$db_config['hostname'], $db_config['database'], $db_config['username'], $db_config['password']
 //);
 
@@ -84,13 +84,13 @@ if (getenv('ALLOW_UNICODE_OUTPUT') === 'true') {
 
 $errors = [];
 
-Command::bind([ 'listopts', 'commands' ], 'CSATF\CommandLine\ListOptionsCommand');
-// CSATF\CommandLine\Command::bind('logs', 'CSATF\CommandLine\ViewLogsCommand');
-CSATF\CommandLine\Command::bind([ 'clear-cache', 'clean' ], 'CSATF\CommandLine\ClearCacheCommand');
-CSATF\CommandLine\Command::bind([ 'view-cache', 'cache' ], 'CSATF\CommandLine\ViewCacheCommand');
-// CSATF\CommandLine\Command::bind('table-search', 'CSATF\CommandLine\DatabaseTableSearchCommand');
-// CSATF\CommandLine\Command::bind([ 'table-info', 'table' ], 'CSATF\CommandLine\DatabaseTableInfoCommand');
-// CSATF\CommandLine\Command::bind([ 'table-data', 'data' ], 'CSATF\CommandLine\DatabaseTableDataCommand');
+Command::bind([ 'listopts', 'commands' ], 'Worklog\CommandLine\ListOptionsCommand');
+// Worklog\CommandLine\Command::bind('logs', 'Worklog\CommandLine\ViewLogsCommand');
+Worklog\CommandLine\Command::bind([ 'clear-cache', 'clean' ], 'Worklog\CommandLine\ClearCacheCommand');
+Worklog\CommandLine\Command::bind([ 'view-cache', 'cache' ], 'Worklog\CommandLine\ViewCacheCommand');
+// Worklog\CommandLine\Command::bind('table-search', 'Worklog\CommandLine\DatabaseTableSearchCommand');
+// Worklog\CommandLine\Command::bind([ 'table-info', 'table' ], 'Worklog\CommandLine\DatabaseTableInfoCommand');
+// Worklog\CommandLine\Command::bind([ 'table-data', 'data' ], 'Worklog\CommandLine\DatabaseTableDataCommand');
 
 /**
  * Get Application (singleton) instance
@@ -99,7 +99,7 @@ function App() {
 	static $App;
 	global $db, $CURRENT_DIR, $user_path;
 	if (! isset($App)) {
-		$App = new CSATF\Application($db, $CURRENT_DIR, $user_path/*, SQL_FILES_DIRECTORY, JIRA_DATA_DIRECTORY*/);
+		$App = new Worklog\Application($db, $CURRENT_DIR, $user_path/*, SQL_FILES_DIRECTORY, JIRA_DATA_DIRECTORY*/);
 	}
 	return $App;
 }
@@ -229,8 +229,8 @@ function database($driver, $attempts = 0) {
     $db_config = include(DATABASE_PATH.'/config/local.php');
     $config = $db_config[$driver];
 
-    if (false === strpos($driver, 'CSATF\\Database\\Drivers')) {
-        $driver = 'CSATF\\Database\\Drivers\\'.$driver;
+    if (false === strpos($driver, 'Worklog\\Database\\Drivers')) {
+        $driver = 'Worklog\\Database\\Drivers\\'.$driver;
     }
     if (false === stripos($driver, 'DatabaseDriver')) {
         $driver .= 'DatabaseDriver';

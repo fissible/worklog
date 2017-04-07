@@ -1,6 +1,6 @@
 <?php
-use CSATF\Application;
-use CSATF\CommandLine\Output;
+use Worklog\Application;
+use Worklog\CommandLine\Output;
 
 if (DEVELOPMENT_MODE && IS_CLI)
 	Application::timer();

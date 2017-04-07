@@ -1,7 +1,7 @@
 <?php
 namespace Worklog\CommandLine;
 
-use \CSATF\CommandLine\Command as Command;
+use \Worklog\CommandLine\Command as Command;
 
 /**
  * UsageCommand

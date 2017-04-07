@@ -18,7 +18,7 @@ define('DEVELOPMENT_MODE', false);
 define('DEFAULT_COMMAND', 'today');
 include(__DIR__.'/src/bootstrap.php');
 
-use CSATF\CommandLine\Command;
+use Worklog\CommandLine\Command;
 
 $dotenv = new Dotenv\Dotenv(__DIR__);
 $dotenv->load();
@@ -31,10 +31,10 @@ $db = database(getenv('DATABASE_DRIVER'));
 // Bind commands
 /*********************************************/
 
-Command::bind('migrate', 'CSATF\CommandLine\MigrateCommand');
-Command::bind('migrate:rollback', 'CSATF\CommandLine\MigrateRollbackCommand');
-Command::bind('migrate:status', 'CSATF\CommandLine\MigrationStatusCommand');
-Command::bind('make:migration', 'CSATF\CommandLine\CreateMigrationCommand');
+Command::bind('migrate', 'Worklog\CommandLine\MigrateCommand');
+Command::bind('migrate:rollback', 'Worklog\CommandLine\MigrateRollbackCommand');
+Command::bind('migrate:status', 'Worklog\CommandLine\MigrationStatusCommand');
+Command::bind('make:migration', 'Worklog\CommandLine\CreateMigrationCommand');
 
 Command::bind('help', 'Worklog\CommandLine\UsageCommand');
 Command::bind('add', 'Worklog\CommandLine\WriteCommand');

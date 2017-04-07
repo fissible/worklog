@@ -1,7 +1,7 @@
 <?php
 namespace Worklog\Database;
 
-use CSATF\Database\Migration;
+use Worklog\Database\Migration;
 use Worklog\Services\TaskService;
 
 /**

@@ -2,9 +2,9 @@
 namespace Worklog\CommandLine;
 
 use Carbon\Carbon;
-use CSATF\CommandLine\Output;
+use Worklog\CommandLine\Output;
 use Worklog\Services\TaskService;
-use CSATF\CommandLine\Command as Command;
+use Worklog\CommandLine\Command as Command;
 
 /**
  * Created by PhpStorm.

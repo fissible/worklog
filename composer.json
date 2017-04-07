@@ -14,7 +14,6 @@
   },
   "autoload": {
     "psr-4": {
-      "CSATF\\": "../CSATF/src/",
       "Worklog\\": "src/"
     }
   }

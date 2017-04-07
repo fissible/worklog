@@ -3,7 +3,7 @@
 namespace Worklog\Services;
 
 use Carbon\Carbon;
-use CSATF\Services\ModelService;
+use Worklog\Services\ModelService;
 
 /**
  * Created by PhpStorm.

@@ -3,7 +3,7 @@ namespace Worklog\CommandLine;
 
 use Carbon\Carbon;
 use Worklog\Services\TaskService;
-use CSATF\CommandLine\Command as Command;
+use Worklog\CommandLine\Command as Command;
 
 /**
  * Created by PhpStorm.

@@ -2,8 +2,8 @@
 namespace Worklog\CommandLine;
 
 use Worklog\Services\TaskService;
-use CSATF\CommandLine\Output;
-use CSATF\CommandLine\Command as Command;
+use Worklog\CommandLine\Output;
+use Worklog\CommandLine\Command as Command;
 
 /**
  * Created by PhpStorm.
