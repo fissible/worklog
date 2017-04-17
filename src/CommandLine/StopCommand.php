@@ -32,22 +32,22 @@ class StopCommand extends Command {
     public function run() {
         parent::run();
 
-        $Tasks = new TaskService(App()->db());
+        $Tasks = new TaskService();
         $cache_name = null;
         $filename = null;
 
-        list($filename, $Task) = $Tasks->cached();
+        list($filename, $Task) = TaskService::cached();
 
         if ($Task) {
-            if (property_exists($Task, 'start')) {
+            if ($Task->hasAttribute('start')) {
                 $Command = new WriteCommand($this->App());
                 $Command->setData('RETURN_RESULT', true);
                 $Command->set_invocation_flag();
 
                 // if stopping a task started today (from CLI)
-                if (IS_CLI && substr($Task->date, 0, 10) !== substr($Tasks->default_val('date'), 0, 10)) {
+                if (IS_CLI && substr($Task->date, 0, 10) !== substr($Task->defaultValue('date'), 0, 10)) {
                     $description = '';
-                    if (property_exists($Task, 'description') && strlen($Task->description) > 0) {
+                    if ($Task->hasAttribute('description') && strlen($Task->description) > 0) {
                         $description = preg_replace('/\s+/', ' ', $Task->description);
                         if (strlen($description) > 27) {
                             $description = substr($description, 0, 24).'...';
@@ -75,19 +75,19 @@ class StopCommand extends Command {
                     $Task->description = $description;
                 }
 
-                if (IS_CLI && substr($Task->date, 0, 10) !== substr($Tasks->default_val('date'), 0, 10)) {
-                    printl($Task->date);
-                    printl($Tasks->default_val('date'));
+                if (IS_CLI && substr($Task->date, 0, 10) !== substr($Task->defaultValue('date'), 0, 10)) {
+//                    printl($Task->friendly_date_string);
+//                    printl($Task->defaultValue('date'));
                     printf("WARNING: stopping task started on %s\n", Carbon::parse($Task->date)->toFormattedDateString());
                 } else {
-                    $Task->stop = $Tasks->default_val('stop');
+                    $Task->stop = $Task->defaultValue('stop');
                 }
 
 
                 $fields = [ 'issue', 'description', 'date', 'start', 'stop' ];
 
                 foreach ($fields as $field) {
-                    if (property_exists($Task, $field)) {
+                    if ($Task->hasAttribute($field)) {
                         $Command->setData($field, $Task->{$field});
                     }
                 }

@@ -31,11 +31,10 @@ class CancelCommand extends Command {
     public function run() {
         parent::run();
 
-        $Tasks = new TaskService(App()->db());
         $deleted = false;
         $filename = null;
 
-        list($filename, $Task) = $Tasks->cached(true);
+        list($filename, $Task) = TaskService::cached(true);
 
         if ($Task) {
             if (! is_null($filename)) {

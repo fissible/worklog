@@ -10,7 +10,13 @@
   "require": {
     "predis/predis": "^1.1",
     "vlucas/phpdotenv": "^2.4",
-    "nesbot/carbon": "^1.22"
+    "nesbot/carbon": "^1.22",
+    "illuminate/database": "^5.4",
+    "doctrine/dbal": "^2.5",
+    "illuminate/filesystem": "^5.4",
+    "illuminate/pagination": "^5.4",
+    "illuminate/events": "^5.4",
+    "illuminate/console": "^5.4"
   },
   "autoload": {
     "psr-4": {

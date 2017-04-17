@@ -25,18 +25,14 @@ class TodayCommand extends Command
     public function run() {
         parent::run();
 
-        $Tasks = new TaskService(App()->db());
-        list($filename, $Task) = $Tasks->cached(true);
+        list(, $Task) = TaskService::cached(true);
 
         // Current (started) task
         if ($Task) {
-            $Tasks->formatFieldsForDisplay($Task);
-            $Tasks->setCalculatedFields($Task);
-
             Output::line('Started task:');
             printl(Output::data_grid(
                 [ 'Started', 'Issue', 'Description' ],
-                [[ $Task->start_time, (property_exists($Task, 'issue') ? $Task->issue : ''), $Task->description ]],
+                [[ $Task->start_string, ($Task->issue ?: ''), $Task->description ]],
                 null,
                 160
             ));

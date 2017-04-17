@@ -3,6 +3,7 @@ namespace Worklog\CommandLine;
 
 use Carbon\Carbon;
 use Worklog\Duration;
+use Worklog\Models\Task;
 use Worklog\CommandLine\Output;
 use Worklog\Services\TaskService;
 use Worklog\CommandLine\Command as Command;
@@ -38,8 +39,6 @@ class ReportCommand extends Command {
     public function run() {
         parent::run();
 
-        $allow_unicode = Output::allow_unicode();
-        $TaskService = new TaskService(App()->db());
         $DateStart = Carbon::today()->startOfWeek();
         $DateEnd = Carbon::today()->endOfWeek()->subDay();
         $today = false;
@@ -47,10 +46,6 @@ class ReportCommand extends Command {
         $border = ($borderless ? '' : '|');
         $issues = [];
         $where = [];
-
-        if ($issue = $this->option('i')) {
-            $where['issue'] = $issue;
-        }
 
         if ($this->option('t') || $this->getData('today')) {
             $DateStart = Carbon::today();
@@ -75,26 +70,31 @@ class ReportCommand extends Command {
             throw new \InvalidArgumentException('End date cannot be before start date.');
         }
 
-        if ($DateStart->toDateString() === $DateEnd->toDateString()) {
-            $where['date'] = $DateStart->toDateString();
-        } else {
-            $where['date>='] = $DateStart->toDateString();
-            $where['date<='] = $DateEnd->toDateString();
+        $Query = Task::query();
+
+        if ($issue = $this->option('i')) {
+            $Query->where('issue', $issue);
         }
 
-        $Tasks = $TaskService->select($where)/*->result()*/;
-        $task_count = App()->db()->count();
+        if ($DateStart->toDateString() === $DateEnd->toDateString()) {
+            $Query->whereDate('date', $DateStart->toDateString());
+        } else {
+            $Query->whereBetween('date', [ $DateStart->toDatetimeString(), $DateEnd->toDatetimeString() ]);
+        }
+
+        // Query the Tasks
+        $Tasks = $Query->defaultSort()->get();
+        $task_count = $Tasks->count();
 
         if ($issue && $task_count < 1) {
             throw new \Exception(sprintf(static::$exception_strings['issue_not_found'], $issue));
         }
 
-        if ($Tasks) {
-            $Tasks = $TaskService->sort($Tasks);
+        if ($Tasks->count() > 0) {
             $last_date = $last_issue = null;
 
             foreach ($Tasks as $key => $Task) {
-                $_issue = (property_exists($Task, 'issue') && $Task->issue ? $Task->issue : 'NA');
+                $_issue = ($Task->hasAttribute('issue') && $Task->issue ? $Task->issue : 'NA');
 
                 if (! array_key_exists($_issue, $issues)) {
                     $issues[$_issue] = [
@@ -105,25 +105,18 @@ class ReportCommand extends Command {
                     ];
                 }
 
-                $TaskService->setCalculatedFields($Task);
-
-                if (property_exists($Task, 'duration') && ! empty($Task->duration)) {
+                if ($Task->duration) {
                     $issues[$_issue]['durations'][$key] = $Task->duration;
-                } else {
-                    printl($Task->id.' NO DURATION');
                 }
-
-                $TaskService->formatFieldsForDisplay($Task);
-
-                if (property_exists($Task, 'description') && ! empty($Task->description)) {
+                if ($Task->description) {
                     $issues[$_issue]['descriptions'][$key] = $Task->description;
                 }
-                if (property_exists($Task, 'date') && ! empty($Task->date)) {
-                    $issues[$_issue]['dates'][$key] = Carbon::parse($Task->date);
+                if ($Task->date) {
+                    $issues[$_issue]['dates'][$key] = $Task->date;
                 }
 
                 if ($today) {
-                    if (property_exists($Task, 'start') || property_exists($Task, 'stop')) {
+                    if ($Task->start || $Task->stop) {
                         $time = '';
                         if (! empty($Task->start)) {
                             $time = str_pad(static::get_twelve_hour_time($Task->start), 8, ' ', STR_PAD_LEFT);
@@ -142,8 +135,6 @@ class ReportCommand extends Command {
 
             if (IS_CLI) {
                 $max_metric = 'h';
-
-                $allow_unicode;
                 /*
 function box($size) {
     $isize = ($size - 2);
@@ -155,13 +146,13 @@ function box($size) {
 }*/
 
                 if (! empty($issues)) {
+//                    Output::set_line_length(static::$output_line_length);
                     $u = function ($char, $variant = 'light') {
                         return Output::uchar($char, $variant);
                     };
                     $hline = function ($flags, $variant = 'light') {
-                        return '+' . str_repeat('-', static::$output_line_length - 2) . '+';
+                        return '+' . str_repeat('-', Output::line_length() - 2) . '+';
                     };
-                    Output::set_line_length(static::$output_line_length);
                     $TotalDuration = new Duration($max_metric);
 
 //                    $char = [
@@ -178,7 +169,7 @@ function box($size) {
 //                        'cross' => ($allow_unicode ? Output::uchar('cross') : '+'),
 //                    ];
                     $char['top_right'] = '';
-                    $hline = '+' . str_repeat('-', static::$output_line_length - 2) . '+';
+                    $hline = '+' . str_repeat('-', Output::line_length() - 2) . '+';
                     $hline_heavy = '';
 
 
@@ -194,11 +185,11 @@ function box($size) {
                     }
 
                     Output::line("\033[1m".$header."\033[0m", $border);
-                    Output::line('+' . str_repeat('=', static::$output_line_length - 2) . '+');
+                    Output::line('+' . str_repeat('=', Output::line_length() - 2) . '+');
 
                     foreach ($issues as $_issue => $data) {
                         $Duration = new Duration($max_metric);
-                        $pad_length = static::$output_line_length - 4;
+                        $pad_length = Output::line_length() - 4;
 
                         // Print Issue
                         if ($_issue !== 'NA') {
@@ -264,7 +255,7 @@ function box($size) {
                     Output::line();
 
                 } else {
-                    return Output::color('No entries found', 'cyan');
+                    return Output::color('No entries found', 'red');
                 }
             } else {
                 return $issues;

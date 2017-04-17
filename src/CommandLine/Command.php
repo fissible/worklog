@@ -470,10 +470,13 @@ class Command {
 		return static::get_data($name, $default);
 	}
 
-	/**
-	 * Throws an exception if the key is not set on data
-	 * @param  mixed $name
-	 */
+    /**
+     * Throws an exception if the key is not set on data
+     * @param  mixed $name
+     * @param string $exception_message
+     * @return $this
+     * @throws \Exception
+     */
 	public function expectData($name = null, $exception_message = '') {
 		if (is_string($name) && ! empty($name)) {
 			if (false === $this->getData($name, false)) {
@@ -680,7 +683,7 @@ class Command {
         return sprintf('%02d:%02d', $hour, $minute);
     }
 
-    protected static function get_twelve_hour_time($time_str, $format = 'g:i a') {
+    protected static function get_twelve_hour_time($time_str) {
         $Date = Carbon::parse(date("Y-m-d").' '.$time_str);
         return $Date->format('g:i a');
     }

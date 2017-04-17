@@ -24,8 +24,8 @@ class RecoverCommand extends Command {
     public function run() {
         parent::run();
 
-        $Tasks = new TaskService(App()->db());
-        list($filename, $Task) = $Tasks->cached(true);
+        $Tasks = new TaskService();
+        list($filename, $Task) = TaskService::cached(true);
 
         if ($Task) {
             if (property_exists($Task, 'start')) {

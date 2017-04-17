@@ -78,9 +78,7 @@ $db_config = $db[$db_config];
 //	$db_config['hostname'], $db_config['database'], $db_config['username'], $db_config['password']
 //);
 
-if (getenv('ALLOW_UNICODE_OUTPUT') === 'true') {
-    Output::set_allow_unicode(true);
-}
+Output::init((getenv('ALLOW_UNICODE_OUTPUT') === 'true'));
 
 $errors = [];
 
@@ -119,6 +117,23 @@ function dump($value) {
 	} else {
 		var_dump($value);
 	}
+}
+
+function deprecated($class = null, $function = null, $line = null) {
+    $bt = debug_backtrace();
+    $caller = array_shift($bt);
+    if (is_null($class)) {
+        $class = $caller['file'];
+    }
+    if (is_null($function)) {
+        $function = $caller['function'];
+    }
+    if (is_null($line)) {
+        $line = $caller['line'];
+    }
+    if (IS_CLI) {
+        printl(sprintf('DEPRECATED - %s %s[%d]', $function, $class, $line));
+    }
 }
 
 /**
@@ -209,6 +224,13 @@ if (! function_exists('readline')) {
 	}
 }
 
+if (! function_exists('tap')) {
+    function tap($value, $callback) {
+        $callback($value);
+        return $value;
+    }
+}
+
 function database_config($key = '') {
     global $db_config;
     if ($key) {
@@ -227,7 +249,22 @@ function database_config($key = '') {
 function database($driver, $attempts = 0) {
     $Handle = null;
     $db_config = include(DATABASE_PATH.'/config/local.php');
+
     $config = $db_config[$driver];
+
+    // Illuminate/Capsule BEGIN
+    $_config = [];
+    switch($driver) {
+        case 'Sqlite':
+            $_config = [
+                'driver'   => 'sqlite',
+                'database' => $config['path'],
+                'prefix'   => '',
+            ];
+            break;
+    }
+    $Connection = new Worklog\Database\Connection($_config);
+    // Illuminate/Capsule END
 
     if (false === strpos($driver, 'Worklog\\Database\\Drivers')) {
         $driver = 'Worklog\\Database\\Drivers\\'.$driver;

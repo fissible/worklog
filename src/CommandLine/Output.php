@@ -3,11 +3,11 @@ namespace Worklog\CommandLine;
 
 class Output {
 
-    protected static $allow_unicode = false;
+    protected static $allow_unicode;
 
-	protected static $line_length = 160;
+	protected static $line_length;
 
-    protected static $variant = 'light';
+    protected static $variant;
 
     protected static $foreground_colors = [
         'black' => '0;30',
@@ -87,6 +87,40 @@ class Output {
 
     private static $temp_config = [];
 
+
+    public static function init($allow_unicode = null, $line_length = null, $variant = null) {
+        if (is_null($allow_unicode) && ! isset(static::$allow_unicode)) {
+            $allow_unicode = false;
+        }
+
+        if (is_null($line_length) && ! isset(static::$line_length)) {
+            $line_length = static::cols();
+        }
+
+        if (is_null($variant) && ! isset(static::$variant)) {
+            $variant = 'light';
+        }
+
+        if (! is_null($allow_unicode)) {
+            static::set_allow_unicode($allow_unicode);
+        }
+
+        if (! is_null($line_length)) {
+            static::set_line_length($line_length);
+        }
+
+        if (! is_null($variant)) {
+            static::set_variant($variant);
+        }
+    }
+
+    public static function cols() {
+        return exec('tput cols');
+    }
+
+    public static function rows() {
+        return exec('tput lines');
+    }
 
     public static function color($string, $color, $background_color = false) {
         $out = ""; $_out = '';

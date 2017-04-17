@@ -1,9 +1,7 @@
 <?php
 namespace Worklog\CommandLine;
 
-use Worklog\Services\TaskService;
-use Worklog\CommandLine\Output;
-use Worklog\CommandLine\Command as Command;
+use Worklog\Models\Task;
 
 /**
  * Created by PhpStorm.
@@ -30,27 +28,20 @@ class DeleteCommand extends Command {
     public function run() {
         parent::run();
 
-        $TaskService = new TaskService(App()->db());
         $id = $this->getData('id');
 
         if (is_numeric($id)) {
-            $where = [ 'id' => $id ];
+            $Task = Task::findOrFail($id);
+            $prompt = sprintf('Delete Task %d%s? [Y/n]: ', $Task->id, ($Task->description ? ' ('.$Task->description.')' : ''));
 
-            if ($results = $TaskService->select($where, 1)/*->first()*/) {
-                $Task = $results[0];
-                $prompt = sprintf('Delete Task %d%s? [Y/n]: ', $Task->id, ($Task->description ? ' ('.$Task->description.')' : ''));
-
-                if (! IS_CLI || $this->option('f') || 'n' !== strtolower(readline($prompt))) {
-                    $TaskService->delete($where);
-                }
-
-            } else {
-                throw new \InvalidArgumentException(static::$exception_strings['invalid_argument']);
+            if (! IS_CLI || $this->option('f') || 'n' !== strtolower(readline($prompt))) {
+                $Task->delete();
             }
+
         } else {
             throw new \InvalidArgumentException(static::$exception_strings['invalid_argument']);
         }
 
-        return (new ListCommand($this->App()))->run();
+        return printf('Deleted Task %d', $id);
     }
 }

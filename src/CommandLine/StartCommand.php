@@ -2,8 +2,8 @@
 namespace Worklog\CommandLine;
 
 use Carbon\Carbon;
-use Worklog\Services\TaskService;
-use Worklog\CommandLine\Command as Command;
+use Worklog\Models\Task;
+use Worklog\Str;
 
 /**
  * Created by PhpStorm.
@@ -16,12 +16,15 @@ class StartCommand extends Command {
     public $command_name;
 
     public static $description = 'Start a work log entry';
+
     public static $options = [
-        'i' => ['req' => true, 'description' => 'The JIRA Issue key'],
+        'i' => ['req' => true, 'description' => 'The Jira Issue key'],
         'd' => ['req' => true, 'description' => 'The task description']
     ];
     public static $arguments = [ 'issue', 'description' ];
-//    public static $usage = '%s [-ls] [opt1]';
+
+    public static $usage = '%s [-id] [issue] [description]';
+
     public static $menu = true;
 
     private $Task;
@@ -36,9 +39,8 @@ class StartCommand extends Command {
 
         $Now = Carbon::now();
         $EndOfDay = $Now->copy()->hour(18); // 6:00 pm
-        $Tasks = new TaskService(App()->db());
-        $this->Task = $Tasks->make();
-//        $LastTask = $Tasks->lastTask([ 'date' => Carbon::now()->toDateString() ]);
+        $this->Task = new Task();
+        $TaskData = new \stdClass;
         $last_index = 0;
 
         $RecoverCommand = new RecoverCommand($this->App());
@@ -58,24 +60,24 @@ class StartCommand extends Command {
 
         // issue key
         if (($issue = $this->option('i', false)) || ($issue = $this->getData('issue'))) {
-            $this->Task->issue = $issue;
+            $TaskData->issue = $issue;
         }
 
         // description
         if (($description = $this->option('d')) || ($description = $this->getData('description'))) {
-            $this->Task->description = $description;
+            $TaskData->description = $description;
         }
 
-        $this->Task->date = $Tasks->default_val('date');
-        $this->Task->start = $Tasks->default_val('start');
+        $TaskData->date = $this->Task->defaultValue('date');
+        $TaskData->start = $this->Task->defaultValue('start');
 
         $start_time = $this->App()->Cache()->data(
             self::CACHE_TAG.self::CACHE_NAME_DELIMITER.($last_index + 1),
-            $this->Task,
+            $TaskData,
             [ self::CACHE_TAG ],
             $Now->diffInSeconds($EndOfDay)
         )->start;
 
-        return 'New task started at '.static::get_twelve_hour_time($start_time);
+        return 'New task started at '.Str::time($start_time);
     }
 }

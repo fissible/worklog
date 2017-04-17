@@ -9,6 +9,9 @@
 /*
  * Bootstrap the application
  */
+
+date_default_timezone_set('America/Los_Angeles');
+
 define('MINIMUM_PHP_VERSION', '5.5.0');
 define('APPLICATION_PATH', __DIR__);
 define('CACHE_DIRECTORY', '/scripts/worklog/cache');
@@ -26,6 +29,8 @@ $dotenv->load();
 
 $db = database(getenv('DATABASE_DRIVER'));
 
+//$tasks = Illuminate\Database\Capsule\Manager::table('task')->where('issue', 'UT-14')->get();
+//$tasks = Worklog\Models\Task::where('issue', 'UT-14')->get();
 
 /*********************************************/
 // Bind commands
@@ -49,5 +54,9 @@ Command::bind('stop', 'Worklog\CommandLine\StopCommand');
 Command::bind('recover', 'Worklog\CommandLine\RecoverCommand');
 Command::bind('cancel', 'Worklog\CommandLine\CancelCommand');
 
+//$TaskService = new Worklog\Services\TaskService($db);
+//$Task = $TaskService->make([ 'issue' => 'UT-14' ]);
+//printl($Task->issue);
+//dump($Task);
 
 include(__DIR__.'/src/run.php');

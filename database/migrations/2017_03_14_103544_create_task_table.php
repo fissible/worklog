@@ -1,7 +1,6 @@
 <?php
 namespace Worklog\Database;
 
-use Worklog\Database\Migration;
 use Worklog\Services\TaskService;
 
 /**

@@ -2,9 +2,8 @@
 namespace Worklog\CommandLine;
 
 use Carbon\Carbon;
-use Worklog\CommandLine\Output;
+use Worklog\Models\Task;
 use Worklog\Services\TaskService;
-use Worklog\CommandLine\Command as Command;
 
 /**
  * Created by PhpStorm.
@@ -30,10 +29,9 @@ class ListCommand extends Command {
 
         $where = [];
         $issue = null;
-        $TaskService = new TaskService(App()->db());
+        $TaskService = new TaskService();
         $DateStart = Carbon::today()->startOfWeek();
         $DateEnd = Carbon::today()->endOfWeek();
-        Output::set_line_length(250);
 
         if (($issue = $this->option('i', false)) || ($issue = $this->getData('issue'))) {
             $where['issue'] = $issue;
@@ -53,7 +51,7 @@ class ListCommand extends Command {
             $where['date<='] = $DateEnd->toDateTimeString();
         }
 
-        $Tasks = $TaskService->select($where)/*->result()*/;
+        $Tasks = Task::where($where)->get();
 
         return $TaskService->ascii_table($Tasks);
     }
