@@ -71,7 +71,6 @@ class Model extends Eloquent
 
     public function promptForAttribute($field) {
         $prompt = sprintf('What is the %s?', Str::snake($field, ' '));
-
         $default = $this->defaultValue($field);
 
 
@@ -131,7 +130,7 @@ class Model extends Eloquent
             $default = $this->{$field};
         }
 
-        if ($config = static::field($field)) {
+        if (is_null($default) && $config = static::field($field)) {
             if (array_key_exists('default', $config)) {
                 $default = $config['default'];
                 if (substr($default, 0, 1) == '*') {

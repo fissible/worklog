@@ -81,6 +81,8 @@ class WriteCommand extends Command {
             do {
                 // HYDRATE TASK
                 foreach (Task::fields() as $field => $config) {
+                    if ($field ===  $this->Task->getKeyName()) continue;
+
                     if (! $this->Task->hasAttribute($field) || $type == self::TYPE_UPDATE) {
 
                         $default = $this->Task->defaultValue($field);
@@ -123,7 +125,7 @@ class WriteCommand extends Command {
                         }
 
                         // Prompt user for values...
-                        $response = readline($this->Task->promptForAttribute($field));
+                        $response = Input::ask($this->Task->promptForAttribute($field, $default));
 
                         if (strlen($response) > 0) {
                             $response = trim($response);

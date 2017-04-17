@@ -3,7 +3,8 @@
 use Worklog\CommandLine\Command;
 use Worklog\CommandLine\Output;
 
-$loader = require dirname(__DIR__) . '/vendor/autoload.php';
+$app_dir = dirname(__DIR__);
+$loader = require $app_dir.'/vendor/autoload.php';
 if (defined('DEVELOPMENT_MODE') && DEVELOPMENT_MODE) {
 	// $loader->add('Acme\\Test\\', __DIR__);
 }
@@ -35,12 +36,16 @@ if (defined('DATABASE_CONFIG_PROFILE')) {
 /**
  * Config for cached data
  */
-if (defined('CACHE_DIRECTORY')) {
-	$cache_dir = '/'.ltrim(CACHE_DIRECTORY, '/');
-} else {
-	$cache_dir = '/dev_cache';
+$dotenv = new Dotenv\Dotenv($app_dir);
+$dotenv->load();
+$dotenv->required('CACHE_DIRECTORY')->notEmpty();
+if (false == ($cache_dir = getenv('CACHE_DIRECTORY'))) {
+    $cache_dir = '/cache';
+    if (defined('CACHE_DIRECTORY')) {
+        $cache_dir = '/'.trim(CACHE_DIRECTORY, '/');
+    }
 }
-define('CACHE_PATH', $user_path.$cache_dir);
+define('CACHE_PATH', $app_dir.$cache_dir);
 define('ONE_HOUR_IN_SECONDS', 60*60);
 define('CI_BOOTSTRAP_ROOT', $CURRENT_DIR);
 define('PORTAL_ROOT', $CURRENT_DIR.'/portal');
@@ -102,6 +107,34 @@ function App() {
 	return $App;
 }
 
+function caller($key = null, $index = 0) {
+    $trace = debug_backtrace(false);
+    $caller = $trace[$index];
+    /*
+    [   'file' => "... /src/Models/Task.php"
+        'line' => 172
+        'function' => "caller"
+        'args' => []                            ]
+     */
+    if (! is_null($key)) {
+        if (array_key_exists($key, $caller)) {
+            return $caller[$key];
+        } else {
+            $output = $key;
+            foreach ($caller as $caller_key => $val) {
+                if (is_array($val)) continue;
+                if (false !== strpos($key, $caller_key)) {
+                    $output = str_replace($caller_key, $val, $output);
+                }
+            }
+
+            return $output;
+        }
+    }
+
+    return $caller;
+}
+
 /**
  * Print a value
  * @param  mixed $value
@@ -112,6 +145,9 @@ function dd($value) {
 }
 
 function dump($value) {
+//    if (IS_CLI) {
+//        Output::line(caller('file:line', 1));
+//    }
 	if (is_scalar($value)) {
 		print $value;
 	} else {
@@ -222,6 +258,17 @@ if (! function_exists('readline')) {
 	    $line = rtrim(fgets($fp, 1024), "\r\n");
 	    return $line;
 	}
+}
+
+if (! function_exists('readline_secret')) {
+    function readline_secret($prompt = null) {
+        if ($prompt) echo $prompt;
+        exec('stty -echo');
+        $line = trim(fgets(STDIN));
+        exec('stty echo');
+        printl();
+        return $line;
+    }
 }
 
 if (! function_exists('tap')) {

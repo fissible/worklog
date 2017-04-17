@@ -6,31 +6,20 @@
  * @author      Allen McCabe
  */
 
-/*
- * Bootstrap the application
- */
+use Worklog\CommandLine\Command;
 
 date_default_timezone_set('America/Los_Angeles');
 
 define('MINIMUM_PHP_VERSION', '5.5.0');
 define('APPLICATION_PATH', __DIR__);
-define('CACHE_DIRECTORY', '/scripts/worklog/cache');
+define('CACHE_DIRECTORY', 'cache');
 define('DATABASE_PATH', APPLICATION_PATH.'/database');
 define('DATABASE_MIGRATIONS', DATABASE_PATH.'/migrations');
 define('DEVELOPMENT_MODE', false);
 define('DEFAULT_COMMAND', 'today');
 include(__DIR__.'/src/bootstrap.php');
 
-use Worklog\CommandLine\Command;
-
-$dotenv = new Dotenv\Dotenv(__DIR__);
-$dotenv->load();
-
-
 $db = database(getenv('DATABASE_DRIVER'));
-
-//$tasks = Illuminate\Database\Capsule\Manager::table('task')->where('issue', 'UT-14')->get();
-//$tasks = Worklog\Models\Task::where('issue', 'UT-14')->get();
 
 /*********************************************/
 // Bind commands
@@ -53,10 +42,5 @@ Command::bind('start', 'Worklog\CommandLine\StartCommand');
 Command::bind('stop', 'Worklog\CommandLine\StopCommand');
 Command::bind('recover', 'Worklog\CommandLine\RecoverCommand');
 Command::bind('cancel', 'Worklog\CommandLine\CancelCommand');
-
-//$TaskService = new Worklog\Services\TaskService($db);
-//$Task = $TaskService->make([ 'issue' => 'UT-14' ]);
-//printl($Task->issue);
-//dump($Task);
 
 include(__DIR__.'/src/run.php');

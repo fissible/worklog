@@ -116,18 +116,18 @@ class Application {
 		return $lines;
 	}
 
-	/**
-	 * Run the specified command
-	 * @param  string $command The command to run
-	 * @return mixed
-	 */
+    /**
+     * Run the specified command
+     * @return mixed
+     * @throws \Exception
+     * @internal param string $command The command to run
+     */
 	public function run() {
 		if (! $this->is_setup()) {
 			$this->setup();
 		}
 
 		CommandLine\Command::set_data('project_path', $this->ProjectPath);
-		// CommandLine\Command::set_data('sql_path', $this->SqlPath);
 
 		try {
 			$this->Command = (new CommandLine\Command($this))->resolve();

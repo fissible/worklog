@@ -68,6 +68,9 @@ class StartCommand extends Command {
             $TaskData->description = $description;
         }
 
+//        dump('DEFAULT DATE: ');
+//        dd($this->Task->defaultValue('date'));
+
         $TaskData->date = $this->Task->defaultValue('date');
         $TaskData->start = $this->Task->defaultValue('start');
 

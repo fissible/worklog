@@ -45,7 +45,7 @@ class StopCommand extends Command {
                 $Command->set_invocation_flag();
 
                 // if stopping a task started today (from CLI)
-                if (IS_CLI && substr($Task->date, 0, 10) !== substr($Task->defaultValue('date'), 0, 10)) {
+                if (IS_CLI && $Task->date->toDateString() !== Carbon::now()->toDateString()) {
                     $description = '';
                     if ($Task->hasAttribute('description') && strlen($Task->description) > 0) {
                         $description = preg_replace('/\s+/', ' ', $Task->description);
@@ -54,9 +54,14 @@ class StopCommand extends Command {
                         }
                         $description = ' ('.$description.')';
                     }
-                    $prompt = sprintf('Complete work item%s started at %s [Y/n]: ', $description, static::get_twelve_hour_time($Task->start));
-                    $response = trim(strtolower(readline($prompt))) ?: 'y';
-                    if ($response[0] !== 'y') {
+//                    $prompt = sprintf('Complete work item%s started at %s [Y/n]: ', $description, static::get_twelve_hour_time($Task->start));
+//                    $response = trim(strtolower(Input::ask($prompt))) ?: 'y';
+//                    if ($response[0] !== 'y') {
+//                        print "Stop aborted.\n";
+//                        return false;
+//                    }
+                    $prompt = sprintf('Complete work item%s started at %s', $description, static::get_twelve_hour_time($Task->start));
+                    if (! Input::confirm($prompt, true)) {
                         print "Stop aborted.\n";
                         return false;
                     }

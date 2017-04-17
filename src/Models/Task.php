@@ -164,12 +164,14 @@ class Task extends Model
      */
     public function getDurationAttribute() {
         if ($this->hasAttribute('start') && $this->hasAttribute('stop')) {
-            $start_parts = explode(':', $this->attributes['start']); // "08:00"
-            $stop_parts = explode(':', $this->attributes['stop']);   // "16:38"
-            $Start = Carbon::today()->hour(intval($start_parts[0]))->minute(intval(preg_replace('/[^0-9]/', '', $start_parts[1])));
-            $Stop = Carbon::today()->hour(intval($stop_parts[0]))->minute(intval(preg_replace('/[^0-9]/', '', $stop_parts[1])));
+            if (! empty($this->attributes['start']) && ! empty($this->attributes['stop'])) {
+                $start_parts = explode(':', $this->attributes['start']); // "08:00"
+                $stop_parts = explode(':', $this->attributes['stop']);   // "16:38"
+                $Start = Carbon::today()->hour(intval($start_parts[0]))->minute(intval(preg_replace('/[^0-9]/', '', $start_parts[1])));
+                $Stop = Carbon::today()->hour(intval($stop_parts[0]))->minute(intval(preg_replace('/[^0-9]/', '', $stop_parts[1])));
 
-            return $Start->diff($Stop);
+                return $Start->diff($Stop);
+            }
         }
     }
 
@@ -277,7 +279,8 @@ class Task extends Model
      * @return string
      */
     public function promptForAttribute($field) {
-        $default = parent::promptForAttribute($field);
+        $prompt = parent::promptForAttribute($field);
+        $default = $this->defaultValue($field);
 
         // UPDATE default values
         if ($this->exists) {

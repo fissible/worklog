@@ -653,14 +653,14 @@ class Command {
             }
             if (IS_CLI) {
                 if ($hour == 12 && $minute < 30) {
-                    $ampm_response = readline(sprintf('Noon or midnight? [%s]: ', ($ampm == 'pm' ? 'noon' : 'midnight')));
+                    $ampm_response = Input::ask(sprintf('Noon or midnight? [%s]: ', ($ampm == 'pm' ? 'noon' : 'midnight')));
                     if ($ampm_response && strtolower($ampm_response[0]) == 'n') {
                         $ampm = 'pm';
                     } elseif ($ampm_response && strtolower($ampm_response[0]) == 'm') {
                         $ampm = 'am';
                     }
                 } else {
-                    $ampm_response = readline(sprintf('%02d:%02d AM or PM? [%s]: ', $hour, $minute, $ampm));
+                    $ampm_response = Input::ask(sprintf('%02d:%02d AM or PM? [%s]: ', $hour, $minute, $ampm));
                     if ($ampm_response && strtolower($ampm_response[0]) == 'p') {
                         $ampm = 'pm';
                     } elseif ($ampm_response && strtolower($ampm_response[0]) == 'a') {

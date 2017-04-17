@@ -29,19 +29,21 @@ class DeleteCommand extends Command {
         parent::run();
 
         $id = $this->getData('id');
+        $out = '';
 
         if (is_numeric($id)) {
             $Task = Task::findOrFail($id);
-            $prompt = sprintf('Delete Task %d%s? [Y/n]: ', $Task->id, ($Task->description ? ' ('.$Task->description.')' : ''));
+            $prompt = sprintf('Delete Task %d%s?', $Task->id, ($Task->description ? ' ('.$Task->description.')' : ''));
 
-            if (! IS_CLI || $this->option('f') || 'n' !== strtolower(readline($prompt))) {
-                $Task->delete();
+            if (! IS_CLI || $this->option('f') || Input::confirm($prompt, true)) {
+                if ($Task->delete()) {
+                    $out = sprintf('Deleted Task %d', $id);
+                }
             }
-
         } else {
             throw new \InvalidArgumentException(static::$exception_strings['invalid_argument']);
         }
 
-        return printf('Deleted Task %d', $id);
+        return $out;
     }
 }
