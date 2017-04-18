@@ -51,7 +51,6 @@ class ModelService extends Service
     }
 
     public static function Model(array $data = []) {
-        printl('Model() -> '.static::$entity_class);
         return new static::$entity_class($data);
     }
 

@@ -276,11 +276,15 @@ class Task extends Model
 
     /**
      * @param $field
+     * @param null $default
      * @return string
      */
-    public function promptForAttribute($field) {
-        $prompt = parent::promptForAttribute($field);
-        $default = $this->defaultValue($field);
+    public function promptForAttribute($field, $default = null) {
+        $prompt = parent::promptForAttribute($field, $default);
+
+        if (is_null($default)) {
+            $default = $this->defaultValue($field);
+        }
 
         // UPDATE default values
         if ($this->exists) {
@@ -337,7 +341,7 @@ class Task extends Model
         $LastTask = null;
 
         if (empty($where)) {
-            $where = [ 'date' => Carbon::now()->toDateString() ];
+            $where = [ ['date', 'LIKE', Carbon::now()->toDateString().' %'] ];
         }
 
         if ($Tasks = Task::where($where)->defaultSort()->get()) {

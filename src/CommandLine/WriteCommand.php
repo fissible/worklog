@@ -36,6 +36,7 @@ class WriteCommand extends Command {
     public function run() {
         parent::run();
 
+        $debug_field_writing = false;
         $TaskService = new TaskService();
         $LastTask = $description = null;
 
@@ -146,7 +147,9 @@ class WriteCommand extends Command {
                                     }
 
                                     if ($type !== self::TYPE_UPDATE && (strlen($response) < 1 || is_null($response))) {
-                                        printl("\t".'is_UPDATE & $response is null or strlen < 1: set $response to false');
+                                        if ($debug_field_writing) {
+                                            debug("\t".'is_UPDATE & $response is null or strlen < 1: set $response to false');
+                                        }
                                         $response = false;
                                     }
                                     break;
@@ -160,19 +163,20 @@ class WriteCommand extends Command {
                             }
 
                             if (false !== $response) {
-
-                                if (is_null($response)) {
-                                    printl("\t".'$response is null');
-                                } else {
-                                    printl("\t".'set '.$field.' to string with length of '.strlen($response));
+                                if ($debug_field_writing) {
+                                    debug("\t" . 'IU: set ' . $field . ' to "' . var_export($response, true) . '"');
                                 }
-
-
                                 $this->Task->{$field} = $response;
                             }
                         } elseif ($type == self::TYPE_UPDATE) {
-                            printl("\t".'set '.$field.' to "'.var_export($default, true).'"');
-
+                            if ($debug_field_writing) {
+                                debug("\t" . 'EU: set ' . $field . ' to "' . var_export($default, true) . '"');
+                            }
+                            $this->Task->{$field} = $default;
+                        } else {
+                            if ($debug_field_writing) {
+                                debug("\t" . 'EI: set ' . $field . ' to "' . var_export($default, true) . '"');
+                            }
                             $this->Task->{$field} = $default;
                         }
 

@@ -69,10 +69,17 @@ class Model extends Eloquent
         }
     }
 
-    public function promptForAttribute($field) {
+    /**
+     * @param $field
+     * @param null $default
+     * @return string
+     */
+    public function promptForAttribute($field, $default = null) {
         $prompt = sprintf('What is the %s?', Str::snake($field, ' '));
-        $default = $this->defaultValue($field);
 
+        if (is_null($default)) {
+            $default = $this->defaultValue($field);
+        }
 
         if ($config = static::field($field)) {
             if (array_key_exists('prompt', $config)) {

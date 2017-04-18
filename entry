@@ -1,46 +1,10 @@
 #!/usr/bin/env php
 <?php
 /**
- * Worklog application bootstrap
+ * Worklog application CLI entrypoint
  *
  * @author      Allen McCabe
  */
 
-use Worklog\CommandLine\Command;
-
-date_default_timezone_set('America/Los_Angeles');
-
-define('MINIMUM_PHP_VERSION', '5.5.0');
-define('APPLICATION_PATH', __DIR__);
-define('CACHE_DIRECTORY', 'cache');
-define('DATABASE_PATH', APPLICATION_PATH.'/database');
-define('DATABASE_MIGRATIONS', DATABASE_PATH.'/migrations');
-define('DEVELOPMENT_MODE', false);
-define('DEFAULT_COMMAND', 'today');
 include(__DIR__.'/src/bootstrap.php');
-
-$db = database(getenv('DATABASE_DRIVER'));
-
-/*********************************************/
-// Bind commands
-/*********************************************/
-
-Command::bind('migrate', 'Worklog\CommandLine\MigrateCommand');
-Command::bind('migrate:rollback', 'Worklog\CommandLine\MigrateRollbackCommand');
-Command::bind('migrate:status', 'Worklog\CommandLine\MigrationStatusCommand');
-Command::bind('make:migration', 'Worklog\CommandLine\CreateMigrationCommand');
-
-Command::bind('help', 'Worklog\CommandLine\UsageCommand');
-Command::bind('add', 'Worklog\CommandLine\WriteCommand');
-Command::bind('list', 'Worklog\CommandLine\ListCommand');
-Command::bind('detail', 'Worklog\CommandLine\DetailCommand');
-Command::bind('edit', 'Worklog\CommandLine\EditCommand');
-Command::bind('delete', 'Worklog\CommandLine\DeleteCommand');
-Command::bind('report', 'Worklog\CommandLine\ReportCommand');
-Command::bind('today', 'Worklog\CommandLine\TodayCommand');
-Command::bind('start', 'Worklog\CommandLine\StartCommand');
-Command::bind('stop', 'Worklog\CommandLine\StopCommand');
-Command::bind('recover', 'Worklog\CommandLine\RecoverCommand');
-Command::bind('cancel', 'Worklog\CommandLine\CancelCommand');
-
 include(__DIR__.'/src/run.php');

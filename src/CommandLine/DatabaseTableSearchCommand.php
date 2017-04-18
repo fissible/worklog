@@ -8,7 +8,7 @@ class DatabaseTableSearchCommand extends Command {
 
 	public $command_name;
 
-	public static $description = 'Run a fuzzy search against database tables';
+	public static $description = 'Run a fuzzy search for database tables';
 	public static $options = [
 		'c' => ['req' => null, 'description' => 'Search for columns'],
 		's' => ['req' => null, 'description' => 'Return as space-delimited list']
