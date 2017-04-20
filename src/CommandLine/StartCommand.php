@@ -75,8 +75,6 @@ class StartCommand extends Command {
         $TaskData->date = $this->Task->defaultValue('date');
         $TaskData->start = $this->Task->defaultValue('start');
 
-        debug($TaskData);
-
         $start_time = $this->App()->Cache()->data(
             self::CACHE_TAG.self::CACHE_NAME_DELIMITER.($last_index + 1),
             $TaskData,
