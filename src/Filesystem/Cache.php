@@ -14,13 +14,10 @@ class Cache {
 
 	private static $DO_NOT_PURGE = false;
 
+
 	public function __construct($path = '') {
 		$this->set_cache_path($path);
 		$this->load_registry();
-	}
-
-	public static function disable_purge($set = true) {
-		static::$DO_NOT_PURGE = (bool) $set;
 	}
 
 	public function set_cache_path($path) {
@@ -31,25 +28,94 @@ class Cache {
 		}
 	}
 
+    /**
+     * Scan cache files and cache their name keys
+     * @param  boolean $force Reload cache registry
+     */
+    private function load_registry($force = false) {
+        $this->setup();
+        if (empty($this->registry) || $force) {
+            foreach (glob($this->path.'/*.json') as $key => $filename) {
+                $raw_data = $this->load($filename, true, true);
+
+                if (! is_null($raw_data['name']) && ! empty($raw_data['name']) && ! $raw_data['expired']) {
+                    $this->register($raw_data['name']);
+                }
+            }
+        }
+    }
+
+    public function setup() {
+        if (! $this->is_setup()) {
+            if (! empty($this->path)) {
+                mkdir($this->path);
+                chmod($this->path, 0777);
+            } else {
+                throw new \Exception('Cache path empty');
+            }
+
+        }
+        return $this->is_setup();
+    }
+
 	public function is_setup() {
-		return is_dir($this->path);
+	    $setup = false;
+        if (! empty($this->path)) {
+            $setup = is_dir($this->path);
+        }
+		return $setup;
 	}
 
-	public function setup() {
-		if (! $this->is_setup()) {
-			if (! empty($this->path)) {
-				mkdir($this->path);
-				chmod($this->path, 0777);
-			} else {
-				throw new \Exception('Cache path empty');
-			}
-			
-		}
-		return $this->is_setup();
-	}
+    /**
+     * Load the cache data given a cache key or filename
+     * @param  string $name The cache key name or filename
+     * @param bool $get_raw
+     * @return array The cache data
+     */
+    public function load($name, $get_raw = false, $do_not_delete = false) {
+        $data = [ 'name' => '', 'data' => null, 'expiry' => 0, 'tags' => [] ];
+        if (! ($filename = $this->registry($name))) {
+            $filename = $this->filename($name);
+        }
+
+        if ($this->is_setup() && file_exists($filename)) {
+            $raw_data = file_get_contents($filename);
+            $raw_data = json_decode($raw_data, true);
+
+            $data = $raw_data;
+            $data['expired'] = static::is_past($raw_data);
+
+            if ($data['expired'] === true) {
+                if (! static::$DO_NOT_PURGE && ! $do_not_delete) {
+                    unlink($filename);
+                }
+            }
+        }
+
+        if ($get_raw) {
+            return $data;
+        } else {
+            return $data['data'];
+        }
+    }
+
+    public function register($name) {
+        if (! $this->registry($name)) {
+            $this->registry[$name] = $this->filename($name);
+        }
+    }
+
+    public function registry($name = null) {
+        if (is_null($name)) {
+            return $this->registry;
+        } elseif (array_key_exists($name, $this->registry)) {
+            return $this->registry[$name];
+        }
+    }
+
 
 	/**
-	 * The cache key/name
+	 * The cache file filename
 	 * @param  string $name The unique array index
 	 * @return string       The filename for a given cache key
 	 */
@@ -99,12 +165,12 @@ class Cache {
 		return $data;
 	}
 
-	/**
-	 * Delete a cache file
-	 * @param  string  $name      A cache key or tag name(s)
-	 * @param  array   $tags      $name is a tag string (or array of strings), clear entries with tag(s)
-	 * @return [type]             [description]
-	 */
+    /**
+     * Delete a cache file
+     * @param  string $name A cache key or tag name(s)
+     * @param array|bool $tags $name is a tag string (or array of strings), clear entries with tag(s)
+     * @return bool [type]             [description]
+     */
 	public function clear($name = null, $tags = false) {
 		$deleted = false;
 		if ($this->is_setup()) {
@@ -157,85 +223,47 @@ class Cache {
 		return $items;
 	}
 
-	/**
-	 * Load the cache data given a cache key or filename
-	 * @param  string $name The cache key name or filename
-	 * @return array        The cache data
-	 */
-	public function load($name, $get_raw = false) {
-		$data = [ 'name' => '', 'data' => null, 'expiry' => 0, 'tags' => [] ];
-		if (! ($filename = $this->registry($name))) {
-			$filename = $this->filename($name);
-		}
-		if ($this->is_setup() && file_exists($filename)) {
-			$raw_data = file_get_contents($filename);
-			$raw_data = json_decode($raw_data, true);
-			if (isset($raw_data['expiry']) && $raw_data['expiry'] > 0 && $raw_data['expiry'] <= strtotime('now')) {
-				if (! static::$DO_NOT_PURGE) {
-					unlink($filename);
-				}
-			} else {
-				$data = $raw_data;
-			}
-		}
+    /**
+     * Write the data array to a cache json file
+     * @param  string $name The cache key
+     * @param  array  $data The cache data
+     * @param  array  $tags Tag string (or array of strings) used for taxonomy
+     * @return mixed        The number of bytes written, or false on failure
+     */
+    public function write($name, $data = [], $tags = []) {
+        $this->setup();
+        $this->register($name);
+        if (! empty($tags)) {
+            if (! is_array($tags)) {
+                $tags = [ $tags ];
+            }
+            if (array_key_exists('tags', $data)) {
+                $data['tags'] = array_merge($data['tags'], $tags);
+            } else {
+                $data['tags'] = $tags;
+            }
+        }
+        return file_put_contents($this->filename($name), json_encode($data));
+    }
 
-		if ($get_raw) {
-			return $data;
-		} else {
-			return $data['data'];
-		}
-	}
+    public static function disable_purge($set = true) {
+        static::$DO_NOT_PURGE = (bool) $set;
+    }
 
-	public function register($name) {
-		if (! $this->registry($name)) {
-			$this->registry[$name] = $this->filename($name);
-		}
-	}
+	private static function is_past($raw_data) {
+        $expired = false;
 
-	public function registry($name = null) {
-		if (is_null($name)) {
-			return $this->registry;
-		} elseif (array_key_exists($name, $this->registry)) {
-			return $this->registry[$name];
-		}
-	}
+        if (! is_string($raw_data)) {
+            if (isset($raw_data['expiry']) && strlen($raw_data['expiry']) > 9) {
+                $date = $raw_data['expiry'];
+            }
+        } else {
+            $date = $raw_data;
+        }
+        if ($date > 0 && $date <= strtotime('now')) {
+            $expired = true;
+        }
 
-	/**
-	 * Write the data array to a cache json file
-	 * @param  string $name The cache key
-	 * @param  array  $data The cache data
-	 * @param  array  $tags Tag string (or array of strings) used for taxonomy
-	 * @return mixed        The number of bytes written, or false on failure
-	 */
-	public function write($name, $data = [], $tags = []) {
-		$this->setup();
-		$this->register($name);
-		if (! empty($tags)) {
-			if (! is_array($tags)) {
-				$tags = [ $tags ];
-			}
-			if (array_key_exists('tags', $data)) {
-				$data['tags'] = array_merge($data['tags'], $tags);
-			} else {
-				$data['tags'] = $tags;
-			}
-		}
-		return file_put_contents($this->filename($name), json_encode($data));
-	}
-
-	/**
-	 * Scan cache files and cache their name keys
-	 * @param  boolean $force Reload cache registry
-	 */
-	private function load_registry($force = false) {
-		$this->setup();
-		if (empty($this->registry) || $force) {
-			foreach (glob($this->path.'/*.json') as $key => $filename) {
-				$raw_data = $this->load($filename, true);
-				if (! is_null($raw_data['name']) && ! empty($raw_data['name'])) {
-					$this->register($raw_data['name']);
-				}
-			}
-		}
-	}
+        return $expired;
+    }
 }

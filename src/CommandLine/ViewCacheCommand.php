@@ -51,7 +51,7 @@ class ViewCacheCommand extends Command {
 			}
 
 			if (count($grid_data)) {
-				$output = Output::data_grid([ 'Name', 'File', 'Data', 'Expiry', 'Tags' ], $grid_data, $template);
+				$output = Output::data_grid([ 'Name', 'File', 'Data', 'Expiry', 'Tags' ], $grid_data/*, $template*/);
 			}
 		}
 

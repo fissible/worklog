@@ -3,9 +3,8 @@
 namespace Worklog\CommandLine;
 
 use Carbon\Carbon;
-use Worklog\CommandLine\Output;
+use Worklog\Models\Task;
 use Worklog\Services\TaskService;
-use Worklog\CommandLine\Command as Command;
 
 /**
  * Created by PhpStorm.
@@ -28,17 +27,17 @@ class TodayCommand extends Command
         list(, $Task) = TaskService::cached(true);
 
         // Current (started) task
-        if ($Task) {
+        if ($Task instanceof Task && $Task->date->isToday()) {
             Output::line('Started task:');
             printl(Output::data_grid(
-                [ 'Started', 'Issue', 'Description' ],
-                [[ $Task->start_string, ($Task->issue ?: ''), $Task->description ]],
+                [ 'Started', 'Issue', 'Description', 'Date' ],
+                [[ $Task->start_string, ($Task->issue ?: ''), $Task->description, $Task->date_string ]],
                 null,
                 160
             ));
         }
 
-        $Command = new ReportCommand($this->App());
+        $Command = new ReportCommand();
         $Command->set_invocation_flag();
         $Command->setData('today', true);
         return $Command->run();

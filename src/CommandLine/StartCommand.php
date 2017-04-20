@@ -38,15 +38,19 @@ class StartCommand extends Command {
         parent::run();
 
         $Now = Carbon::now();
-        $EndOfDay = $Now->copy()->hour(18); // 6:00 pm
+        $Expiry = $Now->copy()->addDays(2);
         $this->Task = new Task();
         $TaskData = new \stdClass;
         $last_index = 0;
 
-        $RecoverCommand = new RecoverCommand($this->App());
+        $RecoverCommand = new RecoverCommand();
         $RecoverCommand->set_invocation_flag();
         $RecoverCommand->setData('warn', 'start');
-        $RecoverCommand->run();
+
+        if (false === $RecoverCommand->run()) {
+            printl('Recovery aborted, resuming current task...');
+            return false;
+        }
 
         // Get the latest cache index (should always be 1 with the RecoverCommand running first)
         if ($cached_start_times = $this->App()->Cache()->load_tags(self::CACHE_TAG)) {
@@ -68,17 +72,16 @@ class StartCommand extends Command {
             $TaskData->description = $description;
         }
 
-//        dump('DEFAULT DATE: ');
-//        dd($this->Task->defaultValue('date'));
-
         $TaskData->date = $this->Task->defaultValue('date');
         $TaskData->start = $this->Task->defaultValue('start');
+
+        debug($TaskData);
 
         $start_time = $this->App()->Cache()->data(
             self::CACHE_TAG.self::CACHE_NAME_DELIMITER.($last_index + 1),
             $TaskData,
             [ self::CACHE_TAG ],
-            $Now->diffInSeconds($EndOfDay)
+            $Now->diffInSeconds($Expiry)
         )->start;
 
         return 'New task started at '.Str::time($start_time);

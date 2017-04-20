@@ -2,8 +2,8 @@
 namespace Worklog\CommandLine;
 
 use Carbon\Carbon;
+use Worklog\Models\Task;
 use Worklog\Services\TaskService;
-use Worklog\CommandLine\Command as Command;
 
 /**
  * Created by PhpStorm.
@@ -24,30 +24,62 @@ class RecoverCommand extends Command {
     public function run() {
         parent::run();
 
-        $Tasks = new TaskService();
         list($filename, $Task) = TaskService::cached(true);
 
-        if ($Task) {
-            if (property_exists($Task, 'start')) {
+        if ($Task instanceof Task) {
+            if ($Task->hasAttribute('start')) {
+
+                $stop_task = true;
+                $cancel_task = false;
+                $result = false;
 
                 if (IS_CLI) {
-                    if ($this->getData('warn')) {
-                        if (substr($Task->date, 0, 10) !== substr($Tasks->default_val('date'), 0, 10)) {
-                            printl('Recovering a previously started task...');
-                        } else {
-                            printl('Stopping previous task..');
-                        }
+                    $Today = Carbon::today();
+
+                    if ($Task->date->lt($Today)) {
+                        $prompt = sprintf(
+                            'Complete work item%s started on %s at %s',
+                            $Task->description_summary,
+                            $Task->date->toFormattedDateString(),
+                            $Task->start_time
+                        );
+                    } else {
+                        $prompt = sprintf(
+                            'Complete work item%s started at %s',
+                            $Task->description_summary,
+                            $Task->start_time
+                        );
                     }
 
-                    if (! $Tasks->valid($Task) && $this->internally_invoked()) {
-                        printl('Please complete the missing details...');
+                    if (! Input::confirm($prompt, $stop_task)) {
+                        $stop_task = false;
+                        if (Input::confirm('Do you want to cancel it?', $cancel_task)) {
+                            $cancel_task = true;
+                        }
                     }
                 }
 
-                // Stop the started task
-                $result = (new StopCommand($this->App()))->run();
+                // Stop or cancel the started task
+                if ($stop_task) {
+                    if ($this->getData('warn')) {
+                        if ($Task->date->ne($Today)) {
+                            printl('Recovering task...');
+                        } else {
+                            printl('Stopping task..');
+                        }
+                    }
 
-                if (IS_CLI) {
+                    if (! $Task->valid() && $this->internally_invoked()) {
+                        printl('Please complete the missing details...');
+                    }
+
+                    $result = (new StopCommand())->run();
+                } elseif ($cancel_task) {
+                    $result = (new CancelCommand())->run();
+                }
+
+
+                if (IS_CLI && false !== $result) {
                     if ($this->getData('warn') == 'start') {
                         printl('Starting new task...');
                     } elseif ($this->internally_invoked()) {
@@ -58,10 +90,11 @@ class RecoverCommand extends Command {
                 return $result;
 
             } elseif (! is_null($filename)) {
-                $this->App()->Cache()->clear($filename);
+                debug($filename.' -- DELETES HERE ');
+//                $this->App()->Cache()->clear($filename);
             }
         }
 
-        return true;
+        return null;
     }
 }

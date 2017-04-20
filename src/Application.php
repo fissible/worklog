@@ -130,7 +130,7 @@ class Application {
 		CommandLine\Command::set_data('project_path', $this->ProjectPath);
 
 		try {
-			$this->Command = (new CommandLine\Command($this))->resolve();
+			$this->Command = (new CommandLine\Command())->resolve();
 			$this->Command->scan();
 			return $this->Command->run();
 		} catch (\Exception $e) {

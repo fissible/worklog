@@ -68,6 +68,11 @@ class DetailCommand extends Command {
             Output::line(implode('', $period_duration), $border);
             Output::line($hline);
 
+            if (DEVELOPMENT_MODE) {
+                $attributes = $Task->attributesToArray();
+                print Output::data_grid(array_keys($attributes), [ array_values($attributes) ]);
+            }
+
 
         } else {
             throw new \InvalidArgumentException(static::$exception_strings['invalid_argument']);

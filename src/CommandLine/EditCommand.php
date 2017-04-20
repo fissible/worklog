@@ -27,7 +27,7 @@ class EditCommand extends Command
     public function run() {
         parent::run();
         $this->expectData('id', static::$exception_strings['invalid_argument']);
-        $Command = new WriteCommand($this->App());
+        $Command = new WriteCommand();
         $Command->set_invocation_flag();
         $Command->setData('id', $this->getData('id'));
 

@@ -62,6 +62,18 @@ class Str
         return false;
     }
 
+    public static function date($input, $format = null) {
+        if ($input instanceof Carbon) {
+            $Date = $input->copy();
+        } else {
+            $Date = Carbon::parse($input);
+        }
+        if (is_null($format)) {
+            return $Date->toDateString();
+        }
+        return $Date->format($format);
+    }
+
     /**
      * @param string $time
      * @param string $format

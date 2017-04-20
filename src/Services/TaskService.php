@@ -95,111 +95,13 @@ class TaskService extends ModelService {
                 if (array_key_exists('date', $data['date'])) {
                     $data['date'] = $data['date']['date'];
                 } else {
-                    $data['date'] = '';
+                    $data['date'] = Carbon::parse(filemtime($filename))->toDateString();
                 }
             }
+
             $Task = new Task($data);
         }
 
         return [ $filename, $Task ];
     }
-
-    /**
-     * Format fields for display
-     * @return array
-     */
-//    protected function display_format_callbacks() {
-//        $time_string = function ($time) {
-//            if (false === stripos($time, 'AM') && false === stripos($time, 'PM')) {
-//                $Date = Carbon::parse(date("Y-m-d").' '.$time);
-//                $time = $Date->format('g:i a');
-//            }
-//            return $time;
-//        };
-//
-//        return [
-//            // description
-//            'description' => function ($Record) {
-//                $str = '';
-//                if (property_exists($Record, 'description')) {
-//                    $str = str_replace('\n', "\n", $Record->description);
-//                }
-//                return $str;
-//            },
-//
-//            // date: '2017-02-23 09:30:47' -> 'Feb 23, 2017'
-//            'date' => function ($Record) {
-//                if (property_exists($Record, 'date')) {
-//                    $date = new Carbon($Record->date);
-//                    return $date->toFormattedDateString();
-//                }
-//            },
-//
-//            // duration: '02:00'/'04:00'
-//            'duration' => function ($Record) {
-//                if (property_exists($Record, 'start') && property_exists($Record, 'stop')) {
-//                    if (property_exists($Record, 'duration') && $Record->duration instanceof \DateInterval) {
-//                        $DateInterval = $Record->duration;
-//                    } else {
-//                        $DateInterval = $this->calculated_field($Record, 'duration');
-//                    }
-//
-//                    $output = '';
-//                    if ($DateInterval->h) {
-//                        $output .= $DateInterval->h.($DateInterval->h > 1 ? ' hrs' : ' hr');
-//                    }
-//                    if ($DateInterval->i) {
-//                        if (strlen($output)) {
-//                            $output .= ', ';
-//                        }
-//                        $output .= $DateInterval->i.($DateInterval->i > 1 ? ' mins' : ' min');
-//                    }
-//
-//                    return $output;
-//                }
-//            },
-//
-//            // start/stop: '14:00' -> '02:00 PM'
-//            'start' => function ($Record) use ($time_string) {
-//                if (property_exists($Record, 'start')) {
-//                    return $time_string($Record->start);
-//                }
-//            },
-//            'stop' => function ($Record) use ($time_string) {
-//                if (property_exists($Record, 'stop')) {
-//                    return $time_string($Record->stop);
-//                }
-//            }
-//        ];
-//    }
-
-    /**
-     * Sort records
-     * @param $records
-     * @param $dir
-     * @param $mode
-     * @return array
-     */
-//    public function sort(array $records = [], $dir = 'asc', $mode = 'default') {
-//        switch ($mode) {
-//            case 'default':
-//            default:
-//                uasort($records, function($a, $b) {
-//                    if (property_exists($a, 'date') && property_exists($b, 'date') &&
-//                        property_exists($a, 'start') && property_exists($b, 'start')) {
-//                        $aDate = Carbon::parse(substr($a->date, 0, 10).' '.$a->start);
-//                        $bDate = Carbon::parse(substr($b->date, 0, 10).' '.$b->start);
-//                        return $aDate->timestamp - $bDate->timestamp;
-//                    } else {
-//                        return 0;
-//                    }
-//                });
-//                if (strtolower($dir) == 'desc') {
-//                    $records = array_reverse($records, true);
-//                }
-//                break;
-//        }
-//
-//        return $records;
-//    }
 }

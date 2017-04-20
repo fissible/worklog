@@ -122,23 +122,34 @@ class Output {
         return exec('tput lines');
     }
 
-    public static function color($string, $color, $background_color = false) {
+    public static function color($input, $color, $background_color = false) {
         $out = ""; $_out = '';
 
-        if (array_key_exists($color, static::$foreground_colors)) {
-            $out .= "\033[" . static::$foreground_colors[$color] . "m";
-//            $_out .= '\033[' . static::$foreground_colors[$color] . 'm';
+        if (is_object($input)) {
+            $input = json_decode(json_encode($input), true);
         }
+        if (is_array($input)) {
+            foreach ($input as $str) {
+                if (! empty($str)) {
+                    $out .= static::color($str, $color, $background_color)."\n";
+                }
+            }
+            $out = trim($out, "\n");
+        } else {
+            if (array_key_exists($color, static::$foreground_colors)) {
+                $out .= "\033[" . static::$foreground_colors[$color] . "m";
+            }
 
-        if ($background_color) {
-            if (array_key_exists($background_color, static::$background_colors)) {
-                $out .= "\033[" . static::$background_colors[$background_color] . "m";
-//                $_out .= '\033[' . static::$background_colors[$background_color] . 'm';
+            if ($background_color) {
+                if (array_key_exists($background_color, static::$background_colors)) {
+                    $out .= "\033[" . static::$background_colors[$background_color] . "m";
+                }
+            }
+
+            if (is_string($input)) {
+                $out .= $input . "\033[0m";
             }
         }
-
-        $out .= $string . "\033[0m";
-//        $_out .= $string . '\033[0m';
 
         return $out;
     }

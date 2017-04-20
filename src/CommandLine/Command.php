@@ -41,8 +41,8 @@ class Command {
 	const ERROR_UNREGISTERED_COMMAND = "Invalid command \"%s\"";
 
 
-	public function __construct($App) {
-		$this->App = $App;
+	public function __construct() {
+		$this->App = App();
 		$this->db = $this->App()->db();
 	}
 
@@ -70,11 +70,11 @@ class Command {
 		$constructor = $reflector->getConstructor();
 
 		if (is_null($constructor)) {
-            return new $concrete($App);
+            return new $concrete();
         }
-		if (! isset($parameters[0]) || ! $parameters[0] instanceof Application) {
-			array_unshift($parameters, $App);
-		}
+//		if (! isset($parameters[0]) || ! $parameters[0] instanceof Application) {
+//			array_unshift($parameters, $App);
+//		}
         return $reflector->newInstanceArgs($parameters);
 	}
 
@@ -106,11 +106,17 @@ class Command {
 		}
 	}
 
+	public static function call($Command) {
+
+        $CancelCommand = new CancelCommand();
+        $CancelCommand->run();
+    }
+
 	public static function instance($App, $command) {
 		if (strlen($command) < 1) {
 			throw new \InvalidArgumentException('No command specified');
 		}
-		$AbstractCommand = new static($App);
+		$AbstractCommand = new static();
 		$Command = $AbstractCommand->build(static::$registry[$command]['class'], $App);
 		$Command->command_name = $command;
 

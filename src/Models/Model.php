@@ -117,6 +117,21 @@ class Model extends Eloquent
         return $fields;
     }
 
+    public static function required($field) {
+        return in_array($field, static::required_fields());
+    }
+
+    public function satisfied($field = null) {
+        $satisfied = false;
+        if (is_null($field)) {
+            $satisfied = $this->valid();
+        } elseif (! in_array($field, static::required_fields()) || $this->hasAttribute($field) && strlen($this->{$field}) > 0) {
+            $satisfied = true;
+        }
+
+        return $satisfied;
+    }
+
     /**
      * Return true if all required fields have values
      * @return bool
@@ -126,6 +141,7 @@ class Model extends Eloquent
         foreach (static::required_fields() as $field) {
             if (! $this->hasAttribute($field) || strlen($this->{$field}) < 1) {
                 $valid = false;
+                break;
             }
         }
 

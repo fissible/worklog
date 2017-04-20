@@ -50,12 +50,28 @@ function caller($key = null, $index = 0) {
     return $caller;
 }
 
-function debug($input) {
+function debug($input, $internally_invoked = false) {
     if (DEVELOPMENT_MODE) {
-        if (IS_CLI) {
-            Output::line(Output::color(' DEBUG: '.caller('file:line', 1).' ', 'black', 'yellow'));
+        $bordr = Output::color(' ', '', 'yellow');
+        $width = Output::cols() / 2;
+
+        if (! $internally_invoked) {
+            Output::line(Output::color(' DEBUG  '.caller('file:line', 1), 'yellow'), $bordr, $width);
         }
-        printl($input);
+        if (is_object($input)) {
+            $input = json_decode(json_encode($input), true);
+        }
+        if (is_array($input)) {
+            $input = print_r($input, true);
+            $input = explode("\n", $input);
+            foreach ($input as $str) {
+                if (! empty($str)) {
+                    debug($str, true);
+                }
+            }
+        } elseif (! empty($input)) {
+            Output::line('       '.$input, $bordr, $width);
+        }
     }
 }
 

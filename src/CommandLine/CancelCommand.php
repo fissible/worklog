@@ -46,5 +46,7 @@ class CancelCommand extends Command {
         } else {
             throw new \Exception(static::$exception_strings['not_found']);
         }
+
+        return $deleted;
     }
 }

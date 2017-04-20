@@ -38,7 +38,7 @@ class WriteCommand extends Command {
 
         $debug_field_writing = false;
         $TaskService = new TaskService();
-        $LastTask = $description = null;
+        $description = null;
 
         // Get a Task instance
         if (($id = $this->option('e')) || ($id = $this->getData('id'))) {
@@ -79,50 +79,19 @@ class WriteCommand extends Command {
         }
 
         if (IS_CLI) {
+
+
+
             do {
                 // HYDRATE TASK
                 foreach (Task::fields() as $field => $config) {
                     if ($field ===  $this->Task->getKeyName()) continue;
 
-                    if (! $this->Task->hasAttribute($field) || $type == self::TYPE_UPDATE) {
+//                    if (! $this->Task->satisfied($field) || $type == self::TYPE_UPDATE) {
 
-                        $default = $this->Task->defaultValue($field);
-                        $prompt_default = ''.$default;
-
-                        // UPDATE default values
-                        if ($type == self::TYPE_UPDATE) {
-                            switch($field) {
-                                case 'start':
-                                case 'stop':
-                                    $prompt_default = static::get_twelve_hour_time($default);
-                                    break;
-                                case 'date':
-                                    $prompt_default = Carbon::parse($default)->toDateString();
-                                    break;
-                                case 'description':
-                                    $description = trim($this->Task->description);
-                                    if ($description) {
-                                        $description = preg_replace('/\s+/', ' ', $description);
-                                        if (strlen($description) > 27) {
-                                            $description = substr($description, 0, 24) . '...';
-                                        }
-                                    }
-                                    $prompt_default = $description;
-                                    break;
-                            }
-
-                        // INSERT default values
-                        } else {
-                            switch($field) {
-                                case 'start':
-                                    if ($LastTask) {
-                                        $default = $LastTask->stop;
-                                    }
-                                    // ...fallthrough
-                                case 'stop':
-                                    $prompt_default = static::get_twelve_hour_time($default);
-                                    break;
-                            }
+                        $default = $this->Task->defaultValue($field);;
+                        if ($this->Task->hasAttribute($field)) {
+                            $default = $this->Task->{$field};
                         }
 
                         // Prompt user for values...
@@ -168,19 +137,19 @@ class WriteCommand extends Command {
                                 }
                                 $this->Task->{$field} = $response;
                             }
-                        } elseif ($type == self::TYPE_UPDATE) {
-                            if ($debug_field_writing) {
-                                debug("\t" . 'EU: set ' . $field . ' to "' . var_export($default, true) . '"');
-                            }
-                            $this->Task->{$field} = $default;
+//                        } elseif ($type == self::TYPE_UPDATE) {
+//                            if ($debug_field_writing) {
+////                                debug("\t" . 'EU: set ' . $field . ' to "' . var_export($default, true) . '"');
+//                            }
+//                            $this->Task->{$field} = $default;
                         } else {
                             if ($debug_field_writing) {
-                                debug("\t" . 'EI: set ' . $field . ' to "' . var_export($default, true) . '"');
+//                                debug("\t" . 'EI: set ' . $field . ' to "' . var_export($default, true) . '"');
                             }
                             $this->Task->{$field} = $default;
                         }
 
-                    }
+//                    }
                 }
             } while (! $this->Task->valid());
         }
@@ -192,7 +161,7 @@ class WriteCommand extends Command {
             return $result;
         }
 
-        $Command = new DetailCommand($this->App());
+        $Command = new DetailCommand();
         $Command->set_invocation_flag();
         $Command->setData('id', $this->Task->id);
 

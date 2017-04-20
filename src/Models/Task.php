@@ -196,22 +196,17 @@ class Task extends Model
     }
 
     /**
-     * @return string
+     * @return string eg. '1975-12-25'
      */
     public function getDateStringAttribute() {
         if ($this->hasAttribute('date')) {
-            $date = $this->attributes['date'];
-            if (! ($date instanceof Carbon)) {
-                $date = new Carbon($date);
-            }
-
-            return $date->toDateString();
+            return Str::date($this->attributes['date']);
         }
         return '';
     }
 
     /**
-     * @return string
+     * @return string eg. 'Dec 25, 1975'
      */
     public function getFriendlyDateStringAttribute() {
         if ($this->hasAttribute('date')) {
@@ -258,6 +253,22 @@ class Task extends Model
     public function getStopStringAttribute() {
         if ($this->hasAttribute('stop')) {
             return Str::time($this->attributes['stop']);
+        }
+    }
+
+    /**
+     * @return string eg. '2:15 pm'
+     */
+    public function getStartTimeAttribute() {
+        return $this->getStartStringAttribute();
+    }
+
+    /**
+     * @return string eg. '4:15 pm'
+     */
+    public function getStopTimeAttribute() {
+        if ($this->hasAttribute('stop')) {
+            return $this->getStopStringAttribute();
         }
     }
 
@@ -308,16 +319,16 @@ class Task extends Model
             switch($field) {
                 case 'start':
                 case 'stop':
-                    $default = Str::datetime(date('Y-m-d').' '.$default.':00', 'g:i a');
+                    $default = Str::time($default);
+                    break;
+                case 'date':
+                    $default = Str::date($default);
                     break;
             }
         }
 
         if ($config = static::field($field)) {
             if (array_key_exists('prompt', $config)) {
-                if (is_null($default)) {
-                    $default = $this->defaultValue($field);
-                }
                 $prompt = $config['prompt'];
                 if ($config['required']) {
                     $prompt .= ' (required)';
@@ -376,8 +387,36 @@ class Task extends Model
         $default = parent::defaultValue($field, $default);
 
         if (! $this->exists) {
-            if ($field == 'start' && $LastTask = $this->lastTask()) {
-                $default = $LastTask->stop;
+            switch ($field) {
+                case 'start':
+                    if ($LastTask = $this->lastTask()) {
+                        $default = $LastTask->stop;
+                    }
+                    break;
+                case 'stop':
+                    if ($this->start && $default) {
+                        $start_datetime = Carbon::parse(date('Y-m-d').' '.$this->start);
+                        $stop_datetime  = Carbon::parse(date('Y-m-d').' '.$default);
+
+                        // if stop is not after start
+                        if ($stop_datetime->lt($start_datetime)) {
+                            if ($this->date->isToday()) {
+
+                                // if the start is in the future, adjust stop to be one hour after
+                                if ($start_datetime->gt(Carbon::now())) {
+                                    $stop_datetime = $start_datetime->copy();
+                                    $stop_datetime->hour += 1;
+                                    $default = $stop_datetime->format('H:i');
+                                }
+                            } else {
+                                // Task not today, stop is start plus one hour
+                                $stop_datetime = $start_datetime->copy();
+                                $stop_datetime->hour += 1;
+                                $default = $stop_datetime->format('H:i');
+                            }
+                        }
+                    }
+                    break;
             }
         }
 

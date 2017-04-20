@@ -32,7 +32,6 @@ class StopCommand extends Command {
     public function run() {
         parent::run();
 
-        $Tasks = new TaskService();
         $cache_name = null;
         $filename = null;
 
@@ -40,35 +39,11 @@ class StopCommand extends Command {
 
         if ($Task) {
             if ($Task->hasAttribute('start')) {
-                $Command = new WriteCommand($this->App());
+                $fields = [ 'issue', 'description', 'date', 'start', 'stop' ];
+                $Today = Carbon::today();
+                $Command = new WriteCommand();
                 $Command->setData('RETURN_RESULT', true);
                 $Command->set_invocation_flag();
-
-                // if stopping a task started today (from CLI)
-                if (IS_CLI && $Task->date->toDateString() !== Carbon::now()->toDateString()) {
-                    $description = '';
-                    if ($Task->hasAttribute('description') && strlen($Task->description) > 0) {
-                        $description = preg_replace('/\s+/', ' ', $Task->description);
-                        if (strlen($description) > 27) {
-                            $description = substr($description, 0, 24).'...';
-                        }
-                        $description = ' ('.$description.')';
-                    }
-//                    $prompt = sprintf('Complete work item%s started at %s [Y/n]: ', $description, static::get_twelve_hour_time($Task->start));
-//                    $response = trim(strtolower(Input::ask($prompt))) ?: 'y';
-//                    if ($response[0] !== 'y') {
-//                        print "Stop aborted.\n";
-//                        return false;
-//                    }
-                    $prompt = sprintf('Complete work item%s started at %s', $description, static::get_twelve_hour_time($Task->start));
-                    if (! Input::confirm($prompt, true)) {
-                        print "Stop aborted.\n";
-                        return false;
-                    }
-                }
-
-                // cache file
-//                $Command->setData('start_cache_file', $filename);
 
                 // issue key
                 if (($issue = $this->option('i', false)) || ($issue = $this->getData('issue'))) {
@@ -80,28 +55,24 @@ class StopCommand extends Command {
                     $Task->description = $description;
                 }
 
-                if (IS_CLI && substr($Task->date, 0, 10) !== substr($Task->defaultValue('date'), 0, 10)) {
-//                    printl($Task->friendly_date_string);
-//                    printl($Task->defaultValue('date'));
-                    printf("WARNING: stopping task started on %s\n", Carbon::parse($Task->date)->toFormattedDateString());
-                } else {
+                // stop
+                if (! $Task->date->lt($Today)) {
                     $Task->stop = $Task->defaultValue('stop');
                 }
 
-
-                $fields = [ 'issue', 'description', 'date', 'start', 'stop' ];
-
                 foreach ($fields as $field) {
                     if ($Task->hasAttribute($field)) {
-                        $Command->setData($field, $Task->{$field});
+                        $Command->setData($field, $Task->{$field}.'');
                     }
                 }
 
                 if ($Command->run()) {
+                    $this->App()->Cache()->disable_purge(false);
                     $this->App()->Cache()->clear($filename);
                 }
             } else {
                 if (! is_null($filename)) {
+                    $this->App()->Cache()->disable_purge(false);
                     $this->App()->Cache()->clear($filename);
                 }
                 throw new \Exception(static::$exception_strings['not_found']);

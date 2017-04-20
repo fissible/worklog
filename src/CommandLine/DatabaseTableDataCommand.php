@@ -43,7 +43,7 @@ class DatabaseTableDataCommand extends Command {
 
 		if (! $db->tableExists($table)) {
 			$output = sprintf('Unknown table "%s"', $table);
-			$Command = new DatabaseTableSearchCommand($this->App());
+			$Command = new DatabaseTableSearchCommand();
             $Command->set_invocation_flag();
 			$Command->setData('input', $table);
 			$tables = $Command->run();
