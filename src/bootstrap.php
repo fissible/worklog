@@ -45,7 +45,7 @@ if (defined('DEVELOPMENT_MODE') && DEVELOPMENT_MODE) {
     // $loader->add('Acme\\Test\\', __DIR__);
 }
 
-Output::init((getenv('ALLOW_UNICODE_OUTPUT') === 'true'));
+Output::init(env('ALLOW_UNICODE_OUTPUT'));
 
 /*********************************************/
 // Bind commands
