@@ -38,7 +38,6 @@ class WriteCommand extends Command {
     public function run() {
         parent::run();
 
-        $debug_field_writing = false;
         $TaskService = new TaskService();
         $description = null;
 
@@ -50,7 +49,6 @@ class WriteCommand extends Command {
             $this->type = self::TYPE_INSERT;
             $this->Task = $TaskService->make();
             $this->Task->date = $this->Task->defaultValue('date');
-            $LastTask = $TaskService->lastTask();
         }
 
         // Parse flags/params
@@ -81,15 +79,12 @@ class WriteCommand extends Command {
         }
 
         if (IS_CLI) {
-
-
-
             do {
                 // HYDRATE TASK
                 foreach (Task::fields() as $field => $config) {
                     if ($field === $this->Task->getKeyName()) continue;
 
-                    if ($this->is_update() || ! $this->Task->satisfied($field)) {
+                    if ($this->is_update() || strlen($this->Task->{$field}) < 1) {
 
                         $default = $this->Task->defaultValue($field);;
                         if ($this->Task->hasAttribute($field)) {
@@ -103,9 +98,6 @@ class WriteCommand extends Command {
                             $response = trim($response);
 
                             switch($field) {
-                                case 'issue':
-                                    $issue = $response;
-                                    break;
                                 case 'description':
                                     $prefix = substr($response, 0, 1);
                                     if ($prefix == '.' || $prefix == ',') {
@@ -118,9 +110,6 @@ class WriteCommand extends Command {
                                     }
 
                                     if ($this->is_update() && (strlen($response) < 1 || is_null($response))) {
-                                        if ($debug_field_writing) {
-                                            debug("\t".'is_UPDATE & $response is null or strlen < 1: set $response to false');
-                                        }
                                         $response = false;
                                     }
                                     break;
@@ -134,20 +123,9 @@ class WriteCommand extends Command {
                             }
 
                             if (false !== $response) {
-                                if ($debug_field_writing) {
-                                    debug("\t" . 'IU: set ' . $field . ' to "' . var_export($response, true) . '"');
-                                }
                                 $this->Task->{$field} = $response;
                             }
-//                        } elseif ($this->is_update()) {
-//                            if ($debug_field_writing) {
-////                                debug("\t" . 'EU: set ' . $field . ' to "' . var_export($default, true) . '"');
-//                            }
-//                            $this->Task->{$field} = $default;
                         } else {
-                            if ($debug_field_writing) {
-//                                debug("\t" . 'EI: set ' . $field . ' to "' . var_export($default, true) . '"');
-                            }
                             $this->Task->{$field} = $default;
                         }
 
@@ -170,11 +148,10 @@ class WriteCommand extends Command {
         return $Command->run();
     }
 
+    /**
+     * @return bool
+     */
     private function is_update() {
         return $this->type == self::TYPE_UPDATE;
-    }
-
-    private function is_insert() {
-        return $this->type == self::TYPE_INSERT;
     }
 }

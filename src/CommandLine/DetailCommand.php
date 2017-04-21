@@ -70,7 +70,16 @@ class DetailCommand extends Command {
 
             if (DEVELOPMENT_MODE) {
                 $attributes = $Task->attributesToArray();
-                print Output::data_grid(array_keys($attributes), [ array_values($attributes) ]);
+                $display_headers = $Task->display_headers();
+                $headers = [];
+                foreach ($attributes as $key => $val) {
+                    if (array_key_exists($key, $display_headers)) {
+                        $headers[] = $display_headers[$key];
+                    } else {
+                        $headers[] = ucwords($key);
+                    }
+                }
+                print Output::data_grid($headers, [ array_values($attributes) ]);
             }
 
 

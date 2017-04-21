@@ -122,6 +122,10 @@ class Output {
         return exec('tput lines');
     }
 
+    public static function bold($input) {
+        return static::$control_chars['bold'][0].$input.static::$control_chars['bold'][1];
+    }
+
     public static function color($input, $color, $background_color = false) {
         $out = ""; $_out = '';
 

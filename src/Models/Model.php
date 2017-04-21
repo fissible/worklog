@@ -55,10 +55,10 @@ class Model extends Eloquent
         return array_key_exists($attr, $this->attributes);
     }
 
-    public static function fields() {
-        return static::$fields;
-    }
-
+    /**
+     * @param $field
+     * @return mixed
+     */
     public static function field($field) {
         if (!is_string($field)) {
             throw new \InvalidArgumentException('Model::field("") requires a string as the first parameter');
@@ -67,6 +67,33 @@ class Model extends Eloquent
         if (array_key_exists($field, $fields)) {
             return $fields[$field];
         }
+    }
+
+    /**
+     * @return array
+     */
+    public static function fields() {
+        return static::$fields;
+    }
+
+    /**
+     * Return true if all required fields have values
+     * @param bool $get_config
+     * @return array
+     */
+    public static function required_fields($get_config = false) {
+        $fields = [];
+        foreach (static::fields() as $field => $config) {
+            if (isset($config['required']) && $config['required']) {
+                if ($get_config) {
+                    $fields[$field] = $config;
+                } else {
+                    $fields[] = $field;
+                }
+            }
+        }
+
+        return $fields;
     }
 
     /**
@@ -97,26 +124,6 @@ class Model extends Eloquent
         return $prompt;
     }
 
-    /**
-     * Return true if all required fields have values
-     * @param bool $get_config
-     * @return array
-     */
-    public static function required_fields($get_config = false) {
-        $fields = [];
-        foreach (static::fields() as $field => $config) {
-            if (isset($config['required']) && $config['required']) {
-                if ($get_config) {
-                    $fields[$field] = $config;
-                } else {
-                    $fields[] = $field;
-                }
-            }
-        }
-
-        return $fields;
-    }
-
     public static function required($field) {
         return in_array($field, static::required_fields());
     }
@@ -125,7 +132,7 @@ class Model extends Eloquent
         $satisfied = false;
         if (is_null($field)) {
             $satisfied = $this->valid();
-        } elseif (! in_array($field, static::required_fields()) || $this->hasAttribute($field) && strlen($this->{$field}) > 0) {
+        } elseif (! in_array($field, static::required_fields()) || ($this->hasAttribute($field) && strlen($this->attributes[$field]) > 0)) {
             $satisfied = true;
         }
 
@@ -139,7 +146,7 @@ class Model extends Eloquent
     public function valid() {
         $valid = true;
         foreach (static::required_fields() as $field) {
-            if (! $this->hasAttribute($field) || strlen($this->{$field}) < 1) {
+            if (! $this->hasAttribute($field) || strlen($this->attributes[$field]) < 1) {
                 $valid = false;
                 break;
             }
