@@ -45,7 +45,6 @@ class ReportCommand extends Command {
         $borderless = (bool) $this->option('n');
         $border = ($borderless ? '' : '|');
         $issues = [];
-        $where = [];
 
         if ($this->option('t') || $this->getData('today')) {
             $DateStart = Carbon::today();

@@ -154,6 +154,24 @@ class Str
         return rtrim($matches[0]) . $end;
     }
 
+    public static function parse($input, $default = null) {
+        $output = $input;
+
+        if (is_null($input) || strtolower($input) === 'null') {
+            $output = $default;
+        } elseif (in_array(strtolower($input), ['false', 'true', 'yes', 'no', 'on', 'off'])) {
+            $output = filter_var($input, FILTER_VALIDATE_BOOLEAN);
+        } elseif (is_numeric($input)) {
+            if ((int) $input == $input) {
+                $output = intval($input);
+            } else {
+                $output = floatval($input);
+            }
+        }
+
+        return $output;
+    }
+
     /**
      * Parse a "Class@method" style callback string into class and method.
      *

@@ -5,6 +5,7 @@
  * @author      Allen McCabe
  */
 
+use Worklog\Application;
 use Worklog\CommandLine\Command;
 use Worklog\CommandLine\Output;
 
@@ -20,6 +21,7 @@ $dotenv = new Dotenv\Dotenv($app_dir);
 $dotenv->load();
 
 define('MINIMUM_PHP_VERSION', '5.5.0');
+
 define('APPLICATION_PATH', __DIR__);
 define('CACHE_PATH', $app_dir.$cache_dir);
 define('DATABASE_PATH', dirname(APPLICATION_PATH).'/database');
@@ -45,7 +47,7 @@ if (defined('DEVELOPMENT_MODE') && DEVELOPMENT_MODE) {
     // $loader->add('Acme\\Test\\', __DIR__);
 }
 
-Output::init(env('ALLOW_UNICODE_OUTPUT'));
+Output::init(env('ALLOW_UNICODE_OUTPUT', false), env('MAX_LINE_LENGTH', 120));
 
 /*********************************************/
 // Bind commands
@@ -58,6 +60,7 @@ Command::bind('stop', 'Worklog\CommandLine\StopCommand');
 Command::bind('help', 'Worklog\CommandLine\UsageCommand');
 Command::bind('today', 'Worklog\CommandLine\TodayCommand');
 Command::bind('start', 'Worklog\CommandLine\StartCommand');
+Command::bind('env', 'Worklog\CommandLine\UpdateEnvCommand');
 Command::bind('detail', 'Worklog\CommandLine\DetailCommand');
 Command::bind('delete', 'Worklog\CommandLine\DeleteCommand');
 Command::bind('report', 'Worklog\CommandLine\ReportCommand');
@@ -75,3 +78,9 @@ Command::bind('migrate:rollback', 'Worklog\CommandLine\MigrateRollbackCommand');
 Command::bind('table-search', 'Worklog\CommandLine\DatabaseTableSearchCommand');
 
 $db = database(getenv('DATABASE_DRIVER'));
+
+// Check the .env file
+if (Application::check_env_file()) {
+    Output::line('The Environment file is out of sync with the example...');
+    Application::update_env_file();
+}

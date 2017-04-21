@@ -27,6 +27,8 @@ class WriteCommand extends Command {
 
     public static $menu = true;
 
+    private $type;
+
     private $Task;
 
     const TYPE_UPDATE = 0;
@@ -42,10 +44,10 @@ class WriteCommand extends Command {
 
         // Get a Task instance
         if (($id = $this->option('e')) || ($id = $this->getData('id'))) {
-            $type = self::TYPE_UPDATE;
+            $this->type = self::TYPE_UPDATE;
             $this->Task = Task::findOrFail($id);
         } else {
-            $type = self::TYPE_INSERT;
+            $this->type = self::TYPE_INSERT;
             $this->Task = $TaskService->make();
             $this->Task->date = $this->Task->defaultValue('date');
             $LastTask = $TaskService->lastTask();
@@ -85,9 +87,9 @@ class WriteCommand extends Command {
             do {
                 // HYDRATE TASK
                 foreach (Task::fields() as $field => $config) {
-                    if ($field ===  $this->Task->getKeyName()) continue;
+                    if ($field === $this->Task->getKeyName()) continue;
 
-//                    if (! $this->Task->satisfied($field) || $type == self::TYPE_UPDATE) {
+                    if ($this->is_insert() && ! $this->Task->satisfied($field)) {
 
                         $default = $this->Task->defaultValue($field);;
                         if ($this->Task->hasAttribute($field)) {
@@ -115,7 +117,7 @@ class WriteCommand extends Command {
                                         }
                                     }
 
-                                    if ($type !== self::TYPE_UPDATE && (strlen($response) < 1 || is_null($response))) {
+                                    if ($this->is_update() && (strlen($response) < 1 || is_null($response))) {
                                         if ($debug_field_writing) {
                                             debug("\t".'is_UPDATE & $response is null or strlen < 1: set $response to false');
                                         }
@@ -137,7 +139,7 @@ class WriteCommand extends Command {
                                 }
                                 $this->Task->{$field} = $response;
                             }
-//                        } elseif ($type == self::TYPE_UPDATE) {
+//                        } elseif ($this->is_update()) {
 //                            if ($debug_field_writing) {
 ////                                debug("\t" . 'EU: set ' . $field . ' to "' . var_export($default, true) . '"');
 //                            }
@@ -149,7 +151,7 @@ class WriteCommand extends Command {
                             $this->Task->{$field} = $default;
                         }
 
-//                    }
+                    }
                 }
             } while (! $this->Task->valid());
         }
@@ -166,5 +168,13 @@ class WriteCommand extends Command {
         $Command->setData('id', $this->Task->id);
 
         return $Command->run();
+    }
+
+    private function is_update() {
+        return $this->type == self::TYPE_UPDATE;
+    }
+
+    private function is_insert() {
+        return $this->type == self::TYPE_INSERT;
     }
 }

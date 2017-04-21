@@ -106,10 +106,14 @@ class Command {
 		}
 	}
 
-	public static function call($Command) {
-
-        $CancelCommand = new CancelCommand();
-        $CancelCommand->run();
+	public static function call($Command, $decorate = null) {
+	    if (!($Command instanceof Command)) {
+            $Command = new $Command();
+        }
+        if (is_callable($decorate)) {
+            $Command = call_user_func($decorate, $Command);
+        }
+        $Command->run();
     }
 
 	public static function instance($App, $command) {
@@ -441,7 +445,6 @@ class Command {
 	}
 
 	public function setOptions() {
-		$command = $this->name();
 		if (isset(static::$registry)) {
 			$this->Options = new Options(static::$registry, $this);
 		}

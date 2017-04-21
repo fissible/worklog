@@ -7,6 +7,10 @@ class File {
 
     private $is_dir = false;
 
+    protected static $exception_strings = [
+        'file_not_found' => 'No such file or directory'
+    ];
+
 
 	public function __construct($path, $directory = false) {
 		$this->set_path($path);
@@ -43,7 +47,7 @@ class File {
 		if ($this->exists()) {
 			return md5_file($this->path);
 		}
-		throw new \Exception(sprintf('File::hash: "%s": No such file or directory', $this->path));
+		throw new \Exception(sprintf('File::hash: "%s": '.static::$exception_strings['file_not_found'], $this->path));
 	}
 
 	public function set_path($path) {
@@ -52,6 +56,13 @@ class File {
         }
 		$this->path = str_replace(basename($path), static::sanitize(basename($path)), $path);
 	}
+
+	public function lines() {
+	    if ($this->exists()) {
+            return file($this->path, FILE_IGNORE_NEW_LINES);
+        }
+        throw new \Exception(sprintf('File::lines: "%s": '.static::$exception_strings['file_not_found'], $this->path));
+    }
 
 	public function name() {
 		return basename($this->path);
@@ -72,14 +83,18 @@ class File {
         }
     }
 
-	public function write($content = null, $flags = null) {
+	public function write($content = null, $flags = null, $line_glue = '') {
 	    if (is_null($flags)) {
 	        $flags = FILE_APPEND | LOCK_EX;
         }
         if (is_array($content)) {
-            $content = implode('', $content);
+            $content = implode($line_glue, $content);
         }
 	    return file_put_contents($this->path, $content, $flags);
+    }
+
+    public function overwrite($content, $line_glue = '') {
+        return $this->write($content, LOCK_EX, $line_glue);
     }
 
     public function delete() {

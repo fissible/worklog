@@ -62,25 +62,30 @@ class Application {
 		return $this->Command;
 	}
 
-	/**
-	 * JIRA Client getter/setter
-	 */
-	// public function Jira($headers = []) {
-	// 	if (! isset($this->Jira)) {
-	// 		if (isset($this->AtlassianPath)) {
-	// 			$this->Jira = new Jira(JIRA_API_SERVER.'/api/'.JIRA_API_VERSION, $headers, $this->AtlassianPath);
-	// 		} else {
-	// 			$this->Jira = new Jira(JIRA_API_SERVER.'/api/'.JIRA_API_VERSION, $headers);
-	// 		}
-	// 	} elseif (! empty($headers)) {
-	// 		$this->Jira->headers($headers);
-	// 	}
-	// 	return $this->Jira;
-	// }
-
 	public function db() {
 		return $this->db;
 	}
+
+    /**
+     * @return bool|int|string
+     */
+    public static function check_env_file() {
+        $Command = new CommandLine\UpdateEnvCommand();
+        $Command->set_invocation_flag();
+        $Command->setData('query', true);
+
+        return $Command->run();
+    }
+
+    /**
+     * @return bool|int|string
+     */
+    public static function update_env_file() {
+        $Command = new CommandLine\UpdateEnvCommand();
+        $Command->set_invocation_flag();
+
+        return $Command->run();
+    }
 
 	/**
 	 * Return menu lines as an array
