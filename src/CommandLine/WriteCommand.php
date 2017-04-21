@@ -89,7 +89,7 @@ class WriteCommand extends Command {
                 foreach (Task::fields() as $field => $config) {
                     if ($field === $this->Task->getKeyName()) continue;
 
-                    if ($this->is_insert() && ! $this->Task->satisfied($field)) {
+                    if ($this->is_update() || ! $this->Task->satisfied($field)) {
 
                         $default = $this->Task->defaultValue($field);;
                         if ($this->Task->hasAttribute($field)) {

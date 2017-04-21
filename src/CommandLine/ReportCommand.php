@@ -33,8 +33,6 @@ class ReportCommand extends Command {
         'issue_not_found' => 'Issue %s not found'
     ];
 
-    private static $output_line_length = 120;
-
 
     public function run() {
         parent::run();
