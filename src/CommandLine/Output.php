@@ -205,8 +205,6 @@ class Output {
             $aliases = [
                 'top_l' => 'down_right',
                 'top_r' =>'down_left',
-                'hor' => 'hor',
-                'ver' => 'ver',
                 'mid_l' => 'ver_right',
                 'mid_r' => 'ver_left',
                 'bot_l' => 'up_right',
