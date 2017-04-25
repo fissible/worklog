@@ -277,7 +277,7 @@ class Report
      */
     private function setRangeTimes() {
         if (array_key_exists(0, $this->DateRange)) {
-            $this->DateRange[0]->setTime(6, 0);
+            $this->DateRange[0]->setTime(5, 0);
         }
         if (array_key_exists(1, $this->DateRange)) {
             $this->DateRange[1]->endOfDay();
@@ -350,7 +350,10 @@ class Report
         if ($this->DateRange[0]->toDateString() === $this->DateRange[1]->toDateString()) {
             $Query->whereDate('date', $this->DateRange[0]->toDateString());
         } else {
-            $Query->whereBetween('date', [ $this->DateRange[0]->toDatetimeString(), $this->DateRange[1]->toDatetimeString() ]);
+            // $Query->whereBetween('date', [ $this->DateRange[0]->toDatetimeString(), $this->DateRange[1]->toDatetimeString() ]);
+
+            // SqlLite compatible
+            $Query->whereRaw('(DATE(date) <= \''.$this->DateRange[1]->toDateString().'\' AND DATE(date) >= \''.$this->DateRange[0]->toDateString().'\')');
         }
 
         if (isset($this->order_by) && ! empty($this->order_by)) {
