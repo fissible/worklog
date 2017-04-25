@@ -127,7 +127,7 @@ class Output {
     }
 
     public static function color($input, $color, $background_color = false) {
-        $out = ""; $_out = '';
+        $out = "";
 
         if (is_object($input)) {
             $input = json_decode(json_encode($input), true);

@@ -409,9 +409,10 @@ class Report
      * @internal param string $max_metric h=hour, m=minute
      */
     public function table($borderless = false, $max_metric = null) {
+        $variant = 'heavy';
         $DateStart = $this->DateRange[0];
         $DateEnd = $this->DateRange[1];
-        $border = ($borderless ? '' : Output::uchar('ver'));
+        $border = ($borderless ? '' : Output::uchar('ver', $variant));
         $this->last_group = $this->last_date = $this->last_issue = null;
         $pad_length = $this->line_length(4);
 
@@ -426,11 +427,11 @@ class Report
         $this->TotalDuration = new Duration($this->max_metric);
 
         $char['top_right'] = '';
-        $hline = $this->horizontal_line('mid', 'light');
+        $hline = $this->horizontal_line('mid', $variant);
 
         // Print date (or date range)
         if (! $borderless) {
-            Output::line($this->horizontal_line('top', 'light'));
+            Output::line($this->horizontal_line('top', $variant));
         }
         if ($DateStart->toDateString() === $DateEnd->toDateString()) {
             $header = $DateStart->format('l').', '.$DateStart->toFormattedDateString();
@@ -470,7 +471,7 @@ class Report
                     if (! $borderless) {
                         $group_str_length = strlen($group);
                         Output::line(Output::bold($group).' '.$border, $border);
-                        Output::line(Output::uchar('mid_l').str_repeat(Output::uchar('hor'), $group_str_length + 2).Output::uchar('bot_r').str_repeat(' ', ($pad_length - ($group_str_length + 1))).$border);
+                        Output::line(Output::uchar('mid_l', $variant).str_repeat(Output::uchar('hor', $variant), $group_str_length + 2).Output::uchar('bot_r', $variant).str_repeat(' ', ($pad_length - ($group_str_length + 1))).$border);
                     } else {
                         Output::line(Output::bold($group), '');
                     }
@@ -497,7 +498,7 @@ class Report
                 // Print Duration and bottom line
                 Output::line(str_pad($Duration->asString(), $this->line_length() - 4, ' ', STR_PAD_LEFT), $border);
                 if (! $borderless) {
-                    Output::line($this->horizontal_line('mid', 'light'));
+                    Output::line($this->horizontal_line('mid', $variant));
                 }
 
                 if ($group !== $this->last_group) {
@@ -515,7 +516,7 @@ class Report
             Output::line($prefix.str_pad($this->TotalDuration->asString(), ($pad_length - strlen($prefix)), ' ', STR_PAD_LEFT), $border);
 
             if (! $borderless) {
-                Output::line($this->horizontal_line('bot', 'light'));
+                Output::line($this->horizontal_line('bot', $variant));
             }
         }
 
