@@ -35,7 +35,7 @@ class ReportCommand extends Command {
         'date', 'issue'
     ];
 
-    protected static $default_group_key = 'issue';
+    protected static $default_group_key = 'date';
 
     protected static $exception_strings = [
         'issue_not_found' => 'Issue %s not found',
