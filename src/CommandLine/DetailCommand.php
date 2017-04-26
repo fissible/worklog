@@ -4,6 +4,7 @@ namespace Worklog\CommandLine;
 use Carbon\Carbon;
 use Worklog\Models\Task;
 use Worklog\Services\TaskService;
+use Worklog\Str;
 
 /**
  * Created by PhpStorm.
@@ -34,17 +35,19 @@ class DetailCommand extends Command {
         $id = $this->expectData('id', static::$exception_strings['invalid_argument'])->getData('id');
 
         if (is_numeric($id)) {
-            $Task = Task::findOrFail($id);
-
-            Output::set_line_length(static::$output_line_length);
-            $border = '|';
-            $Date = Carbon::parse($Task->date);
-            $Today = Carbon::today();
-            $id = str_pad($Task->id, min((strlen($Task->id) + 1), 7));
-            $hline = '+'.str_repeat('-', static::$output_line_length - 2).'+';
+            $variant = 'heavy';
+            $border = output::uchar('ver', $variant);
             $period_duration = [];
             $duration_length = 0;
+            $Today = Carbon::today();
+            $Task = Task::findOrFail($id);
+            $Date = Carbon::parse($Task->date);
+            $id = str_pad($Task->id, min((strlen($Task->id) + 1), 7));
 
+            if (isset(static::$output_line_length)) {
+                Output::set_line_length(static::$output_line_length);
+            }
+            Output::set_variant($variant);
 
             if ($Task->start && $Task->stop) {
                 if ($Today->toDateString() === $Date->toDateString()) {
@@ -56,29 +59,34 @@ class DetailCommand extends Command {
             }
 
             if ($Task->duration) {
-                $pad_length = (static::$output_line_length - $duration_length) - 4;
+                $pad_length = (Output::line_length() - $duration_length) - 4;
                 $period_duration[] = str_pad($Task->duration_string, $pad_length, ' ', STR_PAD_LEFT);
             }
 
-            Output::line($hline);
+            Output::line(Output::horizontal_line('top'));
             Output::line($id.' | '.($Task->issue ?: ''), $border);
-            Output::line($hline);
+            Output::line(Output::horizontal_line('mid'));
             Output::line($Task->description, $border);
-            Output::line($hline);
+            Output::line(Output::horizontal_line('mid'));
             Output::line(implode('', $period_duration), $border);
-            Output::line($hline);
+            Output::line(Output::horizontal_line('bot'));
 
+            // Show raw data table
             if (DEVELOPMENT_MODE) {
+                Output::set_variant('light');
+
                 $attributes = $Task->attributesToArray();
                 $display_headers = $Task->display_headers();
                 $headers = [];
+
                 foreach ($attributes as $key => $val) {
                     if (array_key_exists($key, $display_headers)) {
                         $headers[] = $display_headers[$key];
                     } else {
-                        $headers[] = ucwords($key);
+                        $headers[] = Str::title($key);
                     }
                 }
+
                 print Output::data_grid($headers, [ array_values($attributes) ]);
             }
 

@@ -508,6 +508,38 @@ static::set_variant($variant_default);
         return $left . str_repeat($horizontal, $length - (mb_strlen($left) + mb_strlen($right))) . $right;
     }
 
+    private static function calculate_column_widths($lengths = [], $data_array, $max_width) {
+        $has_unspecified_width = false;
+
+        foreach ($lengths as $lkey => $length) {
+            if (is_null($length)) {
+                $has_unspecified_width = true;
+                break;
+            }
+        }
+
+        // Get max lengths
+        foreach ($data_array as $rowkey => $row) {
+            foreach ($row as $colkey => $cell_value) {
+                $length = mb_strlen($cell_value);
+
+                if (! isset($lengths[$colkey]) || $length > $lengths[$colkey]) {
+                    $lengths[$colkey] = $length;
+                }
+            }
+        }
+
+        $total_max_width = array_sum($lengths);
+
+        if ($total_max_width > $max_width) {
+            foreach ($lengths as $key => $length) {
+                $lengths[$key] = floor(($length / $total_max_width) * 100);
+            }
+        }
+
+        return $lengths;
+    }
+
     /**
      * Format an array of data into an ASCII grid
      * @param  array $headers An array of column header strings
@@ -523,78 +555,19 @@ static::set_variant($variant_default);
             $has_unspecified_width = false;
             $header_count = count($headers);
             $row_strings = $template_cols = $unspecified_width_keys = [];
-            $border = static::$allow_unicode ? Output::uchar('ver') : '|';
+            $border = static::uchar('ver');
+
             $max_line_length = ($max_width ?: static::$line_length);
             $max_col_width = floor($max_line_length / ($header_count ?: 1));
             $lengths = (is_array($template) ? $template : []);
 
-//        static::set_config('allow_unicode', true);
-//        static::set_config('line_length', $size * 2);
-//        static::set_config('variant', $variant);
 
             if (empty($template) || is_array($template)) {
-                if (empty($lengths)) {
-                    foreach ($headers as $hkey => $header) {
-                        $length = mb_strlen($header);
-                        foreach ($rows as $rkey => $rvalue) {
-                            if (isset($rvalue[$hkey])) {
-                                $value_length = mb_strlen($rvalue[$hkey]);
-                                if ($value_length > $length) {
-                                    $length = $value_length;
-                                }
-                            }
-                        }
-
-                        if ($length > $max_col_width) {
-                            $length = $max_col_width;
-                        }
-                        $lengths[$hkey] = $length;
-                    }
-                }
-            }
-
-            foreach ($lengths as $lkey => $length) {
-                if (is_null($length)) {
-                    $has_unspecified_width = true;
-                    break;
-                } elseif (isset($headers[$lkey]) && mb_strlen($headers[$lkey]) > $length) {
-                    $lengths[$lkey] = mb_strlen($headers[$lkey]);
-                }
-            }
-
-            if (count($lengths) > 0 && ($has_unspecified_width || count($lengths) < count($headers))) {
-                $total_length = 0;
-
-                foreach ($headers as $hkey => $header) {
-                    if (! isset($lengths[$hkey]) || is_null($lengths[$hkey])) {
-                        // $lengths[$hkey] = mb_strlen($header);
-                        $unspecified_width_keys[] = $hkey;
-                    } else {
-                        $total_length += $lengths[$hkey];
-                    }
-                }
-                if ($total_length < $max_line_length && count($unspecified_width_keys)) {
-                    $remaining_width = $max_line_length - $total_length;
-                    $max_col_width = floor($remaining_width / count($unspecified_width_keys));
-
-                    foreach ($unspecified_width_keys as $ukey => $key) {
-                        $length = mb_strlen($headers[$key]);
-                        foreach ($rows as $rkey => $rvalue) {
-                            if (isset($rvalue[$key])) {
-                                $value_length = mb_strlen($rvalue[$key]);
-                                if ($value_length > $length) {
-                                    $length = $value_length;
-                                }
-                            }
-                        }
-
-//					if ($length > $max_col_width) { // what's this do?
-//						$length = $max_col_width;
-//					}
-
-                        $lengths[$key] = $max_col_width;
-                    }
-                }
+//                if (empty($lengths)) {
+                    $data_array = $rows;
+                    $data_array[] = $headers;
+                    $lengths = static::calculate_column_widths($lengths, $data_array, $max_line_length);
+//                }
             }
 
             foreach ($lengths as $lkey => $length) {
@@ -602,6 +575,16 @@ static::set_variant($variant_default);
             }
 
             $template = $border.' '.implode(' '.$border.' ', $template_cols).' '.$border;
+
+            // fix header spacing? - nope, still brokey
+            if (! empty($lengths)) {
+                foreach ($headers as $key => $header) {
+                    if (isset($lengths[$key]) && is_numeric($lengths[$key]) && $lengths[$key] > 0) {
+                        $headers[$key] = static::str_shorten($header, $lengths[$key]);
+                    }
+                }
+            }
+
             $header_row = vsprintf($template, $headers);
             $strlen = mb_strlen($header_row);
             $hline = '+'.str_repeat('-', $strlen - 2).'+';
@@ -632,8 +615,6 @@ static::set_variant($variant_default);
             $row_strings[] = $hlinebot;
             $grid = implode("\n", $row_strings);
         }
-
-//        static::reset_config();
 
 		return $grid;
 	}
