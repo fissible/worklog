@@ -130,30 +130,38 @@ class Report
                 $prefix = str_pad($data['time'], 21, ' ', STR_PAD_RIGHT);
             }
         } else {
+            if (array_key_exists($group_by, $data) && strlen($data[$group_by]) > 0) {
+                $label = '';
+                $minimum_string_length = 0;
 
-            //  GROUP BY Issue, [ Date ]
-            if ($group_by == 'issue') {
-                if (strlen($data['date']) > 1) {
-                    $date = '['.$data['date'].']';
-                    $date_string_length = strlen($date);
-                    $minimum_string_length = ($this->rangeInDays() < 7 ? 12 : 15);
-                    $prefix = str_repeat(' ', $minimum_string_length);
+                //  GROUP BY Issue, [ Date ]
+                if ($group_by == 'issue' && array_key_exists('date', $data)) {
+                    $label = '['.$data['date'].']';
+                    $minimum_string_length = $this->rangeInDays() < 7 ? 11 : 14;
 
-                    if (! $this->same_iteration_values($data, $group)) {
-                        $prefix = $date.str_repeat(' ', $minimum_string_length - $date_string_length);
-                    }
+                    //  GROUP BY Date, [ Issue ]
+                } elseif ($group_by == 'date' && array_key_exists('issue', $data) && strtoupper($data['issue']) !== self::NO_GROUP_KEY_FLAG) {
+                    $label = '['.$data['issue'].']';
+                    $minimum_string_length = 9;
                 }
 
-            //  GROUP BY Date, [ Issue ]
-            } elseif ($group_by == 'date') {
-                if ($this->same_iteration_values($data, $group)) {
-                    if (strtoupper($data['issue']) !== self::NO_GROUP_KEY_FLAG) {
-                        $prefix = str_repeat(' ', strlen($data['issue']) + 2);
-                    }
-                } else {
-                    if (strtoupper($data['issue']) !== self::NO_GROUP_KEY_FLAG) {
-                        $group_strlen = isset($data['issue']) ? strlen($data['issue']) + 2 : 12;
-                        $prefix = '['.$data['issue'].']'.str_repeat(' ', $group_strlen - strlen($data['issue']));
+                $label_string_length = strlen($label);
+
+                if ($label_string_length) {
+                    $minimum_string_length = max($minimum_string_length, $label_string_length);
+
+                    if ($minimum_string_length > 0) {
+                        switch($this->same_iteration_values($data, $group)) {
+                            case true:
+                                $prefix = str_repeat(' ', $minimum_string_length);
+                                break;
+                            case false:
+                                $prefix = str_repeat(' ', $minimum_string_length - $label_string_length).$label;
+                                break;
+                            default:
+                                break;
+                        }
+                        $prefix .= ' ';
                     }
                 }
             }
@@ -174,7 +182,7 @@ class Report
 
         switch ($key) {
             case 'date':
-                if ($array_key_exists) {
+                if ($array_key_exists && $data['date'] instanceof Carbon) {
                     if ($this->rangeInDays() < 7) {
                         $new_value = $data['date']->format('l'); // Wednesday -> 9
                     } else {
@@ -237,11 +245,8 @@ class Report
      * @return Report
      */
     public function forLastWeek() {
-        $this->setStartDate();
-        $this->setEndDate();
-
-        $this->DateRange[0]->subWeek();
-        $this->DateRange[1]->subWeek();
+        $this->DateRange[0] = Carbon::today()->startOfWeek()->subWeek();
+        $this->DateRange[1] = Carbon::today()->endOfWeek()->subDay()->subWeek();
 
         return $this->setRangeTimes();
     }
@@ -482,11 +487,15 @@ class Report
                     $Duration->add($_data['duration']);
                     $this->TotalDuration->add($_data['duration']);
 
+                    if ($group !== $this->last_group) {
+                        $this->last_group = $group;
+                        $this->last_issue = null;
+                        $this->last_date = null;
+                    }
+
                     // empty line between entries
-                    if ($key > 0) {
-                        if (! $this->same_iteration_values($_data, $group)) {
-                            Output::line('', $border);
-                        }
+                    if (false === $this->same_iteration_values($_data, $group)) {
+                        Output::line('', $border);
                     }
 
                     Output::line($this->formatEntity($_data, $group), $border);
@@ -499,12 +508,6 @@ class Report
                 Output::line(str_pad($Duration->asString(), $this->line_length() - 4, ' ', STR_PAD_LEFT), $border);
                 if (! $borderless) {
                     Output::line($this->horizontal_line('mid', $variant));
-                }
-
-                if ($group !== $this->last_group) {
-                    $this->last_group = $group;
-                    $this->last_issue = null;
-                    $this->last_date = null;
                 }
             }
         } // EOF foreach (grouped/ungrouped data)
@@ -526,28 +529,40 @@ class Report
     /**
      * @param $data
      * @param null $group
-     * @return bool
+     * @return bool|null
      */
     private function same_iteration_values($data, $group = null) {
         $same = true;
 
-        if (! is_null($this->group_by) && ! is_null($this->last_group) && $group !== $this->last_group) {
+        if (! is_null($group) && ! is_null($this->last_group) && $group !== $this->last_group) {
             $same = false;
         }
 
         if ($same) {
             switch ($this->group_by) {
                 case 'issue':
-                    if ($data['date'] instanceof Carbon) {
-                        $data['date'] = $this->formatEntityField($data, 'date', $group);
-                    }
-                    if ($data['date'] !== $this->last_date) {
-                        $same = false;
+                    if (! is_null($this->last_date)) {
+                        $date = $data['date'];
+                        if ($data['date'] instanceof Carbon) {
+                            $date = $this->formatEntityField($data, 'date', $group);
+                        }
+
+                        if ($date !== $this->last_date) {
+                            $same = false;
+                        }
+                    } else {
+                        $same = null;
                     }
                     break;
-                case 'date': // @todo: remove
-                    if ($data['issue'] !== $this->last_issue) {
-                        $same = false;
+                case 'date':
+                    if (! is_null($this->last_issue)) {
+                        $issue = $data['issue'];
+
+                        if ($issue !== $this->last_issue) {
+                            $same = false;
+                        }
+                    } else {
+                        $same = null;
                     }
                     break;
             }
@@ -559,24 +574,16 @@ class Report
     /**
      * @param $data
      * @param null $group
+     * @return $this
      */
     private function update_iteration_values($data, $group = null) {
-        if (isset($this->group_by) && $group !== $this->last_group && ! is_null($this->last_group)) {
-            $this->last_issue = null;
-            $this->last_date = null;
-        } else {
-            if ($data['date'] instanceof Carbon) {
-                $data['date'] = $this->formatEntityField($data, 'date', $group);
-            }
-
-            if ($data['date'] !== $this->last_date) {
-                $this->last_date = $data['date'];
-            }
-
-            if ($data['issue'] !== $this->last_issue) {
-                $this->last_issue = $data['issue'];
-            }
+        if ($data['date'] instanceof Carbon) {
+            $data['date'] = $this->formatEntityField($data, 'date', $group);
         }
+        $this->last_date = $data['date'];
+        $this->last_issue = $data['issue'];
+
+        return $this;
     }
 
     /**

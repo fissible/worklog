@@ -85,7 +85,7 @@ class ReportCommand extends Command {
             $Report->forDate($DateStart, $DateEnd);
 
             if (! $group_by_overidden) {
-                $Report->groupBy('issue');
+                $Report->groupBy('date');
             }
 
         // Report for last week
