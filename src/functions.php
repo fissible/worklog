@@ -50,13 +50,13 @@ function caller($key = null, $index = 0) {
     return $caller;
 }
 
-function debug($input, $internally_invoked = false) {
+function debug($input, $color = 'yellow', $internally_invoked = false) {
     if (DEVELOPMENT_MODE) {
-        $bordr = Output::color(' ', '', 'yellow');
+        $bordr = Output::color(' ', '', $color);
         $width = Output::cols() / 2;
 
         if (! $internally_invoked) {
-            Output::line(Output::color(' DEBUG  '.caller('file:line', 1), 'yellow'), $bordr, $width);
+            Output::line(Output::color(' DEBUG  '.caller('file:line', 1), $color), $bordr, $width);
         }
         if (is_object($input)) {
             $input = json_decode(json_encode($input), true);
@@ -66,7 +66,7 @@ function debug($input, $internally_invoked = false) {
             $input = explode("\n", $input);
             foreach ($input as $str) {
                 if (! empty($str)) {
-                    debug($str, true);
+                    debug($str, $color, true);
                 }
             }
         } elseif (! empty($input)) {
