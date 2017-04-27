@@ -318,8 +318,8 @@ class Options implements \ArrayAccess {
 					}
 				}
 				$argv = array_values($argv);
-				$args = $this->parse_args(implode(' ', $argv));
-				// $args = $this->parse_args($argv);
+//				$args = $this->parse_args(implode(' ', $argv));
+				 $args = $this->parse_args($argv);
 
 				if (count($args) > 0) {
 					// Initialize Option instances and set values
