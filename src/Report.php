@@ -420,6 +420,7 @@ class Report
         $border = ($borderless ? '' : Output::uchar('ver', $variant));
         $this->last_group = $this->last_date = $this->last_issue = null;
         $pad_length = $this->line_length(4);
+        $rows_output = 0;
 
         if (! is_null($max_metric)) {
             $this->max_metric = $max_metric;
@@ -463,6 +464,7 @@ class Report
                 $this->TotalDuration->add($data['duration']);
 
                 Output::line($this->formatEntity($data), $border);
+                $rows_output++;
 
                 $this->update_iteration_values($data);
 
@@ -505,15 +507,21 @@ class Report
                 /////////////////////////////
 
                 // Print Duration and bottom line
-                Output::line(str_pad($Duration->asString(), $this->line_length() - 4, ' ', STR_PAD_LEFT), $border);
-                if (! $borderless) {
-                    Output::line($this->horizontal_line('mid', $variant));
+                if (count($data) > 1 || count($this->data) > 1) {
+                    Output::line(str_pad($Duration->asString(), $this->line_length() - 4, ' ', STR_PAD_LEFT), $border);
+                    if (! $borderless) {
+                        Output::line($this->horizontal_line('mid', $variant));
+                    }
+                } else {
+                    Output::line('', $border);
                 }
+
+                $rows_output++;
             }
         } // EOF foreach (grouped/ungrouped data)
 
         // Print Total Duration
-        if (count($this->data) > 0) {
+        if ($rows_output > 0) {
             Output::line(($borderless ? '' : $hline));
             $prefix = 'Total Duration:';
             Output::line($prefix.str_pad($this->TotalDuration->asString(), ($pad_length - strlen($prefix)), ' ', STR_PAD_LEFT), $border);
