@@ -72,17 +72,16 @@ class Command {
 		if (is_null($constructor)) {
             return new $concrete();
         }
-//		if (! isset($parameters[0]) || ! $parameters[0] instanceof Application) {
-//			array_unshift($parameters, $App);
-//		}
+
         return $reflector->newInstanceArgs($parameters);
 	}
 
-	/**
-	 * Register a Command class to a string command
-	 * @param  string $command The command line string name, eg. "list"
-	 * @param  array  $config  The command configuration array
-	 */
+    /**
+     * Register a Command class to a string command
+     * @param $commands
+     * @param  array $config The command configuration array
+     * @internal param string $command The command line string name, eg. "list"
+     */
 	public static function bind($commands, $config = []) {
 		if (! is_array($commands)) $commands = [ $commands ];
 		if (! is_array($config)) $config = [ 'class' => $config ];
@@ -366,6 +365,9 @@ class Command {
 	}
 
 	public function run() {
+	    if (method_exists($this, 'init')) {
+	        $this->init();
+        }
         if ($args = func_get_args()) {
             foreach (args as $name) {
                 $this->expectData($name);

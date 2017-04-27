@@ -103,15 +103,15 @@ class Option {
 		return (!is_null($is_required) ? ($is_required ? ':' : '::') : '');
 	}
 
-	
 
-	/**
-	 * Get/set a config value to the configuration array.
-	 * @param string $key     [description]
-	 * @param string $value   [description]
-	 * @param string $default   [description]
-	 * @param mixed
-	 */
+    /**
+     * Get/set a config value to the configuration array.
+     * @param string $key [description]
+     * @param string $value [description]
+     * @param string $default [description]
+     * @param mixed
+     * @return $this|array|mixed|null|string
+     */
 	protected function config($key = null, $value = null, $default = null) {
 		$config = $this->config;
 		if (! is_null($key)) {
