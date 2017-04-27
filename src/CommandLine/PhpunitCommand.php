@@ -18,25 +18,38 @@ class PhpunitCommand extends Command
 //    public $command_name;
 
     public static $description = 'Run unit tests';
-    public static $options = [
-//        'bootstrap' => ['req' => true, 'description' => 'Include a file before test execution'],
-//        'i' => ['req' => true, 'description' => 'The JIRA Issue key'],
-    ];
+    public static $options = [];
     public static $arguments = [];
     public static $menu = true;
 
     private $phpunit_binary;
 
-    public function run() {
-        parent::run();
+    private $config_file = 'phpunit.xml';
 
-        debug($this->Options()->args());
-        debug($this->Options()->all());
-
-        exec($this->phpunit_binary.' -v'." > `tty`");
-    }
 
     protected function init() {
         $this->phpunit_binary = VENDOR_PATH.'/bin/phpunit';
+        if ($config_file = $this->option('configuration')) {
+            $this->config_file = $config_file;
+        }
+    }
+
+    public function run() {
+        parent::run();
+
+        // debug($this->Options()->args()); // arguments
+        // debug($this->Options()->all());  // flags
+        $args = $this->Options()->args();
+        $flags = $this->Options()->all();
+
+        $command = [];
+        $command[] = $this->phpunit_binary;
+        $command[] = '--configuration="'.dirname(APPLICATION_PATH).'/tests/'.$this->config_file.'"';
+//        $command[] = '--verbose';
+//        $command[] = '--debug';
+        $command = array_merge($command, $flags);
+        $command = array_merge($command, $args);
+
+        $this->raw($command);
     }
 }

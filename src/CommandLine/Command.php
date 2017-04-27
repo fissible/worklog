@@ -356,13 +356,27 @@ class Command {
 	public function option($name, $flag = null) {
 		$name = ltrim($name, '-');
 		if ($Options = $this->Options()) {
-			if ($flag !== false && $Options->Option($name)->is_flag()) {
-				return $Options->exist($name)/* || (bool) $this->getData($name)*/;
-			} else {
-				return $Options->Option($name)->value()/* || $this->getData($name)*/;
-			}
+		    if ($Options->Option($name)) {
+                if ($flag !== false && $Options->Option($name)->is_flag()) {
+                    return $Options->exist($name)/* || (bool) $this->getData($name)*/;
+                } else {
+                    return $Options->Option($name)->value()/* || $this->getData($name)*/;
+                }
+            }
 		}
 	}
+
+	public function raw($command) {
+	    if (is_array($command)) {
+	        $command = implode(' ', $command);
+        }
+
+        if (false === strpos($command, 'tty')) {
+            $command .= ' > `tty`';
+        }
+
+        return exec($command);
+    }
 
 	public function run() {
 	    if (method_exists($this, 'init')) {

@@ -23,6 +23,14 @@
       "Worklog\\": "src/"
     }
   },
+  "autoload-dev": {
+    "classmap": [
+      "tests/BaseTest.php"
+    ],
+    "psr-4": {
+      "Tests\\": "tests/"
+    }
+  },
   "require-dev": {
     "phpunit/phpunit": "^5.7"
   }
