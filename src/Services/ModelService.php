@@ -56,7 +56,7 @@ class ModelService extends Service
 
     public static function primary_key() {
         $Model = static::Model();
-        return $Model::$primary_key_field;
+        return $Model->getKeyName();
     }
 
     public function display_headers() {
