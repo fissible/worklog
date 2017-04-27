@@ -13,16 +13,17 @@ date_default_timezone_set('America/Los_Angeles');
 
 include(__DIR__.'/functions.php');
 
-$app_dir = dirname(__DIR__);
+define('APPLICATION_PATH', __DIR__);
+$app_dir = dirname(APPLICATION_PATH);
+define('VENDOR_PATH', $app_dir.'/vendor');
 $cache_dir = '/'.trim((getenv('CACHE_DIRECTORY') ?: 'cache'), '/');
 $script = (isset($argv) ? ltrim(ltrim(basename($argv[0], '.'), '/')) : basename(__FILE__));
-$loader = require($app_dir.'/vendor/autoload.php');
+$loader = require(VENDOR_PATH.'/autoload.php');
 $dotenv = new Dotenv\Dotenv($app_dir);
 $dotenv->load();
 
 define('MINIMUM_PHP_VERSION', '5.5.0');
 
-define('APPLICATION_PATH', __DIR__);
 define('CACHE_PATH', $app_dir.$cache_dir);
 define('DATABASE_PATH', dirname(APPLICATION_PATH).'/database');
 define('DATABASE_MIGRATIONS', DATABASE_PATH.'/migrations');
@@ -60,6 +61,7 @@ Command::bind('stop', 'Worklog\CommandLine\StopCommand');
 Command::bind('help', 'Worklog\CommandLine\UsageCommand');
 Command::bind('today', 'Worklog\CommandLine\TodayCommand');
 Command::bind('start', 'Worklog\CommandLine\StartCommand');
+Command::bind('test', 'Worklog\CommandLine\PhpunitCommand');
 Command::bind('env', 'Worklog\CommandLine\UpdateEnvCommand');
 Command::bind('detail', 'Worklog\CommandLine\DetailCommand');
 Command::bind('delete', 'Worklog\CommandLine\DeleteCommand');
