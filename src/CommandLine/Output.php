@@ -552,37 +552,24 @@ static::set_variant($variant_default);
 		$grid = '';
 
         if (count($rows) > 0) {
-            $has_unspecified_width = false;
-            $header_count = count($headers);
             $row_strings = $template_cols = $unspecified_width_keys = [];
             $border = static::uchar('ver');
-
             $max_line_length = ($max_width ?: static::$line_length);
-            $max_col_width = floor($max_line_length / ($header_count ?: 1));
             $lengths = (is_array($template) ? $template : []);
 
 
-            if (empty($template) || is_array($template)) {
-//                if (empty($lengths)) {
-                    $data_array = $rows;
-                    $data_array[] = $headers;
-                    $lengths = static::calculate_column_widths($lengths, $data_array, $max_line_length);
-//                }
+            if (empty($lengths)) {
+                $data_array = $rows;
+                $data_array[] = $headers;
+                $lengths = static::calculate_column_widths($lengths, $data_array, $max_line_length);
             }
 
-            foreach ($lengths as $lkey => $length) {
-                $template_cols[] = sprintf('%%-%ds', $length);
-            }
-
-            $template = $border.' '.implode(' '.$border.' ', $template_cols).' '.$border;
-
-            // fix header spacing? - nope, still brokey
-            if (! empty($lengths)) {
-                foreach ($headers as $key => $header) {
-                    if (isset($lengths[$key]) && is_numeric($lengths[$key]) && $lengths[$key] > 0) {
-                        $headers[$key] = static::str_shorten($header, $lengths[$key]);
-                    }
+            if (! is_string($template)) {
+                foreach ($lengths as $lkey => $length) {
+                    $template_cols[] = sprintf('%%-%ds', $length);
                 }
+
+                $template = $border.' '.implode(' '.$border.' ', $template_cols).' '.$border;
             }
 
             $header_row = vsprintf($template, $headers);

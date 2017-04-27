@@ -42,6 +42,8 @@ class StartCommand extends Command {
         $this->Task = new Task();
         $TaskData = new \stdClass;
         $last_index = 0;
+        $cache_key = self::CACHE_TAG;
+        $can_have_multiple_started = false;
 
         $RecoverCommand = new RecoverCommand();
         $RecoverCommand->set_invocation_flag();
@@ -53,14 +55,18 @@ class StartCommand extends Command {
         }
 
         // Get the latest cache index (should always be 1 with the RecoverCommand running first)
-        if ($cached_start_times = $this->App()->Cache()->load_tags(self::CACHE_TAG)) {
-            foreach ($cached_start_times as $name => $file) {
-                $parts = explode(self::CACHE_NAME_DELIMITER, $name);
-                if ($parts[1] > $last_index) {
-                    $last_index = $parts[1];
+        if ($can_have_multiple_started) {
+            if ($cached_start_times = $this->App()->Cache()->load_tags(self::CACHE_TAG)) {
+                foreach ($cached_start_times as $name => $file) {
+                    $parts = explode(self::CACHE_NAME_DELIMITER, $name);
+                    if ($parts[1] > $last_index) {
+                        $last_index = $parts[1];
+                    }
                 }
             }
+            $cache_key .= self::CACHE_NAME_DELIMITER.($last_index + 1);
         }
+
 
         // issue key
         if (($issue = $this->option('i', false)) || ($issue = $this->getData('issue'))) {
@@ -76,10 +82,7 @@ class StartCommand extends Command {
         $TaskData->start = $this->Task->defaultValue('start');
 
         $start_time = $this->App()->Cache()->data(
-            self::CACHE_TAG.self::CACHE_NAME_DELIMITER.($last_index + 1),
-            $TaskData,
-            [ self::CACHE_TAG ],
-            $Now->diffInSeconds($Expiry)
+            $cache_key, $TaskData, [ self::CACHE_TAG ], $Now->diffInSeconds($Expiry)
         )->start;
 
         return 'New task started at '.Str::time($start_time);

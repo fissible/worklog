@@ -38,18 +38,19 @@ class RecoverCommand extends Command {
 
                     if ($Task->date->lt($Today)) {
                         $prompt = sprintf(
-                            'Complete work item%s started on %s at %s',
+                            'Complete work item %s started on %s at %s',
                             $Task->description_summary,
                             $Task->date->toFormattedDateString(),
                             $Task->start_time
                         );
                     } else {
                         $prompt = sprintf(
-                            'Complete work item%s started at %s',
+                            'Complete work item %s started at %s',
                             $Task->description_summary,
                             $Task->start_time
                         );
                     }
+                    $prompt = preg_replace('/\s+', ' ', $prompt);
 
                     if (! Input::confirm($prompt, $stop_task)) {
                         $stop_task = false;

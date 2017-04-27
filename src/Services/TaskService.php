@@ -67,7 +67,7 @@ class TaskService extends ModelService {
     }
 
     public static function cached($disable_purge = false) {
-        $last_index = 0;
+        $last_index = 1;
         $cache_name = null;
         $filename = null;
         $Task = false;
@@ -80,9 +80,14 @@ class TaskService extends ModelService {
         // Get the latest index
         if ($cached_start_times = $Cache->load_tags(self::CACHE_TAG)) {
             foreach ($cached_start_times as $name => $file) {
-                $parts = explode('_', $name);
-                if ($parts[1] > $last_index) {
-                    $last_index = $parts[1];
+                if (false !== strpos($name, '_')) {
+                    $parts = explode('_', $name);
+                    if ($parts[1] > $last_index) {
+                        $last_index = $parts[1];
+                        $cache_name = $name;
+                        $filename = $file;
+                    }
+                } else {
                     $cache_name = $name;
                     $filename = $file;
                 }

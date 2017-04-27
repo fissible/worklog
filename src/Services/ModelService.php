@@ -174,6 +174,7 @@ class ModelService extends Service
         $row_data = $col_widths = $headers = [];
         $display_headers = static::display_headers();
         $num_headers = count($display_headers);
+        $lengths = [3, 7, 55, 10, 8, 8, 14];
 
         foreach ($records as $task_id => $Record) {
             $data = [];
@@ -196,9 +197,21 @@ class ModelService extends Service
                     $data[$name] = preg_replace('/\s+/', ' ', $value);
                 }
             }
-            $row_data[] = array_values($data);
+            $row = array_values($data);
+
+            // ID
+            if (mb_strlen($row[0]) > $lengths[0]) {
+                $lengths[0] = mb_strlen($row[0]);
+            }
+
+            // Issue
+            if (mb_strlen($row[1]) > $lengths[1]) {
+                $lengths[1] = mb_strlen($row[1]);
+            }
+
+            $row_data[] = $row;
         }
 
-        return Output::data_grid(array_values($headers), $row_data, array_values($col_widths));
+        return Output::data_grid(array_values($headers), $row_data, $lengths, 200);
     }
 }

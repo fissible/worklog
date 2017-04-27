@@ -225,7 +225,7 @@ class Task extends Model
      */
     public function getStartTimeStringAttribute() {
         if ($this->hasAttribute('start') && $this->hasAttribute('date')) {
-            return Carbon::parse(substr($this->attributes['date'], 0, 10).' '.$this->attributes['start'])->toTimeString();
+            return $this->getStartDatetimeAttribute()->toTimeString();
         }
     }
 
@@ -234,7 +234,7 @@ class Task extends Model
      */
     public function getStopTimeStringAttribute() {
         if ($this->hasAttribute('stop') && $this->hasAttribute('date')) {
-            return Carbon::parse(substr($this->attributes['date'], 0, 10).' '.$this->attributes['stop'])->toTimeString();
+            return $this->getStopDatetimeAttribute()->toTimeString();
         }
     }
 
@@ -267,8 +267,18 @@ class Task extends Model
      * @return string eg. '4:15 pm'
      */
     public function getStopTimeAttribute() {
-        if ($this->hasAttribute('stop')) {
-            return $this->getStopStringAttribute();
+        return $this->getStopStringAttribute();
+    }
+
+    public function getStartDatetimeAttribute() {
+        if ($this->hasAttribute('start') && $this->hasAttribute('date')) {
+            return Carbon::parse(substr($this->attributes['date'], 0, 10).' '.$this->attributes['start']);
+        }
+    }
+
+    public function getStopDatetimeAttribute() {
+        if ($this->hasAttribute('stop') && $this->hasAttribute('date')) {
+            return Carbon::parse(substr($this->attributes['date'], 0, 10).' '.$this->attributes['stop']);
         }
     }
 
@@ -390,7 +400,9 @@ class Task extends Model
             switch ($field) {
                 case 'start':
                     if ($LastTask = $this->lastTask()) {
-                        $default = $LastTask->stop;
+                        if ($LastTask->stop_datetime->diffInMinutes() < 10) {
+                            $default = $LastTask->stop;
+                        }
                     }
                     break;
                 case 'stop':
@@ -400,16 +412,9 @@ class Task extends Model
 
                         // if stop is not after start
                         if ($stop_datetime->lt($start_datetime)) {
-                            if ($this->date->isToday()) {
 
-                                // if the start is in the future, adjust stop to be one hour after
-                                if ($start_datetime->gt(Carbon::now())) {
-                                    $stop_datetime = $start_datetime->copy();
-                                    $stop_datetime->hour += 1;
-                                    $default = $stop_datetime->format('H:i');
-                                }
-                            } else {
-                                // Task not today, stop is start plus one hour
+                            // Task not today, stop is start plus one hour
+                            if (! $this->date->isToday() || $start_datetime->gt(Carbon::now())) {
                                 $stop_datetime = $start_datetime->copy();
                                 $stop_datetime->hour += 1;
                                 $default = $stop_datetime->format('H:i');

@@ -33,6 +33,7 @@ class CancelCommand extends Command {
 
         $deleted = false;
         $filename = null;
+        $return = false;
 
         list($filename, $Task) = TaskService::cached(true);
 
@@ -40,13 +41,20 @@ class CancelCommand extends Command {
             if (! is_null($filename)) {
                 $deleted = $this->App()->Cache()->clear($filename);
             }
-            if (IS_CLI && $deleted) {
-                printl('Log entry canceled.');
-            }
         } else {
             throw new \Exception(static::$exception_strings['not_found']);
         }
 
-        return $deleted;
+        if (IS_CLI) {
+            if ($deleted) {
+                $return = 'Log entry canceled.';
+            } else {
+                $return = 'Error deleting log entry.';
+            }
+        } else {
+            $return = $deleted;
+        }
+
+        return $return;
     }
 }
