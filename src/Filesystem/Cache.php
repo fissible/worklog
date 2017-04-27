@@ -137,7 +137,6 @@ class Cache {
 	public function data($name, $new_data = null, $tags = [], $expires_in_seconds = 0) {
 		$data = $this->load($name);
 		if (is_null($data) && ! is_null($new_data)) {
-            debug('CACHE MISS: '.$name);
 			$data = $new_data;
 			$expiry = intval(! $expires_in_seconds ?: strtotime('now') + $expires_in_seconds);
 
@@ -159,9 +158,6 @@ class Cache {
 				$this->write($name, compact([ 'name', 'data', 'expiry', 'tags' ]));
 				$this->register($name);
 			}
-		} else {
-			// if (DEVELOPMENT_MODE && IS_CLI) print 'CACHE HIT: '.$name."\n";
-            debug('CACHE HIT: '.$name);
 		}
 		return $data;
 	}

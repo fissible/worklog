@@ -50,7 +50,7 @@ class RecoverCommand extends Command {
                             $Task->start_time
                         );
                     }
-                    $prompt = preg_replace('/\s+', ' ', $prompt);
+                    $prompt = preg_replace('/\s+/', ' ', $prompt);
 
                     if (! Input::confirm($prompt, $stop_task)) {
                         $stop_task = false;
