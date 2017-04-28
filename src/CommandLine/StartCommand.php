@@ -85,6 +85,6 @@ class StartCommand extends Command {
             $cache_key, $TaskData, [ self::CACHE_TAG ], $Now->diffInSeconds($Expiry)
         )->start;
 
-        return 'New task started at '.Str::time($start_time);
+        return 'New task started at '.Str::time($start_time)."\n";
     }
 }

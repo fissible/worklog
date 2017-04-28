@@ -61,7 +61,6 @@ Command::bind('stop', 'Worklog\CommandLine\StopCommand');
 Command::bind('help', 'Worklog\CommandLine\UsageCommand');
 Command::bind('today', 'Worklog\CommandLine\TodayCommand');
 Command::bind('start', 'Worklog\CommandLine\StartCommand');
-Command::bind('test', 'Worklog\CommandLine\PhpunitCommand');
 Command::bind('env', 'Worklog\CommandLine\UpdateEnvCommand');
 Command::bind('detail', 'Worklog\CommandLine\DetailCommand');
 Command::bind('delete', 'Worklog\CommandLine\DeleteCommand');
@@ -72,12 +71,18 @@ Command::bind('migrate', 'Worklog\CommandLine\MigrateCommand');
 Command::bind('listopts', 'Worklog\CommandLine\ListOptionsCommand');
 Command::bind('view-cache', 'Worklog\CommandLine\ViewCacheCommand');
 Command::bind('clear-cache', 'Worklog\CommandLine\ClearCacheCommand');
-//Command::bind('table-info', 'Worklog\CommandLine\DatabaseTableInfoCommand');
-//Command::bind('table-data', 'Worklog\CommandLine\DatabaseTableDataCommand');
 Command::bind('migrate:status', 'Worklog\CommandLine\MigrationStatusCommand');
 Command::bind('make:migration', 'Worklog\CommandLine\CreateMigrationCommand');
 Command::bind('migrate:rollback', 'Worklog\CommandLine\MigrateRollbackCommand');
 Command::bind('table-search', 'Worklog\CommandLine\DatabaseTableSearchCommand');
+
+// Binary Commands
+Command::bind('test', 'Worklog\CommandLine\PhpunitCommand');
+Command::bind('composer', 'Worklog\CommandLine\ComposerCommand');
+
+// Diabled Commands
+//Command::bind('table-info', 'Worklog\CommandLine\DatabaseTableInfoCommand');
+//Command::bind('table-data', 'Worklog\CommandLine\DatabaseTableDataCommand');
 
 $db = database(getenv('DATABASE_DRIVER'));
 

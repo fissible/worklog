@@ -433,12 +433,13 @@ class Options implements \ArrayAccess {
      */
 	private function validate_option($option, $configuring = false) {
 		$valid = false;
-		$options = $this->config('options');
-		if (is_string($option)) {
-			if (strlen($option) > 0) {
-				$valid = in_array($option, array_keys($options));
-			} else {
-				throw new \InvalidArgumentException(static::$error_messages['FLAG_NAME_INVALID']);
+		if ($options = $this->config('options')) {
+			if (is_string($option)) {
+				if (strlen($option) > 0) {
+					$valid = in_array($option, array_keys($options));
+				} else {
+					throw new \InvalidArgumentException(static::$error_messages['FLAG_NAME_INVALID']);
+				}
 			}
 		}
 

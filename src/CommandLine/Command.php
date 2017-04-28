@@ -15,6 +15,8 @@ class Command {
 
 	protected $db;
 
+	protected $internally_invoked;
+
 	private $required_data = [];
 
 	private $data;
@@ -25,13 +27,18 @@ class Command {
 
 	private $longopts = [];
 
-	protected $internally_invoked;
+	private $pid;
+
+	private $output;
 
 	protected static $_data;
 
+	protected static $flags_before_arguments = true;
+
     protected static $exception_strings = [
         'date_format' => 'Date must be a valid format, eg. YYYY-MM-DD',
-        'time_format' => 'Start/stop times must be a time format: HH:MM'
+        'time_format' => 'Start/stop times must be a time format: HH:MM',
+        'no_input' => 'Command has no input'
     ];
 
 	protected static $registry;
@@ -41,7 +48,7 @@ class Command {
 	const ERROR_UNREGISTERED_COMMAND = "Invalid command \"%s\"";
 
 
-	public function __construct() {
+	public function __construct($command = []) {
 		$this->App = App();
 		$this->db = $this->App()->db();
 	}
@@ -366,18 +373,26 @@ class Command {
 		}
 	}
 
-	public function raw($command) {
-	    if (is_array($command)) {
-	        $command = implode(' ', $command);
-        }
+	protected function arguments() {
+		return $this->Options()->args();
+	}
 
-        if (false === strpos($command, 'tty')) {
-            $command .= ' > `tty`';
-        }
+	protected function flags() {
+		return $this->Options()->all();
+	}
 
-        return exec($command);
+    /**
+     * Get the process ID
+     * 
+     * @return int
+     */
+    public function pid(){
+        return $this->pid;
     }
 
+	/**
+	 * Run this command
+	 */
 	public function run() {
 	    if (method_exists($this, 'init')) {
 	        $this->init();
@@ -387,7 +402,14 @@ class Command {
                 $this->expectData($name);
             }
         }
-		return true;
+
+		return $this->getOutput();
+	}
+
+	public function getOutput() {
+		if (isset($this->output)) {
+			return $this->output;
+		}
 	}
 
 	public function scan() {
@@ -541,6 +563,10 @@ class Command {
 		if (isset($this->data)) {
 			return $this->data;
 		}
+	}
+
+	protected static function set_flags_before_arguments($bool = true) {
+		static::$flags_before_arguments = (bool) $bool;
 	}
 
     /**
