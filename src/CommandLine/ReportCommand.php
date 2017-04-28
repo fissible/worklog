@@ -21,10 +21,11 @@ class ReportCommand extends Command {
 
     public static $description = 'Report work log entries';
     public static $options = [
-        'i' => ['req' => true, 'description' => 'The JIRA Issue key'],
+        'i' => ['req' => true, 'description' => 'The Jira Issue key'],
+        'j' => ['req' => null, 'description' => 'Output as JSON'],
         'l' => ['req' => null, 'description' => 'Entries from last week'],
         't' => ['req' => null, 'description' => 'Entries from today'],
-        'g' => ['req' => true, 'description' => 'Group by "issue" or "date"'],
+        'g' => ['req' => true, 'description' => 'Group by "issue", "date" or "none'],
         'n' => ['req' => null, 'description' => 'Output without borders']
     ];
     public static $arguments = [ 'date', 'date_end' ];
@@ -47,8 +48,9 @@ class ReportCommand extends Command {
         parent::run();
 
         $group_by_overidden = false;
+        $group_by = $this->option('g');
+        $json = $this->option('j');
         $Report = new Report();
-        $Report->groupBy(static::$default_group_key);
 
         // -i [jira_issue_key]
         if ($issue = $this->option('i')) {
@@ -56,13 +58,17 @@ class ReportCommand extends Command {
         }
 
         // -g [group_by_field]
-        if ($group_by = $this->option('g')) {
+        if ($group_by !== 'none' && false !== filter_var($group_by, FILTER_VALIDATE_BOOLEAN)) {
             if (in_array($group_by, static::$valid_group_keys)) {
                 $Report->groupBy($group_by);
                 $group_by_overidden = true;
             } else {
                 throw new \InvalidArgumentException(static::$exception_strings['invalid_group_key']);
             }
+        } elseif (strtolower($group_by) === 'none') {
+            $group_by_overidden = true;
+        } else {
+            $Report->groupBy(static::$default_group_key);
         }
 
         // -t Report for Today
@@ -99,7 +105,9 @@ class ReportCommand extends Command {
 
         $Report->orderBy([ 'date' => 'asc', 'start' => 'asc' ]);
 
-        if (IS_CLI) {
+        if ($json) {
+            return json_encode($Report->run());
+        } elseif (IS_CLI) {
             $Report->table($this->option('n'));
         } else {
             return $Report->run();
