@@ -97,7 +97,7 @@ class ReportCommand extends Command {
             }
         }
 
-        $Report->orderBy([ 'date' => 'asc', 'start' => 'desc' ]);
+        $Report->orderBy([ 'date' => 'asc', 'start' => 'asc' ]);
 
         if (IS_CLI) {
             $Report->table($this->option('n'));

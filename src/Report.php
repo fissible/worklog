@@ -333,6 +333,21 @@ class Report
 
                 $this->data[$group_key][] = $item;
             }
+
+            if ($this->group_by == 'issue') {
+                uksort($this->data, function($a, $b) {
+                    if ($a == $b) {
+                        return 0;
+                    }
+                    if ($a == self::NO_GROUP_KEY_FLAG) {
+                        return 1;
+                    }
+                    if ($b == self::NO_GROUP_KEY_FLAG) {
+                        return -1;
+                    }
+                    return strcmp($a, $b);
+                });
+            }
         }
 
         return $this;
