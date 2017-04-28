@@ -10,6 +10,7 @@ namespace Worklog\Models;
 
 
 use Carbon\Carbon;
+use Worklog\CommandLine\Output;
 use Worklog\Str;
 
 class Task extends Model
@@ -95,9 +96,7 @@ class Task extends Model
         'duration_string' => 'Time Spent'
     ];
 
-    private static $exception_strings = [
-        'time_format' => 'Start/stop times must be a time format: HH:MM'
-    ];
+    private static $exception_strings = [];
 
     const CACHE_TAG = 'start';
 
@@ -146,13 +145,12 @@ class Task extends Model
      */
     public function getDescriptionSummaryAttribute() {
         $str = '';
-        if ($this->hasAttribute('description')) {
-            if ($str = trim($this->attributes['description'])) {
-                $str = str_replace('\n', "\n", $str);
-                $str = preg_replace('/\s+/', ' ', $str);
-                if (strlen($str) > 27) {
-                    $str = substr($str, 0, 24) . '...';
-                }
+        if ($this->hasAttribute('description') && ! empty($this->attributes['description'])) {
+            if ($Str = new Str($this->attributes['description'], true)) {
+                $Str = $Str->replace('\n', "\n");
+                $Str = $Str->replace('/\s+/', ' ', true);
+                $Str = $Str->limit(30, Output::uchar('\u2026')); // '...'
+                $str = $Str->base();
             }
         }
 
@@ -370,7 +368,7 @@ class Task extends Model
                 if ($Task->hasAttribute('stop')) {
                     $stop_parts = explode(':', $Task->stop);
                     if (! is_numeric($stop_parts[1])) {
-                        if (false !== stripos($stop_parts[1], 'p') && intval($stop_parts[0]) < 12) {
+                        if (Str::contains($stop_parts[1], 'p')/*false !== stripos($stop_parts[1], 'p')*/ && intval($stop_parts[0]) < 12) {
                             $stop_parts[0] = intval($stop_parts[0]) + 12;
                         }
                         $stop_parts[1] = preg_replace('/[^0-9]/', '', $stop_parts[1]);

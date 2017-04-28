@@ -23,12 +23,16 @@ class Str
     private $string;
 
 
-    public function __construct($string = '') {
-        $this->setString($string);
+    public function __construct($string = '', $trim = false) {
+        $this->setString($string, $trim);
     }
 
-    private function setString($string = '') {
+    private function setString($string = '', $trim = false) {
         $this->string = $string . '';
+        if ($trim) {
+            $this->trim();
+        }
+        return $this;
     }
 
     public static function date($input, $format = null) {
@@ -165,7 +169,7 @@ class Str
             return $value;
         }
 
-        return rtrim(mb_strimwidth($value, 0, $limit, '', 'UTF-8')) . $end;
+        return rtrim(mb_strimwidth($value, 0, ($limit - mb_strlen($end)), '', 'UTF-8')) . $end;
     }
 
     /**
@@ -184,6 +188,27 @@ class Str
         return mb_strtoupper($value, 'UTF-8');
     }
 
+    public static function _replace($subject, $find, $replace, $regex = false, $count = null) {
+        //mb_substr_replace
+        if ($regex) {
+            if (is_null($count)) {
+                return preg_replace($find, $replace, $subject);
+            } else {
+                return preg_replace($find, $replace, $subject, $count);
+            }
+        } else {
+            if (is_null($count)) {
+                return str_replace($find, $replace, $subject);
+            } else {
+                return str_replace($find, $replace, $subject, $count);
+            }
+        }
+    }
+
+    /**
+     * @param $value
+     * @return string
+     */
     public static function _shuffle($value) {
         return str_shuffle($value);
     }
@@ -196,6 +221,33 @@ class Str
      */
     public static function _substr($string, $start, $length = null) {
         return mb_substr($string, $start, $length, 'UTF-8');
+    }
+
+    /**
+     * @param $input
+     * @param string $character_mask
+     * @return string
+     */
+    public static function _trim($input, $character_mask = " \t\n\r\0\x0B") {
+        return trim($input, $character_mask);
+    }
+
+    /**
+     * @param $input
+     * @param string $character_mask
+     * @return string
+     */
+    public static function _ltrim($input, $character_mask = " \t\n\r\0\x0B") {
+        return ltrim($input, $character_mask);
+    }
+
+    /**
+     * @param $input
+     * @param string $character_mask
+     * @return string
+     */
+    public static function _rtrim($input, $character_mask = " \t\n\r\0\x0B") {
+        return rtrim($input, $character_mask);
     }
 
     /**
@@ -279,6 +331,11 @@ class Str
         return $string;
     }
 
+    /**
+     * @mutator
+     * @param int $length
+     * @return $this
+     */
     public function randomize($length = 0) {
         if ($length < 1) {
             if (strlen($this->string) > 0) {
@@ -293,9 +350,7 @@ class Str
             $string .= chr(mt_rand(33, 126));
         }
 
-        $this->string = $string;
-
-        return $this;
+        return new Str($string);
     }
 
     /**
@@ -310,7 +365,7 @@ class Str
         // Remove any runs of periods
         $filename = mb_ereg_replace("([\.]{2,})", '', $filename);
 
-        return $filename;
+        return new Str($filename);
     }
 
     /**
@@ -452,7 +507,33 @@ class Str
 
     public function __call($name, $arguments) {
         array_unshift($arguments, $this->base());
-        return call_user_func_array([static::class, '_'.$name], $arguments);
+        switch ($name) {
+            case 'startsWith':
+            case 'contains':
+            case 'endsWith':
+            case 'is_vowel':
+            case 'is_consonant':
+            case 'is_upper':
+            case 'is_lower':
+            case 'length':
+                return call_user_func_array([static::class, '_'.$name], $arguments);
+                break;
+            default:
+            case 'camel':
+            case 'limit':
+            case 'lower':
+            case 'plural':
+            case 'replace':
+            case 'shuffle':
+            case 'studly':
+            case 'snake':
+            case 'substr':
+            case 'title':
+            case 'upper':
+            case 'words':
+                return new static(call_user_func_array([static::class, '_'.$name], $arguments));
+                break;
+        }
     }
 
     public static function __callStatic($name, $arguments) {
