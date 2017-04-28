@@ -54,27 +54,34 @@ Output::init(env('ALLOW_UNICODE_OUTPUT', false), env('MAX_LINE_LENGTH', 120));
 // Bind commands
 /*********************************************/
 
-Command::bind('list', 'Worklog\CommandLine\ListCommand');
-Command::bind('add', 'Worklog\CommandLine\WriteCommand');
-Command::bind('edit', 'Worklog\CommandLine\EditCommand');
-Command::bind('stop', 'Worklog\CommandLine\StopCommand');
-Command::bind('help', 'Worklog\CommandLine\UsageCommand');
-Command::bind('today', 'Worklog\CommandLine\TodayCommand');
 Command::bind('start', 'Worklog\CommandLine\StartCommand');
-Command::bind('env', 'Worklog\CommandLine\UpdateEnvCommand');
-Command::bind('detail', 'Worklog\CommandLine\DetailCommand');
-Command::bind('delete', 'Worklog\CommandLine\DeleteCommand');
-Command::bind('report', 'Worklog\CommandLine\ReportCommand');
 Command::bind('cancel', 'Worklog\CommandLine\CancelCommand');
 Command::bind('recover', 'Worklog\CommandLine\RecoverCommand');
+Command::bind('stop', 'Worklog\CommandLine\StopCommand');
+
+Command::bind('add', 'Worklog\CommandLine\WriteCommand');
+Command::bind('detail', 'Worklog\CommandLine\DetailCommand');
+Command::bind('edit', 'Worklog\CommandLine\EditCommand');
+Command::bind('delete', 'Worklog\CommandLine\DeleteCommand');
+
+Command::bind('list', 'Worklog\CommandLine\ListCommand');
+Command::bind('report', 'Worklog\CommandLine\ReportCommand');
+Command::bind('today', 'Worklog\CommandLine\TodayCommand');
+
+Command::bind('env', 'Worklog\CommandLine\UpdateEnvCommand');
+
 Command::bind('migrate', 'Worklog\CommandLine\MigrateCommand');
-Command::bind('listopts', 'Worklog\CommandLine\ListOptionsCommand');
+Command::bind('make:migration', 'Worklog\CommandLine\CreateMigrationCommand');
+Command::bind('migrate:status', 'Worklog\CommandLine\MigrationStatusCommand');
+Command::bind('migrate:rollback', 'Worklog\CommandLine\MigrateRollbackCommand');
+
 Command::bind('view-cache', 'Worklog\CommandLine\ViewCacheCommand');
 Command::bind('clear-cache', 'Worklog\CommandLine\ClearCacheCommand');
-Command::bind('migrate:status', 'Worklog\CommandLine\MigrationStatusCommand');
-Command::bind('make:migration', 'Worklog\CommandLine\CreateMigrationCommand');
-Command::bind('migrate:rollback', 'Worklog\CommandLine\MigrateRollbackCommand');
+
 Command::bind('table-search', 'Worklog\CommandLine\DatabaseTableSearchCommand');
+
+Command::bind('listopts', 'Worklog\CommandLine\ListOptionsCommand');
+Command::bind('help', 'Worklog\CommandLine\UsageCommand');
 
 // Binary Commands
 Command::bind('test', 'Worklog\CommandLine\PhpunitCommand');

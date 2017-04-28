@@ -14,9 +14,9 @@ class EditCommand extends Command
 {
     public $command_name;
 
-    public static $description = 'Update a work log entries';
+    public static $description = 'Update a work log entry';
     public static $options = [];
-    public static $arguments = [ 'id' ];
+    public static $arguments = [];
     public static $menu = true;
 
     protected static $exception_strings = [
@@ -26,10 +26,35 @@ class EditCommand extends Command
 
     public function run() {
         parent::run();
-        $this->expectData('id', static::$exception_strings['invalid_argument']);
-        $Command = new WriteCommand();
-        $Command->set_invocation_flag();
-        $Command->setData('id', $this->getData('id'));
+
+        $arguments = $this->arguments();
+
+        switch (count($arguments)) {
+            case 0:
+                $this->expectData('id', static::$exception_strings['invalid_argument']);
+                break;
+            case 1:
+                $Command = new WriteCommand();
+                $Command->set_invocation_flag();
+                $Command->setData('id', $arguments[0]);
+                break;
+            default:
+                $last_result = false;
+                foreach ($arguments as $id) {
+                    Output::line(sprintf('Editing entry %d...', $id));
+
+                    $Command = new WriteCommand();
+                    $Command->set_invocation_flag();
+                    $Command->getData('RETURN_RESULT', true);
+                    $Command->setData('id', $id);
+
+                    $last_result = $Command->run();
+                }
+
+                return $last_result;
+
+                break;
+        }
 
         return $Command->run();
     }

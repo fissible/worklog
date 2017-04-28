@@ -87,7 +87,7 @@ class DetailCommand extends Command {
                     }
                 }
 
-                print Output::data_grid($headers, [ array_values($attributes) ]);
+                printl(Output::data_grid($headers, [ array_values($attributes) ]));
             }
 
 
