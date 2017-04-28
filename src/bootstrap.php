@@ -85,9 +85,9 @@ Command::bind('help', 'Worklog\CommandLine\UsageCommand');
 
 // Binary Commands
 Command::bind('test', 'Worklog\CommandLine\PhpunitCommand');
-Command::bind('composer', 'Worklog\CommandLine\ComposerCommand');
+Command::bind('vendor', 'Worklog\CommandLine\ComposerCommand');
 
-// Diabled Commands
+// Disabled Commands
 //Command::bind('table-info', 'Worklog\CommandLine\DatabaseTableInfoCommand');
 //Command::bind('table-data', 'Worklog\CommandLine\DatabaseTableDataCommand');
 

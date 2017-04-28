@@ -15,6 +15,10 @@ abstract class BinaryCommand extends Command
 
     protected $config_file;
 
+    protected $executed = false;
+
+    protected $ready = false;
+
     protected $raw_command;
 
     protected $raw_command_background = false;
@@ -29,6 +33,7 @@ abstract class BinaryCommand extends Command
         if (! empty($command)) {
             $this->raw_command = $command;
             $this->backgroundRawCommand($in_background);
+            $this->ready(true);
         }
     }
 
@@ -48,7 +53,7 @@ abstract class BinaryCommand extends Command
                 $flags = $flags ? $flags : $this->flags();
             }
             if (false !== $arguments) {
-                $arguments = $arguments ? $falgs : $this->arguments();
+                $arguments = $arguments ? $flags : $this->arguments();
             }
 
             // Pass in "--flags" and "arguments"
@@ -62,6 +67,20 @@ abstract class BinaryCommand extends Command
         }
 
         return $command;
+    }
+
+    public function executed($set = null) {
+        if (! is_null($set)) {
+            $this->executed = (bool) $set;
+        }
+        return $this->executed;
+    }
+
+    public function ready($set = null) {
+        if (! is_null($set)) {
+            $this->ready = (bool) $set;
+        }
+        return $this->ready;
     }
 
     /**
@@ -78,7 +97,7 @@ abstract class BinaryCommand extends Command
         // localize raw command, fallsback to the binary (could be null)
         $command = $this->command();
 
-        if ($command) {
+        if ($command && $this->ready()) {
             $command = implode(' ', $command);
 
             if ($this->raw_command_background) {
@@ -99,8 +118,10 @@ abstract class BinaryCommand extends Command
             if (isset($this->output[0])) {
                 $this->pid = (int)$this->output[0];
             }
+            $this->executed(true);
+            $this->ready(false);
 
-        } else {
+        } elseif ($this->ready()) {
             throw new \InvalidArgumentException(static::$exception_strings['no_input']);
         }
 
@@ -115,9 +136,9 @@ abstract class BinaryCommand extends Command
 
         chdir(dirname(APPLICATION_PATH));
 
-        // if ($this->command()) {
-        //     $this->raw();
-        // }
+         if (! $this->executed()) {
+             $this->raw();
+         }
 
         return $this->getOutput();
     }

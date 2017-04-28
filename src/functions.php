@@ -103,6 +103,14 @@ function dump($value) {
 function env($key, $default = null) {
     $value = getenv($key);
 
+    if (preg_match_all('/{+(.*?)}/', $value, $matches)) {
+        foreach ($matches as $match) {
+            if (defined($match[0])) {
+                $value = \Worklog\Str::_replace($value, '/{'.$match[0].'}/', constant($match[0]), true, 1);
+            }
+        }
+    }
+
     if (is_null($value) || strtolower($value) === 'null' || false === $value) {
         $value = $default;
     } elseif (in_array(strtolower($value), ['false', 'true', 'yes', 'no', 'on', 'off'])) {

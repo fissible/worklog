@@ -17,6 +17,10 @@ class Command {
 
 	protected $internally_invoked;
 
+    protected $pid;
+
+    protected $output;
+
 	private $required_data = [];
 
 	private $data;
@@ -26,10 +30,6 @@ class Command {
 	private $shortopts = '';
 
 	private $longopts = [];
-
-	private $pid;
-
-	private $output;
 
 	protected static $_data;
 

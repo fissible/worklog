@@ -9,8 +9,8 @@ namespace Worklog\CommandLine;
  * Time: 9:03 AM
  */
 
-class PhpunitCommand extends BinaryCommand
-{
+class PhpunitCommand extends BinaryCommand {
+
     public static $description = 'Run PhpUnit tests';
     public static $options = [];
     public static $arguments = [];
@@ -20,7 +20,7 @@ class PhpunitCommand extends BinaryCommand
 
 
     protected function init() {
-        $this->binary = VENDOR_PATH.'/bin/phpunit';
+        $this->binary = env('BINARY_PHPUNIT');
         if ($config_file = $this->option('configuration')) {
             $this->config_file = $config_file;
         }
