@@ -16,50 +16,19 @@ class Str
     const LOWERCASE = 0;
     const UPPERCASE = 1;
 
-
     /**
-     * @param $input
-     * @param $needles
-     * @return bool
+     * The underlying string value
+     * @var string
      */
-    public static function contains($input, $needles) {
-        foreach ((array)$needles as $needle) {
-            if ($needle != '' && mb_strpos($input, $needle) !== false) {
-                return true;
-            }
-        }
+    private $string;
 
-        return false;
+
+    public function __construct($string = '') {
+        $this->setString($string);
     }
 
-    /**
-     * @param $haystack
-     * @param $needles
-     * @return bool
-     */
-    public static function startsWith($haystack, $needles) {
-        foreach ((array)$needles as $needle) {
-            if ($needle != '' && substr($haystack, 0, strlen($needle)) === (string)$needle) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * @param $input
-     * @param $needles
-     * @return bool
-     */
-    public static function endsWith($input, $needles) {
-        foreach ((array)$needles as $needle) {
-            if (substr($input, -strlen($needle)) === (string)$needle) {
-                return true;
-            }
-        }
-
-        return false;
+    private function setString($string = '') {
+        $this->string = $string . '';
     }
 
     public static function date($input, $format = null) {
@@ -93,36 +62,96 @@ class Str
 
     /**
      * @param $input
+     * @param $needles
+     * @return bool
+     */
+    public static function _contains($input, $needles) {
+        foreach ((array)$needles as $needle) {
+            if ($needle != '' && mb_strpos($input, $needle) !== false) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param $char
+     * @return bool
+     */
+    public static function _is_vowel($char) {
+        if (mb_strlen($char) > 1) {
+            throw new \InvalidArgumentException('_is_vowel() requires a single character string');
+        }
+        $char = strtolower($char);
+
+        return in_array($char, ['a', 'e', 'i', 'o', 'u']);
+    }
+
+    /**
+     * @param $char
+     * @return bool
+     */
+    public static function _is_consonant($char) {
+        if (mb_strlen($char) > 1) {
+            throw new \InvalidArgumentException('_is_consonant() requires a single character string');
+        }
+
+        return !static::_is_vowel($char);
+    }
+
+    /**
+     * @param $input
+     * @return bool
+     */
+    public static function _is_lower($input) {
+        return ctype_lower($input);
+    }
+
+    /**
+     * @param $input
+     * @return bool
+     */
+    public static function _is_upper($input) {
+        return ctype_upper($input);
+    }
+
+    /**
+     * @param $haystack
+     * @param $needles
+     * @return bool
+     */
+    public static function _startsWith($haystack, $needles) {
+        foreach ((array)$needles as $needle) {
+            if ($needle != '' && mb_substr($haystack, 0, strlen($needle)) === (string)$needle) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param $input
+     * @param $needles
+     * @return bool
+     */
+    public static function _endsWith($input, $needles) {
+        foreach ((array)$needles as $needle) {
+            if (mb_substr($input, -strlen($needle)) === (string)$needle) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param $input
      * @return int
      */
-    public static function length($input) {
+    public static function _length($input) {
         return mb_strlen($input);
-    }
-
-    /**
-     * @param $value
-     * @return mixed|string
-     */
-    public static function lower($value) {
-        return mb_strtolower($value, 'UTF-8');
-    }
-
-    /**
-     * @param $value
-     * @return mixed|string
-     */
-    public static function upper($value) {
-        return mb_strtoupper($value, 'UTF-8');
-    }
-
-    /**
-     * @param $string
-     * @param $start
-     * @param null $length
-     * @return string
-     */
-    public static function substr($string, $start, $length = null) {
-        return mb_substr($string, $start, $length, 'UTF-8');
     }
 
     /**
@@ -131,7 +160,7 @@ class Str
      * @param string $end
      * @return string
      */
-    public static function limit($value, $limit = 100, $end = '...') {
+    public static function _limit($value, $limit = 100, $end = '...') {
         if (mb_strwidth($value, 'UTF-8') <= $limit) {
             return $value;
         }
@@ -141,13 +170,43 @@ class Str
 
     /**
      * @param $value
+     * @return mixed|string
+     */
+    public static function _lower($value) {
+        return mb_strtolower($value, 'UTF-8');
+    }
+
+    /**
+     * @param $value
+     * @return mixed|string
+     */
+    public static function _upper($value) {
+        return mb_strtoupper($value, 'UTF-8');
+    }
+
+    public static function _shuffle($value) {
+        return str_shuffle($value);
+    }
+
+    /**
+     * @param $string
+     * @param $start
+     * @param null $length
+     * @return string
+     */
+    public static function _substr($string, $start, $length = null) {
+        return mb_substr($string, $start, $length, 'UTF-8');
+    }
+
+    /**
+     * @param $value
      * @param int $words
      * @param string $end
      * @return string
      */
-    public static function words($value, $words = 100, $end = '...') {
+    public static function _words($value, $words = 100, $end = '...') {
         preg_match('/^\s*+(?:\S++\s*+){1,' . $words . '}/u', $value, $matches);
-        if (!isset($matches[0]) || static::length($value) === static::length($matches[0])) {
+        if (!isset($matches[0]) || static::_length($value) === static::_length($matches[0])) {
             return $value;
         }
 
@@ -180,7 +239,7 @@ class Str
      * @return array
      */
     public static function parseCallback($callback, $default = null) {
-        return static::contains($callback, '@') ? explode('@', $callback, 2) : [$callback, $default];
+        return static::_contains($callback, '@') ? explode('@', $callback, 2) : [$callback, $default];
     }
 
     /**
@@ -194,8 +253,8 @@ class Str
 
         if (false !== strpos($input, '(') && false !== strpos($input, ')')) {
             $open_paren_pos = strpos($input, '(');
-            $method = substr($input, 0, $open_paren_pos);
-            if ($arg_string = substr($input, $open_paren_pos + 1, (strpos($input, ')', $open_paren_pos) - $open_paren_pos) - 1)) {
+            $method = mb_substr($input, 0, $open_paren_pos);
+            if ($arg_string = mb_substr($input, $open_paren_pos + 1, (strpos($input, ')', $open_paren_pos) - $open_paren_pos) - 1)) {
                 $arguments = explode(',', $arg_string);
                 $arguments = array_map('trim', $arguments);
                 $arguments = array_map(function ($n) {
@@ -207,6 +266,36 @@ class Str
         }
 
         return $output;
+    }
+
+    public static function random($seed, $length = 0) {
+        $string = '';
+        if (is_string($seed) && ! is_numeric($string)) {
+            $string = (new static($seed))->randomize($length);
+        } elseif (is_numeric($seed) && $seed > 0) {
+            $string = (new static())->randomize($seed);
+        }
+
+        return $string;
+    }
+
+    public function randomize($length = 0) {
+        if ($length < 1) {
+            if (strlen($this->string) > 0) {
+                $length = strlen($this->string);
+            } else {
+                throw new \RuntimeException('Cannot randomize an empty string');
+            }
+        }
+
+        $string = '';
+        for ($i = 0; $i < $length; $i++) {
+            $string .= chr(mt_rand(33, 126));
+        }
+
+        $this->string = $string;
+
+        return $this;
     }
 
     /**
@@ -228,7 +317,7 @@ class Str
      * @param $input
      * @return mixed
      */
-    public static function camel($input) {
+    public static function _camel($input) {
         return str_replace(' ', '', ucwords(str_replace('_', ' ', $input)));
     }
 
@@ -237,26 +326,26 @@ class Str
      * @param $delimiter
      * @return string
      */
-    public static function snake($input, $delimiter = '_') {
+    public static function _snake($input, $delimiter = '_') {
         $out = [];
         $parts = str_split($input);
         foreach ($parts as $key => $char) {
             if ($char) {
                 $last_out_key = count($out) - 1;
                 $last_out_char = ($last_out_key >= 0 && isset($out[$last_out_key]) ? $out[$last_out_key] : null);
-                if ($key > 0 && static::is_upper($char) && $last_out_char !== $delimiter) {
+                if ($key > 0 && static::_is_upper($char) && $last_out_char !== $delimiter) {
                     $out[] = $delimiter;
                 }
                 $out[] = $char;
             }
         }
 
-        $output = trim(static::lower(implode('', $out)), $delimiter);
+        $output = trim(static::_lower(implode('', $out)), $delimiter);
 
         return $output;
     }
 
-    public static function studly($input) {
+    public static function _studly($input) {
         return str_replace(' ', '', ucwords(str_replace(['-', '_'], ' ', $input)));
     }
 
@@ -264,7 +353,7 @@ class Str
      * @param $value
      * @return mixed|string
      */
-    public static function title($value) {
+    public static function _title($value) {
         return mb_convert_case($value, MB_CASE_TITLE, 'UTF-8');
     }
 
@@ -272,7 +361,7 @@ class Str
      * @param $input
      * @return mixed|string
      */
-    public static function plural($input) {
+    public static function _plural($input) {
         $output = $input = trim($input);
         $already_plural = [
             'aircraft', 'bison', 'buffalo', 'chinese', 'data', 'deer', 'duck',
@@ -300,32 +389,32 @@ class Str
             'zero' => 'zeros'
         ];
 
-        if (!in_array(static::lower($input), $already_plural)) {
-            if (in_array(static::lower($input), array_keys($special_plural))) {
-                $output = $special_plural[static::lower($input)];
+        if (!in_array(static::_lower($input), $already_plural)) {
+            if (in_array(static::_lower($input), array_keys($special_plural))) {
+                $output = $special_plural[static::_lower($input)];
             } else {
                 switch (true) {
-                    case (substr($input, -2) == 'th'):
-                    case (substr($input, -2) == 'es'):
-                    case (substr($input, -2) == 'us'):
-                    case (substr($input, -3) == 'ies'):
+                    case (mb_substr($input, -2) == 'th'):
+                    case (mb_substr($input, -2) == 'es'):
+                    case (mb_substr($input, -2) == 'us'):
+                    case (mb_substr($input, -3) == 'ies'):
                         break;
-                    case (substr($input, -2) == 'is'):
-                        $output = substr_replace($input, 'es', -2);
+                    case (mb_substr($input, -2) == 'is'):
+                        $output = mb_substr_replace($input, 'es', -2);
                         break;
-                    case (substr($input, -2) == 'us'):
-                        $output = substr_replace($input, 'i', -2);
+                    case (mb_substr($input, -2) == 'us'):
+                        $output = mb_substr_replace($input, 'i', -2);
                         break;
-                    case (substr($input, -1) == 'y'):
-                        if (static::is_consonant($input, -2, 1)) {
-                            $output = substr_replace($input, 'ies', -1);
+                    case (mb_substr($input, -1) == 'y'):
+                        if (static::_is_consonant($input, -2, 1)) {
+                            $output = mb_substr_replace($input, 'ies', -1);
                         } else {
                             $output .= 's';
                         }
                         break;
-                    case (substr($input, -1) == 'h'):
-                    case (substr($input, -1) == 'o' && static::is_consonant($input, -2, 1)):
-                    case (substr($input, -1) == 's'):
+                    case (mb_substr($input, -1) == 'h'):
+                    case (mb_substr($input, -1) == 'o' && static::_is_consonant($input, -2, 1)):
+                    case (mb_substr($input, -1) == 's'):
                         $output = $input . 'es';
                         break;
                     default:
@@ -335,8 +424,8 @@ class Str
             }
         }
 
-        if (static::is_upper(substr($input, 0, 1))) {
-            if (static::is_upper($input)) {
+        if (static::_is_upper(mb_substr($input, 0, 1))) {
+            if (static::_is_upper($input)) {
                 $output = mb_strtoupper($output);
             } else {
                 $output = ucfirst($output);
@@ -347,28 +436,26 @@ class Str
         return $output;
     }
 
-    public static function is_vowel($char) {
-        if (mb_strlen($char) > 1) {
-            throw new \InvalidArgumentException('is_vowel() requires a single character string');
-        }
-        $char = strtolower($char);
-
-        return in_array($char, ['a', 'e', 'i', 'o', 'u']);
+    /**
+     * Return the underlying string
+     * @return string
+     */
+    public function base()
+    {
+        return $this->string;
     }
 
-    public static function is_consonant($char) {
-        if (mb_strlen($char) > 1) {
-            throw new \InvalidArgumentException('is_consonant() requires a single character string');
-        }
-
-        return !static::is_vowel($char);
+    public function __toString()
+    {
+        return $this->string;
     }
 
-    public static function is_lower($input) {
-        return ctype_lower($input);
+    public function __call($name, $arguments) {
+        array_unshift($arguments, $this->base());
+        return call_user_func_array([static::class, '_'.$name], $arguments);
     }
 
-    public static function is_upper($input) {
-        return ctype_upper($input);
+    public static function __callStatic($name, $arguments) {
+        return call_user_func_array([static::class, '_'.$name], $arguments);
     }
 }
