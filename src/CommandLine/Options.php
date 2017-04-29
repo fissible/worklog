@@ -62,9 +62,6 @@ class Options implements \ArrayAccess {
 	}
 
 	public function command_name() {
-		// if (! isset($this->command)) {
-		// 	$this->command = $this->Command()->name();
-		// }
 		return $this->command;
 	}
 
@@ -76,9 +73,6 @@ class Options implements \ArrayAccess {
 	}
 
 	public function Command() {
-		// if (! isset($this->Command) || (isset($this->command) && $this->Command->name() != $this->command)) {
-		// 	$this->Command = Command::instance($this->App(), $this->command);
-		// }
 		return $this->Command;
 	}
 
@@ -128,14 +122,44 @@ class Options implements \ArrayAccess {
 	public function add($option, $config = []) {
 		$option = ltrim(trim($option), '-');
 		if (is_numeric($option) || strlen($option) < 1) {
-			// throw new \InvalidArgumentException(__CLASS__.'::add(): '.sprintf(static::$error_messages['FLAG_NAME_INVALID'], $option));
 			throw new \InvalidArgumentException($this->error_message('FLAG_NAME_INVALID', __METHOD__, $option));
 		}
-		// if (! $this->exist($option)) {
-			$Option = new Option($this, $option, $config);
-			$this->Command()->register_option($Option);
-			$this->Options[] = $Option;
-		// }
+
+		$Option = new Option($this, $option, $config);
+		$this->Command()->register_option($Option);
+		$this->Options[] = $Option;
+
+		if (! in_array($option, $this->options)) {
+			$this->options[$option] = null;
+		}
+	}
+
+	/**
+	 * Check if an option exists
+	 * @param $name mixed The name of the option (string)
+	 * @return bool
+	 */
+	public function exist($name = null) {
+		$exists = false;
+
+		if (isset($this->options)) {
+			$set_options = $this->options;
+		} else {
+			$set_options = getopt($this->Command()->shortopts(), $this->Command()->longopts());
+		}
+
+		// $this->scan();
+		if (is_null($name)) {
+			$exists = count($set_options) > 0;
+		} elseif (is_string($name) && strlen($name) > 0) {
+			if (count($set_options) > 0) {
+				$exists = isset($set_options[$name]);
+			}
+		} else {
+			throw new \InvalidArgumentException($this->error_messages['FLAG_NAME_INVALID']);
+		}
+
+		return $exists;
 	}
 
 	/**
@@ -158,7 +182,6 @@ class Options implements \ArrayAccess {
 			if (array_key_exists($this->command, $this->command_registry)) {
 				$config = $this->command_registry[$this->command];
 			} else {
-				// throw new \InvalidArgumentException(__CLASS__.'::config(): '.sprintf(static::$error_messages['COMMAND_NAME_INVALID'], $this->command));
 				throw new \InvalidArgumentException($this->error_message('COMMAND_NAME_INVALID', __METHOD__, $this->command));
 			}
 		} else {
@@ -174,22 +197,6 @@ class Options implements \ArrayAccess {
 			}
 		}
 		return $config;
-	}
-
-	/**
-	 * Check if an option exists
-	 * @param $name mixed The name of the option (string)
-	 * @return bool
-	 */
-	public function exist($name = null) {
-		// $this->scan();
-		if (is_null($name)) {
-			return count($this->options) > 0;
-		} elseif (is_string($name) && strlen($name) > 0) {
-			return isset($this->options[$name]);
-		} else {
-			throw new \InvalidArgumentException($this->error_messages['FLAG_NAME_INVALID']);
-		}
 	}
 
 	/**
@@ -294,9 +301,15 @@ class Options implements \ArrayAccess {
      * @internal param string $options
      * @internal param array $longopts
      */
-	public function scan($Command, $force = false) {
+	public function scan($Command = null, $force = false) {
 		$argv = static::argv();
 		$flags_with_values = [];
+
+		if (! is_null($Command)) {
+			$this->set_Command($Command);
+		}
+
+		$Command = $this->Command;
 
 		if (! isset($this->command)) {
 			$this->command = $Command->name();
@@ -307,8 +320,7 @@ class Options implements \ArrayAccess {
 			$longopts = $Command->longopts();
 
 			if (PHP_SAPI === 'cli' || empty($_SERVER['REMOTE_ADDR'])) {
-				
-				$this->options = getopt($this->Command()->shortopts(), $this->Command()->longopts());
+				$this->options = getopt($shortopts, $longopts);
 
 				// drop the command string
 				foreach ($argv as $akey => $arg) {
@@ -318,8 +330,9 @@ class Options implements \ArrayAccess {
 					}
 				}
 				$argv = array_values($argv);
+				$argv_count = count($argv);
 //				$args = $this->parse_args(implode(' ', $argv));
-				 $args = $this->parse_args($argv);
+				$args = $this->parse_args($argv);
 
 				if (count($args) > 0) {
 					// Initialize Option instances and set values
@@ -327,14 +340,20 @@ class Options implements \ArrayAccess {
 						foreach ($options as $flag => $config) {
 							if (array_key_exists($flag, $args)) {
 								$this->options[$flag] = $args[$flag];
-								$Option = $this->Option($flag);
-								if (! $Option->is_flag($flag)) {
-									$flags_with_values[] = $flag;
-									$Option->set_value($args[$flag]);
+
+								if ($Option = $this->Option($flag)) {
+									// $this->Option($flag, $args[$flag]);
+									if (! $Option->is_flag($flag)) {
+										$flags_with_values[] = $flag;
+										$Option->set_value($args[$flag]);
+									}
+								} else {
+									throw new \Exception('Missing expected Option '.$flag);
 								}
 							}
 						}
 					}
+
 
 					// Parse arguments into Command data
 					$data_keys = $this->config('arguments') ?: [];
@@ -347,24 +366,26 @@ class Options implements \ArrayAccess {
                         if (! empty($data_keys) && ! array_key_exists($data_key, $data_keys)) {
                             break;
                         }
+						$dynamic_option = false;
                         $is_option = substr($argument, 0, 1) == '-';
                         $option = ltrim($argument, '-');
 
                         if ($is_option && array_key_exists($option, $args)) {
                             if (! empty($this->options) && ! array_key_exists($option, $this->options)) {
                                 throw new \Exception(sprintf("Invalid flag \"%s\"", $argument));
-                            } elseif (! in_array($option, $flags_with_values)) {
-                                $last_flag_gets_value = substr($argument, 0, 2) == '--';
-                                $flags_with_values[] = $option;
                             } elseif (array_key_exists($option, $this->options)) {
                                 $last_flag_gets_value = ($options[$option]['req'] === true);
+                            } else {
+                            	$last_flag_gets_value = substr($argument, 0, 2) == '--' && $key != ($argv_count -1);
+                            	$this->add($option, ['req' => ($last_flag_gets_value ? false : null), 'description' => 'Dynamic option']);
+                            	$dynamic_option = true;
                             }
                             $last_arg_was_option = true;
                             $last_arg = $option;
 
                             continue;
                         } else {
-                            if (! $last_arg_was_option || ! in_array($last_arg, $flags_with_values)) {
+                            if (! $last_arg_was_option || (! in_array($last_arg, $flags_with_values) && ! $last_flag_gets_value)) {
                                 $this->arguments[] = $argument;
 
                                 if (array_key_exists($data_key, $data_keys)) {
@@ -376,6 +397,7 @@ class Options implements \ArrayAccess {
 
                             } elseif ($last_arg_was_option && $last_flag_gets_value) {
                                 $this->options[$last_arg] = $argument;
+                                $this->Option($last_arg, $argument);
                             }
                             $last_arg_was_option = false;
                             $last_flag_gets_value = false;
@@ -383,8 +405,8 @@ class Options implements \ArrayAccess {
                         }
                     }
 
-
 				} // EOF if (count($args) > 0)
+
 			} elseif (isset($_REQUEST)) {
 				if (isset($_REQUEST['command'])) {
 					$command = $_REQUEST['command'];
@@ -441,6 +463,8 @@ class Options implements \ArrayAccess {
 					throw new \InvalidArgumentException(static::$error_messages['FLAG_NAME_INVALID']);
 				}
 			}
+		} else {
+			$valid = true;
 		}
 
 		return $valid;

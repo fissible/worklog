@@ -24,7 +24,8 @@ class EditCommand extends Command
         'record_not_found' => 'Record %d not found'
     ];
 
-    public function run() {
+    public function run()
+    {
         parent::run();
 
         $arguments = $this->arguments();

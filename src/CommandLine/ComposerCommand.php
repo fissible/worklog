@@ -13,13 +13,14 @@ class ComposerCommand extends BinaryCommand {
 
     public static $description = 'Run composer';
     public static $options = [
-        'nodev' => ['req' => null, 'description' => 'Do not install development dependencies']
+        // 'nodev' => ['req' => null, 'description' => 'Do not install development dependencies'],
+        // 'test' => ['req' => null, 'description' => 'test']
     ];
     public static $arguments = [];
 
 
     protected function init() {
-        $this->binary = env('BINARY_COMPOSER');
+        $this->setBinary(env('BINARY_COMPOSER'));
         if ($config_file = $this->option('configuration')) {
             $this->config_file = $config_file;
         }

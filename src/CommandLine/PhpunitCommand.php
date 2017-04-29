@@ -14,13 +14,13 @@ class PhpunitCommand extends BinaryCommand {
     public static $description = 'Run PhpUnit tests';
     public static $options = [];
     public static $arguments = [];
-    public static $menu = true;
+    public static $menu = false;
 
     protected $config_file = 'phpunit.xml';
 
 
     protected function init() {
-        $this->binary = env('BINARY_PHPUNIT');
+        $this->setBinary(env('BINARY_PHPUNIT'));
         if ($config_file = $this->option('configuration')) {
             $this->config_file = $config_file;
         }

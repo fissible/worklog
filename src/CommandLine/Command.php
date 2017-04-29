@@ -33,8 +33,6 @@ class Command {
 
 	protected static $_data;
 
-	protected static $flags_before_arguments = true;
-
     protected static $exception_strings = [
         'date_format' => 'Date must be a valid format, eg. YYYY-MM-DD',
         'time_format' => 'Start/stop times must be a time format: HH:MM',
@@ -413,7 +411,10 @@ class Command {
 	}
 
 	public function scan() {
-		$this->Options()->scan($this);
+		if (! $this->Options()->Command()) {
+			$this->Options()->set_Command($this);
+		}
+		$this->Options()->scan();
 		return $this;
 	}
 
@@ -563,10 +564,6 @@ class Command {
 		if (isset($this->data)) {
 			return $this->data;
 		}
-	}
-
-	protected static function set_flags_before_arguments($bool = true) {
-		static::$flags_before_arguments = (bool) $bool;
 	}
 
     /**

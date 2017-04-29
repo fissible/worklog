@@ -52,10 +52,11 @@ function caller($key = null, $index = 0) {
 
 function debug($input, $color = 'yellow', $internally_invoked = false) {
     if (DEVELOPMENT_MODE) {
-        $bordr = Output::color(' ', '', $color);
-        $width = Output::cols() / 2;
+        $bordr = Output::color(Output::uchar('ver', 'heavy'), $color);
+        $width = floor(Output::cols() / 1.5);
 
         if (! $internally_invoked) {
+            Output::line(Output::color(Output::horizontal_line('top', $width, 'heavy'), $color), '', $width);
             Output::line(Output::color(' DEBUG  '.caller('file:line', 1), $color), $bordr, $width);
         }
         if (is_object($input)) {
@@ -71,6 +72,9 @@ function debug($input, $color = 'yellow', $internally_invoked = false) {
             }
         } elseif (! empty($input)) {
             Output::line('       '.$input, $bordr, $width);
+        }
+        if (! $internally_invoked) {
+            Output::line(Output::color(Output::horizontal_line('bot', $width, 'heavy'), $color), '', $width);
         }
     }
 }

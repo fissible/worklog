@@ -68,6 +68,7 @@ Command::bind('list', 'Worklog\CommandLine\ListCommand');
 Command::bind('report', 'Worklog\CommandLine\ReportCommand');
 Command::bind('today', 'Worklog\CommandLine\TodayCommand');
 
+// Admin/Dev Commands
 Command::bind('env', 'Worklog\CommandLine\UpdateEnvCommand');
 
 Command::bind('migrate', 'Worklog\CommandLine\MigrateCommand');
@@ -80,12 +81,13 @@ Command::bind('clear-cache', 'Worklog\CommandLine\ClearCacheCommand');
 
 Command::bind('table-search', 'Worklog\CommandLine\DatabaseTableSearchCommand');
 
-Command::bind('listopts', 'Worklog\CommandLine\ListOptionsCommand');
-Command::bind('help', 'Worklog\CommandLine\UsageCommand');
-
 // Binary Commands
 Command::bind('test', 'Worklog\CommandLine\PhpunitCommand');
 Command::bind('vendor', 'Worklog\CommandLine\ComposerCommand');
+
+// Usage/autcompletion commands
+Command::bind('listopts', 'Worklog\CommandLine\ListOptionsCommand');
+Command::bind('help', 'Worklog\CommandLine\UsageCommand');
 
 // Disabled Commands
 //Command::bind('table-info', 'Worklog\CommandLine\DatabaseTableInfoCommand');

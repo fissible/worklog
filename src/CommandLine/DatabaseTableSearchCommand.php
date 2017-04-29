@@ -15,7 +15,7 @@ class DatabaseTableSearchCommand extends Command {
 	];
 	public static $arguments = [ 'input' ];
 	public static $usage = '[-cs] %s <search-term>';
-	public static $menu = true;
+	public static $menu = false;
 
 	public function run() {
 		$db = $this->App()->db();

@@ -21,7 +21,11 @@ abstract class BinaryCommand extends Command
 
     protected $raw_command;
 
+    protected $final_command;
+
     protected $raw_command_background = false;
+
+    protected static $flags_before_arguments = false;
 
 
     public function __construct($command = [], $in_background = false) {
@@ -29,11 +33,26 @@ abstract class BinaryCommand extends Command
         $this->setRawCommand($command, $in_background);
     }
 
+    public function name() {
+        $name = '';
+        if (isset($this->binary)) {
+            $name = $this->binary;
+        } elseif (isset($this->command_name)) {
+            $name = $this->command_name;
+        }
+        return $name;
+    }
+
+    public function setBinary($binary) {
+        $this->binary = $binary;
+    }
+
     public function setRawCommand($command = [], $in_background = false) {
         if (! empty($command)) {
-            $this->raw_command = $command;
+            $this->raw_command = [];
+            $this->pushCommand($command);
             $this->backgroundRawCommand($in_background);
-            $this->ready(true);
+            $this->ready(false);
         }
     }
 
@@ -41,32 +60,73 @@ abstract class BinaryCommand extends Command
         $this->raw_command_background = (bool) $bool;
     }
 
-    public function command($flags = [], $arguments = []) {
-        $command = (array) $this->raw_command;
+    public function command($reprocess = false) {
+        if (! isset($this->final_command) || $reprocess == true) {
+            $this->final_command = [];
+            $this->ready(false);
 
-        if ($this->binary && ! in_array($this->binary, $command)) {
-            array_unshift($command, $this->binary);
-        }
-
-        if (is_array($command)) {
-            if (false !== $flags) {
-                $flags = $flags ? $flags : $this->flags();
-            }
-            if (false !== $arguments) {
-                $arguments = $arguments ? $flags : $this->arguments();
+            // Add the binary
+            if (isset($this->binary)) {
+                $this->final_command[] = $this->binary;
             }
 
             // Pass in "--flags" and "arguments"
-            if (static::$flags_before_arguments) {
-                if ($flags) $command = array_merge($command, $flags);
-                if ($arguments) $command = array_merge($command, $arguments);
-            } else {
-                if ($arguments) $command = array_merge($command, $arguments);
-                if ($flags) $command = array_merge($command, $flags);
+            $this->pushOptions();
+
+            // Process maunal pushes
+            foreach ((array) $this->raw_command as $key => $token) {
+                if (isset($this->binary) && $token == $this->binary) {
+                    continue;
+                }
+                $this->pushFinalCommand($token);
             }
+
+            // Update ready status
+            $this->ready(! empty($this->final_command));
         }
 
-        return $command;
+        return $this->final_command;
+    }
+
+    private function pushOptions() {
+        $pushFlags = function ($flags) {
+            foreach ($flags as $key => $value) {
+                $prefix = (strlen($key) == 1 ? '-' : '--');
+                $this->pushFinalCommand($prefix.$key);
+
+                if (false !== $value) {
+                    $this->pushFinalCommand($value);
+                }
+            }
+        };
+        if (static::$flags_before_arguments) {
+            $pushFlags($this->flags());
+            $this->pushFinalCommand($this->arguments());
+        } else {
+            $this->pushFinalCommand($this->arguments());
+            $pushFlags($this->flags());
+        }
+    }
+
+    public function pushCommand($token, $check_exists = false) {
+        return $this->_pushCommand($token, false, $check_exists);
+    }
+    
+    protected function pushFinalCommand($token, $check_exists = false) {
+        return $this->_pushCommand($token, true, $check_exists);
+    }
+
+    private function _pushCommand($token, $final, $check_exists = false) {
+        $command = ($final ? 'final_command' : 'raw_command');
+        if (is_array($token)) {
+            foreach ($token as $key => $_token) {
+                $this->_pushCommand($_token, $final, $check_exists);
+            }
+        } elseif ((is_int($token) || strlen($token) > 0) && (! $check_exists || ! in_array($token, $this->{$command}))) {
+            $this->{$command}[] = $token;
+        }
+
+        return $this;
     }
 
     public function executed($set = null) {
@@ -90,12 +150,12 @@ abstract class BinaryCommand extends Command
      * @throws \InvalidArgumentException
      */
     protected function raw($command = [], $in_background = false) {
-        if (! empty($command) && ! isset($this->raw_command) || empty($this->raw_command)) {
+        if (! empty($command) && ! isset($this->raw_command)) {
             $this->setRawCommand($command, $in_background);
         }
         
         // localize raw command, fallsback to the binary (could be null)
-        $command = $this->command();
+        $command = $this->command($this->ready());
 
         if ($command && $this->ready()) {
             $command = implode(' ', $command);
@@ -111,7 +171,7 @@ abstract class BinaryCommand extends Command
                     $command .= ' > `tty`';
                 }
             }
-            
+            // debug($command, 'red');
             $this->output = [];
             exec($command, $this->output);
 
@@ -141,6 +201,11 @@ abstract class BinaryCommand extends Command
          }
 
         return $this->getOutput();
+    }
+
+
+    protected static function set_flags_before_arguments($bool = true) {
+        static::$flags_before_arguments = (bool) $bool;
     }
 
 }

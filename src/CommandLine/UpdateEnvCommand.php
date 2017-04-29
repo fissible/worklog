@@ -23,7 +23,7 @@ class UpdateEnvCommand extends Command {
     ];
     public static $arguments = [ 'date', 'date_end' ];
     public static $usage = '%s [-ilt] [date [end_date]]';
-    public static $menu = true;
+    public static $menu = false;
 
 
     public function run() {
