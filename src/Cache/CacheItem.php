@@ -50,6 +50,12 @@ class CacheItem {
 		$this->Cache = $Cache;
 	}
 
+    public static function new_from_store(Cache $Cache, $name, $props = []) {
+    	$props = array_merge($props, ['data' => Cache::remember($name)]);
+
+    	return new static($Cache, $props);
+    }
+
     public static function new_from_file(Cache $Cache, $path, $props = []) {
     	$raw_data = null;
 
@@ -74,6 +80,11 @@ class CacheItem {
     	}
 
     	return $Item;
+    }
+
+    public function cacheClass() {
+    	$class_name = get_class($this->Cache);
+    	return $class_name;
     }
 
     public function File($path = null) {
@@ -103,9 +114,17 @@ class CacheItem {
 	}
 
 	public function write() {
-		if ($this->data && $this->isFile()) {
-			return $this->File()->write(json_encode($this->data), LOCK_EX);
+		if ($this->data) {
+			if ($this->isFile()) {
+				return $this->File()->write(json_encode($this->data), LOCK_EX);
+			} else {
+				Cache::remember($this->name, $this->data);
+			}
+		} else {
+			return false;
 		}
+
+		return true;
 	}
 
 
@@ -148,6 +167,8 @@ class CacheItem {
 
 		if ($this->isFile() && $this->fileExists()) {
 			$deleted = $this->File->delete();
+		} else {
+			Cache::forget($this->name);
 		}
 
 		return $deleted;
@@ -192,6 +213,9 @@ class CacheItem {
     }
 
     public function setExpiry($value) {
+    	if ($value < strtotime('now')) {
+    		$value = strtotime('now') + $value;
+    	}
     	$this->expiry = $value;
     }
 
@@ -202,12 +226,26 @@ class CacheItem {
 	public function __get($name) {
 		if (isset($this->{$name})) {
 			if ($name == 'data') {
+				if (is_null($this->data)) {
+					if ($this->Cache instanceof Cache && isset($this->name)) {
+						$this->data = Cache::remember($this->name);
+					} elseif ($this->File->exists()) {
+						$this->data = $this->File->contents();
+					}
+				}
 				$data = $this->data;
+
 				if (is_array($data)) {
 					$data = json_decode(json_encode($data));
 				}
 
-				$data->tags = $this->tags;
+				if (isset($this->tags)) {
+					if (is_object($data)) {
+						$data->tags = $this->tags;
+					} elseif (is_array($data)) {
+						$data['tags'] = $this->tags;
+					}
+				}
 
 				return $data;
 			} else {

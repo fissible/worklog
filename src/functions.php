@@ -17,10 +17,11 @@ function App() {
     static $App;
     global $db, $CURRENT_DIR, $user_path;
     if (! isset($App)) {
-        $App = new Worklog\Application($db, $CURRENT_DIR, $user_path/*, SQL_FILES_DIRECTORY, JIRA_DATA_DIRECTORY*/);
+        $App = Worklog\Application::instance($db, $CURRENT_DIR, $user_path);
     }
     return $App;
 }
+
 
 function caller($key = null, $index = 0) {
     $trace = debug_backtrace(false);
@@ -59,10 +60,17 @@ function debug($input, $color = 'yellow', $internally_invoked = false) {
             Output::line(Output::color(Output::horizontal_line('top', $width, 'heavy'), $color), '', $width);
             Output::line(Output::color(' DEBUG  '.caller('file:line', 1), $color), $bordr, $width);
         }
-        if (is_object($input)) {
+        if (is_null($input)) {
+            $input = gettype($input);
+        } elseif (true === $input) {
+            $input = 'true';
+        } elseif (false === $input) {
+            $input = 'false';
+        } elseif (is_object($input)) {
             $input = @var_export($input, true);
             $input = explode("\n", $input);
         }
+
         if (is_array($input)) {
             $input = print_r($input, true);
             $input = explode("\n", $input);

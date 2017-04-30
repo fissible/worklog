@@ -8,15 +8,17 @@ use Worklog\Application;
  */
 class Cache {
 
+	private $Item;
+
 	private $path;
 
 	private $driver;
 
 	private $registry;
 
-	private static $DO_NOT_PURGE = false;
+	private static $store = [];
 
-	private $Item;
+	private static $DO_NOT_PURGE = false;
 
 	const DRIVER_ARRAY = 'array';
 
@@ -28,40 +30,24 @@ class Cache {
 		$this->load_registry();
 	}
 
-	protected function Item($data = []) {
-		if (! isset($this->Item) || ! empty($data)) {
-			$this->Item = new CacheItem($this, $data);
+	public function Item($data = []) {
+		if (! isset($this->Item) || (! empty($data) && isset($data['name']))) {
+			$this->Item = CacheItem::new_from_store($this, $data['name'], $data);
 		}
 		return $this->Item;
 	}
 
-	private function setDriver($driver) {
+	public function setDriver($driver) {
 		$this->driver = $driver;
 	}
 
-    /**
-     * Scan cache files and cache their name keys
-     * @param  boolean $force Reload cache registry
-     */
-    protected function load_registry($force = false) {
-        $this->registry = [];
-        $this->setup();
-    }
-
     public function setup() {
+        $this->registry = [];
         return $this->is_setup();
     }
 
-	public function is_setup() {        
+	public function is_setup() {
 		return isset($this->registry);
-	}
-
-	private function garbage_collect() {
-		if ($this->Item()->is_expired()) {
-            if (! static::$DO_NOT_PURGE && ! $do_not_delete) {
-                $this->delete($this->Item);
-            }
-        }
 	}
 
     /**
@@ -74,21 +60,47 @@ class Cache {
         if ($this->Item(compact('name'))->is_expired()) {
             $this->garbage_collect();
         }
-        
+
         if ($get_raw) {
-            return $this->Item();
-        } else {
             return $this->Item()->data;
+        } else {
+            return $this->Item();
         }
     }
+
+    /**
+     * Scan cache files and cache their name keys
+     * @param  boolean $force Reload cache registry
+     */
+    protected function load_registry($force = false) {
+        $this->setup();
+        if (! empty(static::$store)) {
+        	foreach (static::$store as $key => $value) {
+        		$this->register($this->Item(['name' => $key, 'data' => $value]));
+        	}
+        }
+    }
+
+	private function garbage_collect() {
+		if ($this->Item()->is_expired()) {
+            if (! static::$DO_NOT_PURGE && ! $do_not_delete) {
+                $this->delete($this->Item);
+            }
+        }
+	}
 
     protected function register(CacheItem $CacheItem = null) {
     	if (is_null($CacheItem)) {
     		$CacheItem = $this->Item();
     	}
+
         if (! $CacheItem->is_registered()) {
-            $this->registry[$CacheItem->name] = $CacheItem;
-            $CacheItem->register($this);
+        	if ($CacheItem->is_valid()) {
+				$this->registry[$CacheItem->name] = $CacheItem;
+            	$CacheItem->register($this);
+			} else {
+				throw new \Exception('Invalid cache item.');
+			}
         }
     }
 
@@ -122,7 +134,7 @@ class Cache {
 	 */
 	public function data($name, $data = null, $tags = [], $expires_in_seconds = 0) {
 		if (is_scalar($name)) {
-			$CacheItem = $this->load($name);
+			$CacheItem = $this->load($name, false);
 		} else {
 			throw new \InvalidArgumentException('Cache::data(): first argument must be a string.');
 		}
@@ -142,14 +154,7 @@ class Cache {
 				}
 			}
 
-			$CacheItem->setData($data);
-			$CacheItem->addTag($tags);
-			$CacheItem->setExpiry(intval(! $expires_in_seconds ?: strtotime('now') + $expires_in_seconds));
-
-			if ($CacheItem->is_valid()) {
-				$this->write($CacheItem);
-				$this->register($CacheItem);
-			}
+			$CacheItem = $this->write($CacheItem, $data, $tags, $expires_in_seconds);
 
 			$data = $CacheItem->data;
 		}
@@ -218,26 +223,28 @@ class Cache {
      * @param  array  $tags Tag string (or array of strings) used for taxonomy
      * @return mixed        The number of bytes written, or false on failure
      */
-    public function write($name, $data = [], $tags = []) {
+    public function write($name, $data = [], $tags = [], $expires_in_seconds = 0) {
         $this->setup();
 
         if ($name instanceof CacheItem) {
         	$CacheItem = $name;
         	$name = $CacheItem->name;
-        	$data = $CacheItem->data;
-        	$tags = $CacheItem->tags;
         } else {
-        	$CacheItem = $this->Item(compact('name', 'data', 'tags'));
-
-        	if ($data) {
-        		$CacheItem->setData($data);
-        	}
-	        if ($tags) {
-	            $CacheItem->addTag($tags);
-	        }
+        	$CacheItem = $this->Item(compact('name'));
         }
-        
+
+    	if ($data) {
+    		$CacheItem->setData($data);
+    	}
+
+        if ($tags) {
+            $CacheItem->setTags($tags);
+        }
+
+        $CacheItem->setExpiry($expires_in_seconds);
         $this->register($CacheItem);
+
+        $CacheItem->write();
 
         return $CacheItem;
     }
@@ -275,5 +282,26 @@ class Cache {
 
     public static function disable_purge($set = true) {
         static::$DO_NOT_PURGE = (bool) $set;
+    }
+
+    public static function remember($key, $value = null) {
+		$return = null;
+
+    	if (is_null($value)) {
+    		if (isset(static::$store[$key])) {
+    			$return = static::$store[$key];
+    		}
+    	} else {
+    		if (! isset(static::$store[$key])) {
+    			static::$store[$key] = null;
+    		}
+    		static::$store[$key] = $value;
+    	}
+
+    	return $return;
+    }
+
+    public static function forget($key) {
+    	unset(static::$store[$key]);
     }
 }
