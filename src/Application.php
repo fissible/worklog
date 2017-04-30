@@ -4,6 +4,7 @@ namespace Worklog;
 use Worklog\Cache\Cache;
 use Worklog\Cache\FileStore;
 use Worklog\CommandLine;
+use Illuminate\Container\Container;
 
 class Application {
 
@@ -32,16 +33,16 @@ class Application {
 	/**
 	 * @param  string $userdir The path to the user directory
 	 */
-	public function __construct($db, $project_path, $user_path = '~'/*, $sql_files_directory = 'database', $Atlassian_path = ''*/) {
-		$this->db = $db;
-		$this->set_project_paths($project_path/*, $sql_files_directory*/);
-		$this->set_user_paths($user_path/*, $Atlassian_path*/);
+	public function __construct($db, $project_path, $user_path = '~') {
+		$this->db = ($db ?: database(getenv('DATABASE_DRIVER')));
+		$this->set_project_paths($project_path);
+		$this->set_user_paths($user_path);
 		static::$instance = $this;
 	}
 
-	public static function instance($db = null, $project_path = '', $user_path = '~'/*, $sql_files_directory = 'database', $Atlassian_path = ''*/) {
+	public static function instance($db = null, $project_path = '', $user_path = '~') {
 		if (! isset(static::$instance)) {
-			return new static($db, $project_path, $user_path/*, $sql_files_directory, $Atlassian_path*/);
+			return new static($db, $project_path, $user_path);
 		}
 		return static::$instance;
 	}
@@ -92,6 +93,11 @@ class Application {
         $Command->set_invocation_flag();
 
         return $Command->run();
+    }
+
+    public function make($abstract) {
+    	$Container = new Container(APPLICATION_PATH);
+    	return $Container->make($abstract);
     }
 
 	/**

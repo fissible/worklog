@@ -16,7 +16,7 @@ class TestCase extends \PHPUnit_Framework_TestCase {
 	protected $app;
 
 	public function __construct() {
-		require(dirname(__DIR__).'/bootstrap.php');
+		require_once(dirname(__DIR__).'/bootstrap.php');
 	}
 
 
