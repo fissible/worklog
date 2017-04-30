@@ -57,6 +57,8 @@ class FileStore extends Cache {
 
     public function setup() {
         if (! $this->is_setup()) {
+            parent::setup();
+            
             if (! empty($this->path)) {
                 mkdir($this->path);
                 chmod($this->path, 0777);
