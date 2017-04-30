@@ -10,5 +10,19 @@ namespace Worklog\Testing;
 
 class TestCase extends \PHPUnit_Framework_TestCase {
 
+	/**
+	 * An application instance
+	 */
+	protected $app;
+
+	public function __construct() {
+		require(dirname(__DIR__).'/bootstrap.php');
+	}
+
+
+	protected function refreshApplication()
+	{
+		$this->app = App();
+	}
 
 }
