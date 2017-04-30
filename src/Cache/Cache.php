@@ -250,6 +250,8 @@ class Cache {
     }
 
 	public function load_tags($tags) {
+        $this->setup();
+        
 		$items = [];
 		if (! empty($tags)) {
 			$tags = static::tags($tags);
