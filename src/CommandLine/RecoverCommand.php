@@ -24,7 +24,7 @@ class RecoverCommand extends Command {
     public function run() {
         parent::run();
 
-        list($filename, $Task) = TaskService::cached(true);
+        list($CachedItem, $Task) = TaskService::cached(true);
 
         if ($Task instanceof Task) {
             if ($Task->hasAttribute('start')) {
@@ -90,9 +90,8 @@ class RecoverCommand extends Command {
 
                 return $result;
 
-            } elseif (! is_null($filename)) {
-                debug($filename.' -- DELETES HERE ');
-//                $this->App()->Cache()->clear($filename);
+            } elseif (! is_null($CachedItem)) {
+               $this->App()->Cache()->clear($CachedItem);
             }
         }
 

@@ -171,6 +171,7 @@ abstract class BinaryCommand extends Command
                     $command .= ' > `tty`';
                 }
             }
+            
             // debug($command, 'red');
             $this->output = [];
             exec($command, $this->output);

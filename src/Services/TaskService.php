@@ -72,6 +72,7 @@ class TaskService extends ModelService {
         $filename = null;
         $Task = false;
         $Cache = App()->Cache();
+        $CacheItem = null;
 
         if ($disable_purge) {
             $Cache->disable_purge();
@@ -79,23 +80,23 @@ class TaskService extends ModelService {
 
         // Get the latest index
         if ($cached_start_times = $Cache->load_tags(self::CACHE_TAG)) {
-            foreach ($cached_start_times as $name => $file) {
+            foreach ($cached_start_times as $name => $CacheItem) {
                 if (false !== strpos($name, '_')) {
                     $parts = explode('_', $name);
                     if ($parts[1] > $last_index) {
                         $last_index = $parts[1];
+                        $filename = $CacheItem->File()->path();
                         $cache_name = $name;
-                        $filename = $file;
                     }
                 } else {
+                    $filename = $CacheItem->File()->path();
                     $cache_name = $name;
-                    $filename = $file;
                 }
             }
         }
 
         if (! is_null($cache_name)) {
-            $data = json_decode(json_encode($Cache->load($cache_name)), true);
+            $data = json_decode(json_encode($Cache->load($cache_name, true)), true);
             if (array_key_exists('date', $data) && is_array($data['date'])) {
                 if (array_key_exists('date', $data['date'])) {
                     $data['date'] = $data['date']['date'];
@@ -107,6 +108,6 @@ class TaskService extends ModelService {
             $Task = new Task($data);
         }
 
-        return [ $filename, $Task ];
+        return [ $CacheItem, $Task ];
     }
 }

@@ -83,6 +83,10 @@ class File {
         }
     }
 
+    public function contents() {
+    	return file_get_contents($this->path);
+    }
+
 	public function write($content = null, $flags = null, $line_glue = '') {
 	    if (is_null($flags)) {
 	        $flags = FILE_APPEND | LOCK_EX;

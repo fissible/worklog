@@ -1,8 +1,9 @@
 <?php
 namespace Worklog;
 
+use Worklog\Cache\Cache;
+use Worklog\Cache\FileStore;
 use Worklog\CommandLine;
-use Worklog\Filesystem;
 
 class Application {
 
@@ -50,8 +51,14 @@ class Application {
 	 */
 	public function Cache() {
 		if (! isset($this->Cache)) {
-			$this->Cache = new Filesystem\Cache(CACHE_PATH);
+			$driver = env('CACHE_DRIVER');
+			if ($driver == Cache::DRIVER_FILE) {
+				$this->Cache = new FileStore(CACHE_PATH);
+			} else {
+				$this->Cache = new Cache();
+			}
 		}
+
 		return $this->Cache;
 	}
 

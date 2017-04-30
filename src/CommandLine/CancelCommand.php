@@ -32,15 +32,12 @@ class CancelCommand extends Command {
         parent::run();
 
         $deleted = false;
-        $filename = null;
         $return = false;
 
-        list($filename, $Task) = TaskService::cached(true);
+        list($CacheItem, $Task) = TaskService::cached(true);
 
-        if ($Task) {
-            if (! is_null($filename)) {
-                $deleted = $this->App()->Cache()->clear($filename);
-            }
+        if ($Task && $CacheItem) {
+            $deleted = $this->App()->Cache()->delete($CacheItem);
         } else {
             throw new \Exception(static::$exception_strings['not_found']);
         }

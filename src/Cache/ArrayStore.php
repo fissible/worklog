@@ -1,21 +1,19 @@
 <?php
-namespace Worklog\Filesystem;
+namespace Worklog\Cache;
 
 use Worklog\Application;
 
 /**
  * Cache file wrapper class
  */
-class Cache {
-
-	private $path;
+class ArrayStore extends Cache {
 
 	private $registry = [];
 
 	private static $DO_NOT_PURGE = false;
 
 
-	public function __construct($path = '') {
+	public function __construct($path = '', $driver = 'file') {
 		$this->set_cache_path($path);
 		$this->load_registry();
 	}
@@ -60,9 +58,13 @@ class Cache {
 
 	public function is_setup() {
 	    $setup = false;
-        if (! empty($this->path)) {
-            $setup = is_dir($this->path);
-        }
+	    
+	    if ($this->drvier == 'file') {
+	    	if (! empty($this->path)) {
+	            $setup = is_dir($this->path);
+	        }
+	    }
+        
 		return $setup;
 	}
 

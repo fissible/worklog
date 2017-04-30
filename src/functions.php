@@ -60,7 +60,8 @@ function debug($input, $color = 'yellow', $internally_invoked = false) {
             Output::line(Output::color(' DEBUG  '.caller('file:line', 1), $color), $bordr, $width);
         }
         if (is_object($input)) {
-            $input = json_decode(json_encode($input), true);
+            $input = @var_export($input, true);
+            $input = explode("\n", $input);
         }
         if (is_array($input)) {
             $input = print_r($input, true);

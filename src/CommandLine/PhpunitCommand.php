@@ -29,6 +29,8 @@ class PhpunitCommand extends BinaryCommand {
     public function run() {
         parent::run();
 
+        
+
         $command = $this->command();
         $command[] = '--configuration="'.dirname(APPLICATION_PATH).'/tests/'.$this->config_file.'"';
 
