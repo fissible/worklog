@@ -11,9 +11,8 @@ use Worklog\CommandLine\Output;
 
 date_default_timezone_set('America/Los_Angeles');
 
-include(__DIR__.'/functions.php');
-
 define('APPLICATION_PATH', __DIR__);
+
 $app_dir = dirname(APPLICATION_PATH);
 define('VENDOR_PATH', $app_dir.'/vendor');
 $cache_dir = '/'.trim((getenv('CACHE_DIRECTORY') ?: 'cache'), '/');
@@ -22,13 +21,15 @@ $loader = require(VENDOR_PATH.'/autoload.php');
 $dotenv = new Dotenv\Dotenv($app_dir);
 $dotenv->load();
 
-define('MINIMUM_PHP_VERSION', '5.5.0');
+define('DEVELOPMENT_MODE', getenv('DEVELOPMENT_MODE'));
 
+include(__DIR__.'/functions.php');
+
+define('MINIMUM_PHP_VERSION', '5.5.0');
 define('CACHE_PATH', $app_dir.$cache_dir);
 define('DATABASE_PATH', dirname(APPLICATION_PATH).'/database');
 define('DATABASE_MIGRATIONS', DATABASE_PATH.'/migrations');
 define('DEFAULT_COMMAND', 'today');
-define('DEVELOPMENT_MODE', env('DEVELOPMENT_MODE'));
 define('IS_CLI', php_sapi_name() == "cli");
 define('ONE_HOUR_IN_SECONDS', 60*60);
 define('SCRIPT_NAME', $script);

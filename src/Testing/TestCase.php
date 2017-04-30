@@ -6,19 +6,9 @@
  * Time: 11:38 AM
  */
 
-namespace Worklog\Tests;
+namespace Worklog\Testing;
 
-use PHPUnit\Framework\TestCase as PHPUnitTestCase;
+class TestCase extends \PHPUnit_Framework_TestCase {
 
-class TestCase extends PHPUnitTestCase {
 
-    public function assertTrue($value)
-    {
-    	$this->assertEquals(true, $value);
-    }
-
-    public function assertTrue($value)
-    {
-    	$this->assertEquals(false, $value);
-    }
 }
