@@ -14,10 +14,6 @@ class TestCase extends BaseTestCase {
 
     public function testSetUp()
     {
-        $this->assertNull($this->app);
-
-        $this->refreshApplication();
-
         $this->assertNotNull($this->app);
         $this->assertTrue(is_dir(APPLICATION_PATH));
         $this->assertTrue(defined('APPLICATION_PATH'));

@@ -144,7 +144,7 @@ class Cache {
 			if (is_callable($data)) {
 				try {
 					$param = new \ReflectionParameter($data, 0);
-					if (stristr($param->getClass(), 'Application', 'blue')) {
+					if (stristr($param->getClass(), 'Application')) {
 						$data = call_user_func($data, Application::instance());
 					} else {
 						$data = call_user_func($data);

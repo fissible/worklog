@@ -96,8 +96,12 @@ class Application {
     }
 
     public function make($abstract) {
-    	$Container = new Container(APPLICATION_PATH);
+    	$Container = static::Container();
     	return $Container->make($abstract);
+    }
+
+    public static function Container() {
+    	return new Container(APPLICATION_PATH);
     }
 
 	/**
@@ -281,5 +285,14 @@ class Application {
 		}
 
 		return "\t" . implode("\n\t", $result);
+	}
+
+	public function __call($name, $arguments)
+	{
+		$Container = static::Container();
+
+		if (method_exists($Container, $name)) {
+			return call_user_func_array([$Container, $name], $arguments);
+		}
 	}
 }

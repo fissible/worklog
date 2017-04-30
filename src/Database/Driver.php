@@ -13,6 +13,9 @@ abstract class Driver {
 
     abstract public function last_error();
 
+    protected $connected = false;
+
+
     public function first() {
         if (isset($this->result)) {
             return array_shift($this->result);
@@ -60,11 +63,11 @@ abstract class Driver {
         foreach ($where as $field => $value) {
             $operator = '=';
             foreach ($_operators as $_op) {
-                if (false !== stristr($field, $_op)) {
+                if (substr($field, -(strlen($_op))) == $_op) {
                     $field = str_replace($_op, '', $field);
                     $operator = $_op;
                     break;
-                } elseif (false !== stristr($value, $_op)) {
+                } elseif (substr($value, 0, strlen($_op)) == $_op) {
                     $value = str_replace($_op, '', $value);
                     $operator = $_op;
                     break;
@@ -87,11 +90,11 @@ abstract class Driver {
         foreach ($where as $field => $value) {
             $operator = '=';
             foreach ($_operators as $_op) {
-                if (false !== stristr($field, $_op)) {
+                if (substr($field, -(strlen($_op))) == $_op) {
                     $field = str_replace($_op, '', $field);
                     $operator = $_op;
                     break;
-                } elseif (false !== stristr($value, $_op)) {
+                } elseif (substr($value, 0, strlen($_op)) == $_op) {
                     $value = str_replace($_op, '', $value);
                     $operator = $_op;
                     break;

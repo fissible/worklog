@@ -63,10 +63,15 @@ class SqliteDatabaseDriver extends Driver {
 
         if ($this->db = new \PDO($connString)) {
             $this->db->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+            $this->connected = true;
             return true;
         }
 
         throw new \Exception(sprintf('Unable to connect to Sqlite database using connection string: %s', $connString));
+    }
+
+    public function is_connected() {
+        return $this->connected;
     }
 
     public function begin_transaction() {
@@ -133,7 +138,6 @@ class SqliteDatabaseDriver extends Driver {
 
     public function prepare($sql, $options = []) {
         //$options = array_merge([ PDO::ATTR_CURSOR => PDO::CURSOR_FWDONLY ], $options);
-
         $this->stmt = $this->db->prepare($sql, $options);
     }
 
@@ -192,7 +196,7 @@ class SqliteDatabaseDriver extends Driver {
         }
         $sql = sprintf('SELECT %s FROM %s', $fields, $table);
         if (! is_null($where) && ! empty($where)) {
-            $sql .= sprintf(' WHERE %s', $where);
+            $sql .= sprintf(' WHERE %s', static::where_string($where));
         }
         if (! is_null($order_by)) {
             $sql .= sprintf(' ORDER BY %s', $order_by);
