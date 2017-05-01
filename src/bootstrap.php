@@ -21,7 +21,7 @@ $loader = require(VENDOR_PATH.'/autoload.php');
 $dotenv = new Dotenv\Dotenv($app_dir);
 $dotenv->load();
 
-define('DEVELOPMENT_MODE', getenv('DEVELOPMENT_MODE'));
+define('DEVELOPMENT_MODE', filter_var(getenv('DEVELOPMENT_MODE'), FILTER_VALIDATE_BOOLEAN));
 
 include(__DIR__.'/functions.php');
 

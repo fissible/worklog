@@ -251,18 +251,21 @@ class Cache {
 
 	public function load_tags($tags) {
         $this->setup();
-        
+
 		$items = [];
 		if (! empty($tags)) {
 			$tags = static::tags($tags);
 
-			foreach ($this->registry as $name => $CacheItem) {
-				if (array_intersect($tags, $CacheItem->tags)) {
-					if ($CacheItem->is_registered()) {
-						$items[$name] = $CacheItem;
+			if (isset($this->registry)) {
+				foreach ($this->registry as $name => $CacheItem) {
+					if (array_intersect($tags, $CacheItem->tags)) {
+						if ($CacheItem->is_registered()) {
+							$items[$name] = $CacheItem;
+						}
 					}
 				}
 			}
+			
 		}
 
 		return $items;

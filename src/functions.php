@@ -52,7 +52,7 @@ function caller($key = null, $index = 0) {
 }
 
 function debug($input, $color = 'yellow', $internally_invoked = false) {
-    if (DEVELOPMENT_MODE) {
+    if (DEVELOPMENT_MODE == true) {
         $bordr = Output::color(Output::uchar('ver', 'heavy'), $color);
         $width = floor(Output::cols() / 1.5);
 

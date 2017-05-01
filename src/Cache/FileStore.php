@@ -17,8 +17,6 @@ class FileStore extends Cache {
 
 
 	public function __construct($path = '') {
-    	debug('FileStore::__construct('.$path.')', 'red');
-
 		$this->set_cache_path($path);
 		parent::__construct(self::DRIVER_FILE);
 	}
@@ -58,7 +56,7 @@ class FileStore extends Cache {
     public function setup() {
         if (! $this->is_setup()) {
             parent::setup();
-            
+
             if (! empty($this->path)) {
                 mkdir($this->path);
                 chmod($this->path, 0777);
@@ -87,8 +85,6 @@ class FileStore extends Cache {
      * @return array The cache data
      */
     public function load($name, $get_raw = false, $do_not_delete = false) {
-    	debug('FileStore->load('.$name.')', 'red');
-
         $this->Item = $this->Item(compact('name'));
 
         if ($this->is_setup()) {
