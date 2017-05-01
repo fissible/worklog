@@ -28,13 +28,5 @@ class ComposerCommand extends BinaryCommand {
 
     public function run() {
         parent::run();
-
-        $command = $this->command();
-
-        if ($this->Options()->nodev && ! DEVELOPMENT_MODE) {
-            $command[] = '--no-dev';
-        }
-
-        $this->raw($command);
     }
 }

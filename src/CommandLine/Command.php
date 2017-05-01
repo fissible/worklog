@@ -379,6 +379,30 @@ class Command {
 		return $this->Options()->all();
 	}
 
+	public function setArgument($offset, $value) {
+		$this->Options()->setArgument($offset, $value);
+	}
+
+	public function getArgument($offset) {
+		return $this->Options()->getArgument($offset);
+	}
+
+	public function unsetArgument($offset) {
+		$this->Options()->unsetArgument($offset);
+	}
+
+	public function setOption($offset, $value) {
+		$this->Options()->setOption($offset, $value);
+	}
+
+	public function getOption($offset) {
+		return $this->Options()->getOption($offset);
+	}
+
+	public function unsetOption($offset) {
+		$this->Options()->unsetOption($offset);
+	}
+
     /**
      * Get the process ID
      * 

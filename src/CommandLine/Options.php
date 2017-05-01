@@ -177,16 +177,20 @@ class Options implements \ArrayAccess {
      * @throws \Exception
      */
 	protected function config($property = null) {
-		$config = [];
-		if (isset($this->command)) {
-			if (array_key_exists($this->command, $this->command_registry)) {
-				$config = $this->command_registry[$this->command];
+		$config = (isset($this->config) ? $this->config : []);
+
+		if (! ($this->Command instanceof BinaryCommand)) {
+			if (isset($this->command)) {
+				if (array_key_exists($this->command, $this->command_registry)) {
+					$config = $this->command_registry[$this->command];
+				} else {
+					throw new \InvalidArgumentException($this->error_message('COMMAND_NAME_INVALID', __METHOD__, $this->command));
+				}
 			} else {
-				throw new \InvalidArgumentException($this->error_message('COMMAND_NAME_INVALID', __METHOD__, $this->command));
+				throw new \Exception(static::$error_messages['COMMAND_NAME_UNSET']);
 			}
-		} else {
-			throw new \Exception(static::$error_messages['COMMAND_NAME_UNSET']);
 		}
+		
 		if (! empty($config)) {
 			if (! is_null($property)) {
 				if (array_key_exists($property, $config)) {
@@ -196,6 +200,7 @@ class Options implements \ArrayAccess {
 				}
 			}
 		}
+
 		return $config;
 	}
 
@@ -230,6 +235,38 @@ class Options implements \ArrayAccess {
 	 */
 	public function args() {
 		return $this->arguments;
+	}
+
+	public function setArgument($offset, $value) {
+		$this->arguments[$offset] = $value;
+	}
+
+	public function getArgument($offset) {
+		if (isset($this->arguments[$offset])) {
+			return $this->arguments[$offset];
+		}
+	}
+
+	public function unsetArgument($offset) {
+		if (isset($this->arguments[$offset])) {
+			unset($this->arguments[$offset]);
+		}
+	}
+
+	public function setOption($offset, $value) {
+		$this->options[$offset] = $value;
+	}
+
+	public function getOption($offset) {
+		if (isset($this->options[$offset])) {
+			return $this->options[$offset];
+		}
+	}
+
+	public function unsetOption($offset) {
+		if (isset($this->options[$offset])) {
+			unset($this->options[$offset]);
+		}
 	}
 
 	public function parse_args($args) {
@@ -384,7 +421,7 @@ class Options implements \ArrayAccess {
                             $last_arg = $option;
 
                             continue;
-                        } else {
+                        } elseif($argument !== $this->Command->name()) {
                             if (! $last_arg_was_option || (! in_array($last_arg, $flags_with_values) && ! $last_flag_gets_value)) {
                                 $this->arguments[] = $argument;
 
@@ -491,6 +528,7 @@ class Options implements \ArrayAccess {
 		if ($signature) {
 			$error = $signature.': '.$error;
 		}
+
 		return $error;
 	}
 

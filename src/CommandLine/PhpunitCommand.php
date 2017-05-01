@@ -11,27 +11,30 @@ namespace Worklog\CommandLine;
 
 class PhpunitCommand extends BinaryCommand {
 
+    public $command_name = 'test';
+
     public static $description = 'Run PhpUnit tests';
+
     public static $options = [];
+
     public static $arguments = [];
+
     public static $menu = false;
 
-    protected $config_file = 'phpunit.xml';
+    protected $config = [
+        'file' => 'phpunit.xml'
+    ];
 
 
     protected function init() {
         $this->setBinary(env('BINARY_PHPUNIT'));
         if ($config_file = $this->option('configuration')) {
-            $this->config_file = $config_file;
+            $this->config['file'] = $config_file;
         }
     }
 
     public function run() {
-        parent::run();
-
-        $command = $this->command();
-        $command[] = '--configuration="'.dirname(APPLICATION_PATH).'/tests/'.$this->config_file.'"';
-
-        $this->raw($command);
+        $this->pushCommand('--configuration="../'.$this->config['file'].'"');
+        $this->raw();
     }
 }

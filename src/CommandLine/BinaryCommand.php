@@ -15,6 +15,8 @@ abstract class BinaryCommand extends Command
 
     protected $config_file;
 
+    protected $initialized = false;
+
     protected $executed = false;
 
     protected $ready = false;
@@ -31,17 +33,26 @@ abstract class BinaryCommand extends Command
     public function __construct($command = [], $in_background = false) {
         parent::__construct();
         $this->setRawCommand($command, $in_background);
+
+        if (method_exists($this, 'init')) {
+            $this->init();
+        }
     }
 
-    public function name() {
-        $name = '';
-        if (isset($this->binary)) {
-            $name = $this->binary;
-        } elseif (isset($this->command_name)) {
-            $name = $this->command_name;
-        }
-        return $name;
+    protected function init() {
+        deubg('parent::init()', 'blue');
+        $this->initialized(true);
     }
+
+    // public function name() {
+    //     $name = '';
+    //     if (isset($this->binary)) {
+    //         $name = $this->binary;
+    //     } elseif (isset($this->command_name)) {
+    //         $name = $this->command_name;
+    //     }
+    //     return $name;
+    // }
 
     public function setBinary($binary) {
         $this->binary = $binary;
@@ -61,6 +72,9 @@ abstract class BinaryCommand extends Command
     }
 
     public function command($reprocess = false) {
+        if (! $this->initialized()) {
+            $this->init();
+        }
         if (! isset($this->final_command) || $reprocess == true) {
             $this->final_command = [];
             $this->ready(false);
@@ -129,18 +143,28 @@ abstract class BinaryCommand extends Command
         return $this;
     }
 
-    public function executed($set = null) {
+    public function initialized($set = null) {
         if (! is_null($set)) {
-            $this->executed = (bool) $set;
+            $this->initialized = (bool) $set;
         }
-        return $this->executed;
+
+        return $this->initialized;
     }
 
     public function ready($set = null) {
         if (! is_null($set)) {
             $this->ready = (bool) $set;
         }
+
         return $this->ready;
+    }
+
+    public function executed($set = null) {
+        if (! is_null($set)) {
+            $this->executed = (bool) $set;
+        }
+
+        return $this->executed;
     }
 
     /**
@@ -150,12 +174,12 @@ abstract class BinaryCommand extends Command
      * @throws \InvalidArgumentException
      */
     protected function raw($command = [], $in_background = false) {
-        if (! empty($command) && ! isset($this->raw_command)) {
+        if (! empty($command)) {
             $this->setRawCommand($command, $in_background);
         }
         
         // localize raw command, fallsback to the binary (could be null)
-        $command = $this->command($this->ready());
+        $command = $this->command(! $this->ready());
 
         if ($command && $this->ready()) {
             $command = implode(' ', $command);
@@ -172,7 +196,7 @@ abstract class BinaryCommand extends Command
                 }
             }
             
-            // debug($command, 'red');
+            debug($command, 'red');
             $this->output = [];
             exec($command, $this->output);
 
