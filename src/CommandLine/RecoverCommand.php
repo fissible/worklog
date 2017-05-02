@@ -11,8 +11,8 @@ use Worklog\Services\TaskService;
  * Date: 3/7/17
  * Time: 10:49 AM
  */
-class RecoverCommand extends Command {
-
+class RecoverCommand extends Command
+{
     public $command_name;
 
     public static $description = 'Recover a started work log entry';
@@ -20,8 +20,8 @@ class RecoverCommand extends Command {
     public static $arguments = [];
     public static $menu = false;
 
-
-    public function run() {
+    public function run()
+    {
         parent::run();
 
         list($CachedItem, $Task) = TaskService::cached(true);
@@ -78,7 +78,6 @@ class RecoverCommand extends Command {
                 } elseif ($cancel_task) {
                     $result = (new CancelCommand())->run();
                 }
-
 
                 if (IS_CLI && false !== $result) {
                     if ($this->getData('warn') == 'start') {

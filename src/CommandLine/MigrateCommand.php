@@ -5,7 +5,6 @@ namespace Worklog\CommandLine;
 use Worklog\Database\Migration;
 use Worklog\CommandLine\Command as Command;
 
-
 /**
  * Created by PhpStorm.
  * User: allenmccabe
@@ -21,7 +20,8 @@ class MigrateCommand extends Command
     public static $arguments = [ 'name' ];
     public static $menu = false;
 
-    public function run() {
+    public function run()
+    {
         parent::run();
 
         Migration::set_migrations_path(DATABASE_MIGRATIONS);

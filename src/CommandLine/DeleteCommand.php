@@ -9,8 +9,8 @@ use Worklog\Models\Task;
  * Date: 2/23/17
  * Time: 8:34 AM
  */
-class DeleteCommand extends Command {
-
+class DeleteCommand extends Command
+{
     public $command_name;
 
     public static $description = 'Delete a work log entry by ID';
@@ -24,8 +24,8 @@ class DeleteCommand extends Command {
         'invalid_argument' => 'Command requires a valid ID as the argument'
     ];
 
-
-    public function run() {
+    public function run()
+    {
         parent::run();
 
         $id = $this->getData('id');

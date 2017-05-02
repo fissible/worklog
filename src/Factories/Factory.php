@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Factory as Eloquent;
 /**
  * Factory
  */
-class Factory extends Eloquent {
-
-
+class Factory extends Eloquent
+{
 }

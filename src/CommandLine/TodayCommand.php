@@ -2,7 +2,6 @@
 
 namespace Worklog\CommandLine;
 
-use Carbon\Carbon;
 use Worklog\Models\Task;
 use Worklog\Services\TaskService;
 
@@ -21,7 +20,8 @@ class TodayCommand extends Command
     public static $arguments = [];
     public static $menu = true;
 
-    public function run() {
+    public function run()
+    {
         parent::run();
 
         list(, $Task) = TaskService::cached(true);
@@ -40,6 +40,7 @@ class TodayCommand extends Command
         $Command = new ReportCommand();
         $Command->set_invocation_flag();
         $Command->setData('today', true);
+
         return $Command->run();
     }
 }

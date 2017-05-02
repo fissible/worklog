@@ -11,8 +11,8 @@ use Worklog\Services\TaskService;
  * Date: 2/21/17
  * Time: 4:20 PM
  */
-class WriteCommand extends Command {
-
+class WriteCommand extends Command
+{
     public $command_name;
 
     public static $description = 'Create a work log entry';
@@ -34,8 +34,8 @@ class WriteCommand extends Command {
     const TYPE_UPDATE = 0;
     const TYPE_INSERT = 1;
 
-
-    public function run() {
+    public function run()
+    {
         parent::run();
 
         $TaskService = new TaskService();
@@ -97,7 +97,7 @@ class WriteCommand extends Command {
                         if (strlen($response) > 0) {
                             $response = trim($response);
 
-                            switch($field) {
+                            switch ($field) {
                                 case 'description':
                                     $prefix = substr($response, 0, 1);
                                     if ($prefix == '.' || $prefix == ',') {
@@ -136,7 +136,6 @@ class WriteCommand extends Command {
 
         $result = $this->Task->save();
 
-
         if ($this->getData('RETURN_RESULT')) {
             return $result;
         }
@@ -151,7 +150,8 @@ class WriteCommand extends Command {
     /**
      * @return bool
      */
-    private function is_update() {
+    private function is_update()
+    {
         return $this->type == self::TYPE_UPDATE;
     }
 }

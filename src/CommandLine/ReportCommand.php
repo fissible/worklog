@@ -2,11 +2,7 @@
 namespace Worklog\CommandLine;
 
 use Carbon\Carbon;
-use Worklog\Duration;
-use Worklog\Models\Task;
-use Worklog\CommandLine\Output;
 use Worklog\Report;
-use Worklog\Services\TaskService;
 use Worklog\CommandLine\Command as Command;
 
 /**
@@ -15,8 +11,8 @@ use Worklog\CommandLine\Command as Command;
  * Date: 2/24/17
  * Time: 2:28 PM
  */
-class ReportCommand extends Command {
-
+class ReportCommand extends Command
+{
     public $command_name;
 
     public static $description = 'Report work log entries';
@@ -43,8 +39,8 @@ class ReportCommand extends Command {
         'invalid_group_key' => 'Invalid group key'
     ];
 
-
-    public function run() {
+    public function run()
+    {
         parent::run();
 
         $group_by_overidden = false;

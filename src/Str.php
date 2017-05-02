@@ -8,7 +8,6 @@
 
 namespace Worklog;
 
-
 use Carbon\Carbon;
 
 class Str
@@ -22,20 +21,23 @@ class Str
      */
     private $string;
 
-
-    public function __construct($string = '', $trim = false) {
+    public function __construct($string = '', $trim = false)
+    {
         $this->setString($string, $trim);
     }
 
-    private function setString($string = '', $trim = false) {
+    private function setString($string = '', $trim = false)
+    {
         $this->string = $string . '';
         if ($trim) {
             $this->trim();
         }
+
         return $this;
     }
 
-    public static function date($input, $format = null) {
+    public static function date($input, $format = null)
+    {
         if ($input instanceof Carbon) {
             $Date = $input->copy();
         } else {
@@ -44,23 +46,28 @@ class Str
         if (is_null($format)) {
             return $Date->toDateString();
         }
+
         return $Date->format($format);
     }
 
     /**
-     * @param string $time
-     * @param string $format
-     * @param null $timezone
+     * @param  string $time
+     * @param  string $format
+     * @param  null   $timezone
      * @return mixed
      */
-    public static function datetime($time = 'now', $format = 'Y-m-d H:i:s', $timezone = null) {
+    public static function datetime($time = 'now', $format = 'Y-m-d H:i:s', $timezone = null)
+    {
         if (strtolower($time) === 'now') $time = null;
         $Date = new Carbon($time, $timezone);
+
         return $Date->format($format);
     }
 
-    public static function time($time_str, $format = 'g:i a') {
+    public static function time($time_str, $format = 'g:i a')
+    {
         $Date = Carbon::parse(date("Y-m-d").' '.$time_str);
+
         return $Date->format($format);
     }
 
@@ -69,8 +76,9 @@ class Str
      * @param $needles
      * @return bool
      */
-    public static function _contains($input, $needles) {
-        foreach ((array)$needles as $needle) {
+    public static function _contains($input, $needles)
+    {
+        foreach ((array) $needles as $needle) {
             if ($needle != '' && mb_strpos($input, $needle) !== false) {
                 return true;
             }
@@ -83,7 +91,8 @@ class Str
      * @param $char
      * @return bool
      */
-    public static function _is_vowel($char) {
+    public static function _is_vowel($char)
+    {
         if (mb_strlen($char) > 1) {
             throw new \InvalidArgumentException('_is_vowel() requires a single character string');
         }
@@ -96,7 +105,8 @@ class Str
      * @param $char
      * @return bool
      */
-    public static function _is_consonant($char) {
+    public static function _is_consonant($char)
+    {
         if (mb_strlen($char) > 1) {
             throw new \InvalidArgumentException('_is_consonant() requires a single character string');
         }
@@ -108,7 +118,8 @@ class Str
      * @param $input
      * @return bool
      */
-    public static function _is_lower($input) {
+    public static function _is_lower($input)
+    {
         return ctype_lower($input);
     }
 
@@ -116,7 +127,8 @@ class Str
      * @param $input
      * @return bool
      */
-    public static function _is_upper($input) {
+    public static function _is_upper($input)
+    {
         return ctype_upper($input);
     }
 
@@ -125,9 +137,10 @@ class Str
      * @param $needles
      * @return bool
      */
-    public static function _startsWith($haystack, $needles) {
-        foreach ((array)$needles as $needle) {
-            if ($needle != '' && mb_substr($haystack, 0, strlen($needle)) === (string)$needle) {
+    public static function _startsWith($haystack, $needles)
+    {
+        foreach ((array) $needles as $needle) {
+            if ($needle != '' && mb_substr($haystack, 0, strlen($needle)) === (string) $needle) {
                 return true;
             }
         }
@@ -140,9 +153,10 @@ class Str
      * @param $needles
      * @return bool
      */
-    public static function _endsWith($input, $needles) {
-        foreach ((array)$needles as $needle) {
-            if (mb_substr($input, -strlen($needle)) === (string)$needle) {
+    public static function _endsWith($input, $needles)
+    {
+        foreach ((array) $needles as $needle) {
+            if (mb_substr($input, -strlen($needle)) === (string) $needle) {
                 return true;
             }
         }
@@ -154,17 +168,19 @@ class Str
      * @param $input
      * @return int
      */
-    public static function _length($input) {
+    public static function _length($input)
+    {
         return mb_strlen($input);
     }
 
     /**
      * @param $value
-     * @param int $limit
-     * @param string $end
+     * @param  int    $limit
+     * @param  string $end
      * @return string
      */
-    public static function _limit($value, $limit = 100, $end = '...') {
+    public static function _limit($value, $limit = 100, $end = '...')
+    {
         if (mb_strwidth($value, 'UTF-8') <= $limit) {
             return $value;
         }
@@ -176,7 +192,8 @@ class Str
      * @param $value
      * @return mixed|string
      */
-    public static function _lower($value) {
+    public static function _lower($value)
+    {
         return mb_strtolower($value, 'UTF-8');
     }
 
@@ -184,11 +201,13 @@ class Str
      * @param $value
      * @return mixed|string
      */
-    public static function _upper($value) {
+    public static function _upper($value)
+    {
         return mb_strtoupper($value, 'UTF-8');
     }
 
-    public static function _replace($subject, $find, $replace, $regex = false, $count = null) {
+    public static function _replace($subject, $find, $replace, $regex = false, $count = null)
+    {
         //mb_substr_replace
         if ($regex) {
             if (is_null($count)) {
@@ -209,54 +228,60 @@ class Str
      * @param $value
      * @return string
      */
-    public static function _shuffle($value) {
+    public static function _shuffle($value)
+    {
         return str_shuffle($value);
     }
 
     /**
      * @param $string
      * @param $start
-     * @param null $length
+     * @param  null   $length
      * @return string
      */
-    public static function _substr($string, $start, $length = null) {
+    public static function _substr($string, $start, $length = null)
+    {
         return mb_substr($string, $start, $length, 'UTF-8');
     }
 
     /**
      * @param $input
-     * @param string $character_mask
+     * @param  string $character_mask
      * @return string
      */
-    public static function _trim($input, $character_mask = " \t\n\r\0\x0B") {
+    public static function _trim($input, $character_mask = " \t\n\r\0\x0B")
+    {
         return trim($input, $character_mask);
     }
 
     /**
      * @param $input
-     * @param string $character_mask
+     * @param  string $character_mask
      * @return string
      */
-    public static function _ltrim($input, $character_mask = " \t\n\r\0\x0B") {
+    public static function _ltrim($input, $character_mask = " \t\n\r\0\x0B")
+    {
         return ltrim($input, $character_mask);
     }
 
     /**
      * @param $input
-     * @param string $character_mask
+     * @param  string $character_mask
      * @return string
      */
-    public static function _rtrim($input, $character_mask = " \t\n\r\0\x0B") {
+    public static function _rtrim($input, $character_mask = " \t\n\r\0\x0B")
+    {
         return rtrim($input, $character_mask);
     }
 
     /**
      * @param $value
-     * @param int $words
-     * @param string $end
+     * @param  int    $words
+     * @param  string $end
      * @return string
      */
-    public static function _words($value, $words = 100, $end = '...') {
+    public static function _words($value, $words = 100, $end = '...')
+    {
         preg_match('/^\s*+(?:\S++\s*+){1,' . $words . '}/u', $value, $matches);
         if (!isset($matches[0]) || static::_length($value) === static::_length($matches[0])) {
             return $value;
@@ -265,7 +290,8 @@ class Str
         return rtrim($matches[0]) . $end;
     }
 
-    public static function parse($input, $default = null) {
+    public static function parse($input, $default = null)
+    {
         $output = $input;
 
         if (is_null($input) || strtolower($input) === 'null') {
@@ -286,11 +312,12 @@ class Str
     /**
      * Parse a "Class@method" style callback string into class and method.
      *
-     * @param  string $callback
+     * @param  string      $callback
      * @param  string|null $default
      * @return array
      */
-    public static function parseCallback($callback, $default = null) {
+    public static function parseCallback($callback, $default = null)
+    {
         return static::_contains($callback, '@') ? explode('@', $callback, 2) : [$callback, $default];
     }
 
@@ -300,7 +327,8 @@ class Str
      * @param $input
      * @return array
      */
-    public static function parseFunctionArgs($input) {
+    public static function parseFunctionArgs($input)
+    {
         $output = $input;
 
         if (false !== strpos($input, '(') && false !== strpos($input, ')')) {
@@ -320,7 +348,8 @@ class Str
         return $output;
     }
 
-    public static function random($seed, $length = 0) {
+    public static function random($seed, $length = 0)
+    {
         $string = '';
         if (is_string($seed) && ! is_numeric($string)) {
             $string = (new static($seed))->randomize($length);
@@ -333,10 +362,11 @@ class Str
 
     /**
      * @mutator
-     * @param int $length
+     * @param  int   $length
      * @return $this
      */
-    public function randomize($length = 0) {
+    public function randomize($length = 0)
+    {
         if ($length < 1) {
             if (strlen($this->string) > 0) {
                 $length = strlen($this->string);
@@ -358,7 +388,8 @@ class Str
      * @param  string $filename
      * @return string
      */
-    public static function sanitize($filename) {
+    public static function sanitize($filename)
+    {
         // Remove anything which isn't a word, whitespace, number
         // or any of the following caracters -_,;[]().
         $filename = mb_ereg_replace("([^\w\s\d\-_,;\[\]\(\).])", '', $filename);
@@ -372,7 +403,8 @@ class Str
      * @param $input
      * @return mixed
      */
-    public static function _camel($input) {
+    public static function _camel($input)
+    {
         return str_replace(' ', '', ucwords(str_replace('_', ' ', $input)));
     }
 
@@ -381,7 +413,8 @@ class Str
      * @param $delimiter
      * @return string
      */
-    public static function _snake($input, $delimiter = '_') {
+    public static function _snake($input, $delimiter = '_')
+    {
         $out = [];
         $parts = str_split($input);
         foreach ($parts as $key => $char) {
@@ -400,7 +433,8 @@ class Str
         return $output;
     }
 
-    public static function _studly($input) {
+    public static function _studly($input)
+    {
         return str_replace(' ', '', ucwords(str_replace(['-', '_'], ' ', $input)));
     }
 
@@ -408,7 +442,8 @@ class Str
      * @param $value
      * @return mixed|string
      */
-    public static function _title($value) {
+    public static function _title($value)
+    {
         return mb_convert_case($value, MB_CASE_TITLE, 'UTF-8');
     }
 
@@ -416,7 +451,8 @@ class Str
      * @param $input
      * @return mixed|string
      */
-    public static function _plural($input) {
+    public static function _plural($input)
+    {
         $output = $input = trim($input);
         $already_plural = [
             'aircraft', 'bison', 'buffalo', 'chinese', 'data', 'deer', 'duck',
@@ -487,7 +523,6 @@ class Str
             }
         }
 
-
         return $output;
     }
 
@@ -505,7 +540,8 @@ class Str
         return $this->string;
     }
 
-    public function __call($name, $arguments) {
+    public function __call($name, $arguments)
+    {
         array_unshift($arguments, $this->base());
         switch ($name) {
             case 'startsWith':
@@ -536,7 +572,8 @@ class Str
         }
     }
 
-    public static function __callStatic($name, $arguments) {
+    public static function __callStatic($name, $arguments)
+    {
         return call_user_func_array([static::class, '_'.$name], $arguments);
     }
 }

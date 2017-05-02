@@ -13,17 +13,19 @@ $errors = [];
 /**
  * Get Application (singleton) instance
  */
-function App() {
+function App()
+{
     static $App;
     global $db, $CURRENT_DIR, $user_path;
     if (! isset($App)) {
         $App = Worklog\Application::instance($db, $CURRENT_DIR, $user_path);
     }
+
     return $App;
 }
 
-
-function caller($key = null, $index = 0) {
+function caller($key = null, $index = 0)
+{
     $trace = debug_backtrace(false);
     $caller = $trace[$index];
     /*
@@ -51,7 +53,8 @@ function caller($key = null, $index = 0) {
     return $caller;
 }
 
-function debug($input, $color = 'yellow', $internally_invoked = false) {
+function debug($input, $color = 'yellow', $internally_invoked = false)
+{
     if (DEVELOPMENT_MODE == true) {
         $bordr = Output::color(Output::uchar('ver', 'heavy'), $color);
         $width = floor(Output::cols() / 1.5);
@@ -88,7 +91,8 @@ function debug($input, $color = 'yellow', $internally_invoked = false) {
     }
 }
 
-function deprecated($class = null, $function = null, $line = null) {
+function deprecated($class = null, $function = null, $line = null)
+{
     $bt = debug_backtrace();
     $caller = array_shift($bt);
     if (is_null($class)) {
@@ -105,7 +109,8 @@ function deprecated($class = null, $function = null, $line = null) {
     }
 }
 
-function dump($value) {
+function dump($value)
+{
     if (is_scalar($value)) {
         print $value;
     } else {
@@ -113,7 +118,8 @@ function dump($value) {
     }
 }
 
-function env($key, $default = null) {
+function env($key, $default = null)
+{
     $value = getenv($key);
 
     if (preg_match_all('/{+(.*?)}/', $value, $matches)) {
@@ -142,7 +148,8 @@ function env($key, $default = null) {
 /**
  * Add an error to the errors array
  */
-function error($error_msg = null, $command = null) {
+function error($error_msg = null, $command = null)
+{
     global $errors;
     if (!is_null($error_msg)) {
         if (IS_CLI) {
@@ -159,7 +166,8 @@ function error($error_msg = null, $command = null) {
 /**
  * Output errors and return with status code 1
  */
-function error_exit($error_msg = null, $exit_code = 1) {
+function error_exit($error_msg = null, $exit_code = 1)
+{
     global $errors;
     error($error_msg);
     show_errors();
@@ -169,7 +177,8 @@ function error_exit($error_msg = null, $exit_code = 1) {
  * Output errors
  * @return [type] [description]
  */
-function show_errors() {
+function show_errors()
+{
     global $errors;
     if (count($errors)) {
         printl(implode("\n", Output::color($errors, 'red')));
@@ -180,7 +189,8 @@ function show_errors() {
  * Handle the Application->run() result
  * @param  mixed $result The return value of the Application->run() method
  */
-function handle_result($result = null) {
+function handle_result($result = null)
+{
     $nested_array = false;
     $coerce_string = App()->Command()->Options()->exist('s');
 
@@ -208,7 +218,8 @@ function handle_result($result = null) {
     }
 }
 
-function printl($value = '') {
+function printl($value = '')
+{
     dump($value);
     print "\n";
 }
@@ -219,33 +230,40 @@ function printl($value = '') {
  * @return string The user input
  */
 if (! function_exists('readline')) {
-    function readline($prompt = null) {
+    function readline($prompt = null)
+    {
         if ($prompt) echo $prompt;
         $fp = fopen("php://stdin","r");
         $line = rtrim(fgets($fp, 1024), "\r\n");
+
         return $line;
     }
 }
 
 if (! function_exists('readline_secret')) {
-    function readline_secret($prompt = null) {
+    function readline_secret($prompt = null)
+    {
         if ($prompt) echo $prompt;
         exec('stty -echo');
         $line = trim(fgets(STDIN));
         exec('stty echo');
         printl();
+
         return $line;
     }
 }
 
 if (! function_exists('tap')) {
-    function tap($value, $callback) {
+    function tap($value, $callback)
+    {
         $callback($value);
+
         return $value;
     }
 }
 
-function database_config($key = '') {
+function database_config($key = '')
+{
     global $db_config;
     if ($key) {
         return $db_config[$key];
@@ -260,7 +278,8 @@ function database_config($key = '') {
  * @return mixed
  * @throws \Predis\Connection\ConnectionException
  */
-function database($driver, $attempts = 0) {
+function database($driver, $attempts = 0)
+{
     $Handle = null;
     $db_config = include(DATABASE_PATH.'/config/local.php');
 
@@ -268,7 +287,7 @@ function database($driver, $attempts = 0) {
 
     // Illuminate/Capsule BEGIN
     $_config = [];
-    switch($driver) {
+    switch ($driver) {
         case 'Sqlite':
             $_config = [
                 'driver'   => 'sqlite',
@@ -295,6 +314,7 @@ function database($driver, $attempts = 0) {
         if ($attempts < 10) {
             passthru('bash '.APPLICATION_PATH.'/start-redis-server > /dev/null');
             sleep(1);
+
             return database($driver, $config, ++$attempts);
         } else {
             throw $e;
@@ -304,7 +324,8 @@ function database($driver, $attempts = 0) {
     return $Handle;
 }
 
-function mb_str_pad($str, $pad_len, $pad_str = ' ', $dir = STR_PAD_RIGHT) {
+function mb_str_pad($str, $pad_len, $pad_str = ' ', $dir = STR_PAD_RIGHT)
+{
     $str_len = mb_strlen($str);
     $pad_str_len = mb_strlen($pad_str);
     if (!$str_len && ($dir == STR_PAD_RIGHT || $dir == STR_PAD_LEFT)) {
@@ -326,7 +347,7 @@ function mb_str_pad($str, $pad_len, $pad_str = ' ', $dir = STR_PAD_RIGHT) {
         if ($dir == STR_PAD_RIGHT) {
             $result = $str . str_repeat($pad_str, $repeat);
             $result = mb_substr($result, 0, $pad_len);
-        } else if ($dir == STR_PAD_LEFT) {
+        } elseif ($dir == STR_PAD_LEFT) {
             $result = str_repeat($pad_str, $repeat);
             $result = mb_substr($result, 0,
                     $pad_len - (($str_len - $pad_str_len) + $pad_str_len))

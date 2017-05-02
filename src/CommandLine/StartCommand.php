@@ -11,8 +11,8 @@ use Worklog\Str;
  * Date: 2/21/17
  * Time: 4:20 PM
  */
-class StartCommand extends Command {
-
+class StartCommand extends Command
+{
     public $command_name;
 
     public static $description = 'Start a work log entry';
@@ -33,8 +33,8 @@ class StartCommand extends Command {
 
     const CACHE_NAME_DELIMITER = '_';
 
-
-    public function run() {
+    public function run()
+    {
         parent::run();
 
         $Now = Carbon::now();
@@ -51,6 +51,7 @@ class StartCommand extends Command {
 
         if (false === $RecoverCommand->run()) {
             printl('Recovery aborted, resuming current task...');
+
             return false;
         }
 
@@ -66,7 +67,6 @@ class StartCommand extends Command {
             }
             $cache_key .= self::CACHE_NAME_DELIMITER.($last_index + 1);
         }
-
 
         // issue key
         if (($issue = $this->option('i', false)) || ($issue = $this->getData('issue'))) {

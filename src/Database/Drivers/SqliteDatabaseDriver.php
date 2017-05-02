@@ -9,8 +9,8 @@ use Worklog\Database\Driver;
  * Date: 3/13/17
  * Time: 9:23 AM
  */
-class SqliteDatabaseDriver extends Driver {
-
+class SqliteDatabaseDriver extends Driver
+{
     /**
      * @var int
      */
@@ -41,8 +41,8 @@ class SqliteDatabaseDriver extends Driver {
 
     private $result;
 
-
-    public function __construct(/**/) {
+    public function __construct(/**/)
+    {
         $args = func_get_args();
         $num_args = func_num_args();
         if ($num_args == 1 && is_array($args[0])) {
@@ -52,7 +52,8 @@ class SqliteDatabaseDriver extends Driver {
         }
     }
 
-    public function connect($config) {
+    public function connect($config)
+    {
         $connString = 'sqlite:';
 
         if (array_key_exists('path', $config)) {
@@ -64,29 +65,35 @@ class SqliteDatabaseDriver extends Driver {
         if ($this->db = new \PDO($connString)) {
             $this->db->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
             $this->connected = true;
+
             return true;
         }
 
         throw new \Exception(sprintf('Unable to connect to Sqlite database using connection string: %s', $connString));
     }
 
-    public function is_connected() {
+    public function is_connected()
+    {
         return $this->connected;
     }
 
-    public function begin_transaction() {
+    public function begin_transaction()
+    {
         $this->db->beginTransaction();
     }
 
-    public function commit_transaction() {
+    public function commit_transaction()
+    {
         $this->db->commit();
     }
 
-    public function rollback() {
+    public function rollback()
+    {
         $this->db->rollBack();
     }
 
-    public function select($table, $where = [], $order_by = null, $limit = 0) {
+    public function select($table, $where = [], $order_by = null, $limit = 0)
+    {
         list($sql, $values) = $this->prepare_sql('*', $table, $where, $order_by, $limit);
 
         $this->prepare($sql);
@@ -100,7 +107,8 @@ class SqliteDatabaseDriver extends Driver {
         return $this->rows();
     }
 
-    public function prepare_sql($fields, $table, $where = null, $order_by = null, $limit = null) {
+    public function prepare_sql($fields, $table, $where = null, $order_by = null, $limit = null)
+    {
         $values = [];
         if (is_array($fields)) {
             $fields = implode(',', $fields);
@@ -120,7 +128,8 @@ class SqliteDatabaseDriver extends Driver {
         return [ $sql, $values ];
     }
 
-    public static function driver_modify($field, $value) {
+    public static function driver_modify($field, $value)
+    {
         switch (true) {
             case (stristr($field, 'datetime')):
                 $field = 'datetime('.$field.')';
@@ -136,7 +145,8 @@ class SqliteDatabaseDriver extends Driver {
         return [ $field, $value ];
     }
 
-    public function prepare($sql, $options = []) {
+    public function prepare($sql, $options = [])
+    {
         //$options = array_merge([ PDO::ATTR_CURSOR => PDO::CURSOR_FWDONLY ], $options);
         $this->stmt = $this->db->prepare($sql, $options);
     }
@@ -148,11 +158,13 @@ class SqliteDatabaseDriver extends Driver {
      * @param $type
      * @return mixed
      */
-    public function param($key, $variable, $type = null) {
+    public function param($key, $variable, $type = null)
+    {
         if (is_null($type)) $type = \PDO::PARAM_STR;
         if (! is_numeric($key) && substr($key, 0, 1) !== ':') {
             $key = ':'.$key;
         }
+
         return $this->stmt->bindParam($key, $variable, $type);
     }
 
@@ -163,26 +175,30 @@ class SqliteDatabaseDriver extends Driver {
      * @param $type
      * @return mixed
      */
-    public function bind($key, $value, $type = null) {
+    public function bind($key, $value, $type = null)
+    {
         if (is_null($type)) $type = \PDO::PARAM_STR;
         if (! is_numeric($key) && substr($key, 0, 1) !== ':') {
             $key = ':'.$key;
         }
+
         return $this->stmt->bindValue($key, $value, $type);
     }
 
-    public function execute($input = []) {
+    public function execute($input = [])
+    {
         return $this->stmt->execute($input);
     }
 
-    public function fetch() {
+    public function fetch()
+    {
         return $this->stmt->fetch();
     }
 
-    public function fetchAll() {
+    public function fetchAll()
+    {
         return $this->stmt->fetchAll();
     }
-
 
     /**
      * Get the rows in a table.
@@ -190,7 +206,8 @@ class SqliteDatabaseDriver extends Driver {
      * @param str table
      * @return resource A resultset resource
      */
-    public function get($fields, $table, $where = null, $order_by = null, $limit = null) {
+    public function get($fields, $table, $where = null, $order_by = null, $limit = null)
+    {
         if (is_array($fields)) {
             $fields = implode(',', $fields);
         }
@@ -214,7 +231,8 @@ class SqliteDatabaseDriver extends Driver {
      * @param str where
      * @return resource A resultset resource
      */
-    public function get_row($table, $where = null) {
+    public function get_row($table, $where = null)
+    {
         return $this->get('*', $table, $where, null, 1);
     }
 
@@ -224,7 +242,8 @@ class SqliteDatabaseDriver extends Driver {
      * @param str table
      * @return resource A resultset resource
      */
-    public function get_rows($fields, $table, $where = null) {
+    public function get_rows($fields, $table, $where = null)
+    {
         return $this->get($fields, $table, $where);
     }
 
@@ -232,7 +251,8 @@ class SqliteDatabaseDriver extends Driver {
      * Get the tables info in a database.
      * @return
      */
-    public function getDatabase() {
+    public function getDatabase()
+    {
         $this->prepare("SELECT name FROM sqlite_master WHERE type='table';");
         $this->execute();
 
@@ -243,7 +263,8 @@ class SqliteDatabaseDriver extends Driver {
      * Get the tables in a database.
      * @return array
      */
-    public function getTables() {
+    public function getTables()
+    {
         $tables = [];
 //        $this->getDatabase();
 //        if ($rows = $this->rows()) {
@@ -265,8 +286,10 @@ class SqliteDatabaseDriver extends Driver {
      * @param string The table name
      * @return bool
      */
-    public function tableExists($table) {
+    public function tableExists($table)
+    {
         $tables = $this->getTables();
+
         return in_array($table, $tables);
     }
 
@@ -277,7 +300,8 @@ class SqliteDatabaseDriver extends Driver {
      * @param str where
      * @return bool
      */
-    public function updateRow($table, $values, $where) {
+    public function updateRow($table, $values, $where)
+    {
         if (is_array($where)) {
             $where = static::where_string($where);
         }
@@ -316,13 +340,14 @@ class SqliteDatabaseDriver extends Driver {
     /**
      * Insert a new row.
      * @param str table
-     * @param array $data
+     * @param  array $data
      * @return bool
      */
-    public function insertRow($table, $data = []) {
+    public function insertRow($table, $data = [])
+    {
         $result = false;
         list($names, $values) = $this->separate_fields_values($data);
-        if($values = $this->prepare_values($values, true)) {
+        if ($values = $this->prepare_values($values, true)) {
             $names = implode(',', $names);
             $qs = sprintf(
                 'INSERT INTO %s (%s) VALUES %s',
@@ -334,16 +359,18 @@ class SqliteDatabaseDriver extends Driver {
 
             $result = $this->db->lastInsertId();
         }
+
         return $result;
     }
 
     /**
      * Insert new rows.
      * @param str table
-     * @param array $data
+     * @param  array $data
      * @return bool
      */
-    public function insertRows($table, $data = []) {
+    public function insertRows($table, $data = [])
+    {
         $result = false;
         $rows = [];
         $names = $this->separate_fields_values($data[0], 'fields');
@@ -354,7 +381,7 @@ class SqliteDatabaseDriver extends Driver {
             $names = implode(',', $names);
             $qs = sprintf('INSERT INTO %s (%s) VALUES ', $table, $names);
             foreach ($rows as $key => $values) {
-                if($values = $this->prepare_values($values, false)) {
+                if ($values = $this->prepare_values($values, false)) {
                     $qs .= sprintf('(%s),', $values);
                 }
             }
@@ -368,7 +395,8 @@ class SqliteDatabaseDriver extends Driver {
         return $result;
     }
 
-    private function prepare_values($values, $wrap_in_paren = false) {
+    private function prepare_values($values, $wrap_in_paren = false)
+    {
         if (is_array($values)) {
             foreach ($values as $key => $row_values) {
                 if (is_array($row_values)) {
@@ -397,7 +425,8 @@ class SqliteDatabaseDriver extends Driver {
      * @param string Return "both" field names and values, or just "fields" or just "values"
      * @return array
      */
-    private function separate_fields_values($data = [], $mode = 'both') {
+    private function separate_fields_values($data = [], $mode = 'both')
+    {
         $values = $names = $return = [];
         switch ($mode) {
             case 'key':
@@ -437,6 +466,7 @@ class SqliteDatabaseDriver extends Driver {
                 $return = [$names, $values];
                 break;
         }
+
         return $return;
     }
 
@@ -445,10 +475,12 @@ class SqliteDatabaseDriver extends Driver {
      * @param str table
      * @return resource A resultset resource
      */
-    public function deleteRow($table, $where) {
+    public function deleteRow($table, $where)
+    {
         if (is_array($where)) {
             $where = static::where_string($where);
         }
+
         return $this->query(sprintf('DELETE FROM %s WHERE %s', $table, $where));
     }
 
@@ -457,7 +489,8 @@ class SqliteDatabaseDriver extends Driver {
      * @param str string The string to escape
      * @return str The escaped string
      */
-    public function escape($string) {
+    public function escape($string)
+    {
         return $this->db->escapeString($string);
     }
 
@@ -465,7 +498,8 @@ class SqliteDatabaseDriver extends Driver {
      * Fetch a row from a query resultset.
      * @return str[] An array of the fields and values from the next row in the resultset
      */
-    public function row() {
+    public function row()
+    {
         return $this->result->fetch(\PDO::FETCH_CLASS);
     }
 
@@ -473,7 +507,8 @@ class SqliteDatabaseDriver extends Driver {
      * Fetch rows from a query resultset.
      * @return str[] An array of the fields and values from the next row in the resultset
      */
-    public function rows() {
+    public function rows()
+    {
         if (isset($this->stmt) && ! is_null($this->stmt)) {
             return $this->stmt->fetchAll(\PDO::FETCH_CLASS);
         } elseif (isset($this->result) && ! is_null($this->result)) {
@@ -487,7 +522,8 @@ class SqliteDatabaseDriver extends Driver {
      * @param resource resource A resultset resource
      * @return int The number of rows
      */
-    public function numRows() {
+    public function numRows()
+    {
         $nrows = 0;
         $this->result->reset();
         while ($this->result->fetchAll())
@@ -501,9 +537,10 @@ class SqliteDatabaseDriver extends Driver {
      * Insert a row into the datastore
      * @param  [type] $table [description]
      * @param  [type] $data  [description]
-     * @return [type]        [description]
+     * @return [type] [description]
      */
-    public function insert($table, $data) {
+    public function insert($table, $data)
+    {
         $id = false;
 
         if (is_array($data) || $data instanceof \stdClass) {
@@ -512,6 +549,7 @@ class SqliteDatabaseDriver extends Driver {
                 foreach ($data as $key => $record) {
                     $results[] = $this->insert($table, $record);
                 }
+
                 return $results;
             } else {
                 $this->lastInsertPKeys[] = $id = $this->insertRow($table, $data);
@@ -527,9 +565,10 @@ class SqliteDatabaseDriver extends Driver {
      * Update a record in the datastore
      * @param  [type] $table [description]
      * @param  [type] $data  [description]
-     * @return [type]        [description]
+     * @return [type] [description]
      */
-    public function update($table, $data, $where) {
+    public function update($table, $data, $where)
+    {
         $count = 0;
         if (is_array($data) || $data instanceof \stdClass) {
             if (is_array($data) && isset($data[0]) && (is_array($data[0]) || $data[0] instanceof \stdClass)) {
@@ -558,11 +597,13 @@ class SqliteDatabaseDriver extends Driver {
      * Get the ID of the last inserted record.
      * @return int The last insert ID ('a/b' in case of multi-field primary key)
      */
-    public function insert_id() {
+    public function insert_id()
+    {
         return join('/', $this->lastInsertPKeys);
     }
 
-    public function delete($table, $where) {
+    public function delete($table, $where)
+    {
         if (is_array($where)) {
             $where = static::where_string($where);
         }
@@ -576,44 +617,51 @@ class SqliteDatabaseDriver extends Driver {
     /**
      * Execute SQL statement
      */
-    public function query($sql) {
+    public function query($sql)
+    {
         $this->last_query = $sql;
         $this->result = $this->db->query($sql);
         if (false === $this->result) {
             throw new \Exception($this->last_error());
         }
+
         return $this->result;
     }
-
 
     /**
      * Close the database connection.
      */
-    public function close() {
+    public function close()
+    {
         $this->db->closeCursor();
     }
 
     /**
      * Get the last query
      */
-    public function last_query() {
+    public function last_query()
+    {
         return $this->last_query;
     }
 
-    public function last_error() {
+    public function last_error()
+    {
         $last_error = $this->get_last_error();
+
         return $last_error[2];
     }
 
-    public function get_last_error() {
+    public function get_last_error()
+    {
         $this->last_error = $this->db->errorInfo();
+
         return $this->last_error;
     }
 
-    public function __call($func, $args) {
+    public function __call($func, $args)
+    {
         return call_user_func_array(array(&$this->db, $func), $args);
     }
-
 
     /**
      * Create Table
@@ -623,10 +671,12 @@ class SqliteDatabaseDriver extends Driver {
      * @param	mixed	primary key(s)
      * @param	mixed	key(s)
      * @param	boolean	should 'IF NOT EXISTS' be added to the SQL
-     * @return	bool
+     * @return bool
      */
-    public function create_table($table, $fields, $primary_keys = [], $keys = [], $if_not_exists = true) {
+    public function create_table($table, $fields, $primary_keys = [], $keys = [], $if_not_exists = true)
+    {
         $this->query($this->create_table_sql($table, $fields, $primary_keys, $keys, $if_not_exists));
+
         return $this->tableExists($table);
     }
 
@@ -638,9 +688,10 @@ class SqliteDatabaseDriver extends Driver {
      * @param	mixed	primary key(s)
      * @param	mixed	key(s)
      * @param	boolean	should 'IF NOT EXISTS' be added to the SQL
-     * @return	bool
+     * @return bool
      */
-    public function create_table_sql($table, $fields, $primary_keys = [], $keys = [], $if_not_exists = true) {
+    public function create_table_sql($table, $fields, $primary_keys = [], $keys = [], $if_not_exists = true)
+    {
         $sql = 'CREATE TABLE ';
         if ($if_not_exists === TRUE) {
             if ($this->tableExists($table)) {
@@ -767,7 +818,8 @@ class SqliteDatabaseDriver extends Driver {
      * @param	string
      * @return string
      */
-    public function escape_identifiers($item) {
+    public function escape_identifiers($item)
+    {
         if ($this->escape_char == '') {
             return $item;
         }
@@ -814,9 +866,10 @@ class SqliteDatabaseDriver extends Driver {
      * @param	bool
      * @param	mixed
      * @param	bool
-     * @return	string
+     * @return string
      */
-    public function protect_identifiers($item, $prefix_single = FALSE, $protect_identifiers = NULL) {
+    public function protect_identifiers($item, $prefix_single = FALSE, $protect_identifiers = NULL)
+    {
         if ( ! is_bool($protect_identifiers)) {
             $protect_identifiers = $this->protect_identifiers;
         }
@@ -827,6 +880,7 @@ class SqliteDatabaseDriver extends Driver {
             foreach ($item as $k => $v) {
                 $escaped_array[$this->protect_identifiers($k)] = $this->protect_identifiers($v);
             }
+
             return $escaped_array;
         }
 
@@ -856,6 +910,7 @@ class SqliteDatabaseDriver extends Driver {
             if ($protect_identifiers === TRUE) {
                 $item = $this->escape_identifiers($item);
             }
+
             return $item.$alias;
         }
 

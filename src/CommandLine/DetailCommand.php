@@ -3,7 +3,6 @@ namespace Worklog\CommandLine;
 
 use Carbon\Carbon;
 use Worklog\Models\Task;
-use Worklog\Services\TaskService;
 use Worklog\Str;
 
 /**
@@ -12,8 +11,8 @@ use Worklog\Str;
  * Date: 2/23/17
  * Time: 8:34 AM
  */
-class DetailCommand extends Command {
-
+class DetailCommand extends Command
+{
     public $command_name;
 
     public static $description = 'Show work log entry details';
@@ -28,8 +27,8 @@ class DetailCommand extends Command {
 
     private static $output_line_length = 120;
 
-
-    public function run() {
+    public function run()
+    {
         parent::run();
 
         $id = $this->expectData('id', static::$exception_strings['invalid_argument'])->getData('id');
@@ -89,7 +88,6 @@ class DetailCommand extends Command {
 
                 printl(Output::data_grid($headers, [ array_values($attributes) ]));
             }
-
 
         } else {
             throw new \InvalidArgumentException(static::$exception_strings['invalid_argument']);

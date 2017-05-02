@@ -1,13 +1,13 @@
 <?php
 /**
- * 
+ *
  */
 
 namespace Worklog\Testing;
 
 trait DatabaseTransactions
 {
-	/**
+    /**
      * Handle database transactions on the specified connections.
      *
      * @return void

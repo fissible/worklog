@@ -9,8 +9,8 @@ namespace Worklog\CommandLine;
  * Time: 9:03 AM
  */
 
-class ComposerCommand extends BinaryCommand {
-
+class ComposerCommand extends BinaryCommand
+{
     public static $description = 'Run composer';
     public static $options = [
         // 'nodev' => ['req' => null, 'description' => 'Do not install development dependencies'],
@@ -18,15 +18,16 @@ class ComposerCommand extends BinaryCommand {
     ];
     public static $arguments = [];
 
-
-    protected function init() {
+    protected function init()
+    {
         $this->setBinary(env('BINARY_COMPOSER'));
         if ($config_file = $this->option('configuration')) {
             $this->config_file = $config_file;
         }
     }
 
-    public function run() {
+    public function run()
+    {
         parent::run();
     }
 }

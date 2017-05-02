@@ -8,7 +8,6 @@
 
 namespace Worklog\Models;
 
-
 use Carbon\Carbon;
 use Worklog\CommandLine\Output;
 use Worklog\Str;
@@ -45,7 +44,6 @@ class Task extends Model
      * @var bool
      */
     public $timestamps = false;
-
 
     protected static $fields = [
         'id' => [
@@ -100,8 +98,6 @@ class Task extends Model
 
     const CACHE_TAG = 'start';
 
-
-
     /**
      * Scopes
      */
@@ -110,11 +106,10 @@ class Task extends Model
      * @param $query
      * @return mixed
      */
-    public function scopeDefaultSort($query) {
+    public function scopeDefaultSort($query)
+    {
         return $query->orderBy('date', 'desc')->orderBy('start', 'desc');
     }
-
-
 
     /**
      * Getters
@@ -123,7 +118,8 @@ class Task extends Model
     /**
      * @return Carbon
      */
-    public function getDateAttribute() {
+    public function getDateAttribute()
+    {
         return Carbon::parse($this->attributes['date']);
         //return $this->attributes['date']; // raw value
     }
@@ -131,7 +127,8 @@ class Task extends Model
     /**
      * @return mixed|string
      */
-    public function getDescriptionAttribute() {
+    public function getDescriptionAttribute()
+    {
         $str = '';
         if ($this->hasAttribute('description')) {
             $str = str_replace('\n', "\n", $this->attributes['description']);
@@ -143,7 +140,8 @@ class Task extends Model
     /**
      * @return mixed|string
      */
-    public function getDescriptionSummaryAttribute() {
+    public function getDescriptionSummaryAttribute()
+    {
         $str = '';
         if ($this->hasAttribute('description') && ! empty($this->attributes['description'])) {
             if ($Str = new Str($this->attributes['description'], true)) {
@@ -160,7 +158,8 @@ class Task extends Model
     /**
      * @return bool|\DateInterval
      */
-    public function getDurationAttribute() {
+    public function getDurationAttribute()
+    {
         if ($this->hasAttribute('start') && $this->hasAttribute('stop')) {
             if (! empty($this->attributes['start']) && ! empty($this->attributes['stop'])) {
                 $start_parts = explode(':', $this->attributes['start']); // "08:00"
@@ -176,7 +175,8 @@ class Task extends Model
     /**
      * @return string
      */
-    public function getDurationStringAttribute() {
+    public function getDurationStringAttribute()
+    {
         $output = '';
         if ($DateInterval = $this->getDurationAttribute()) {
             if ($DateInterval->h) {
@@ -196,17 +196,20 @@ class Task extends Model
     /**
      * @return string eg. '1975-12-25'
      */
-    public function getDateStringAttribute() {
+    public function getDateStringAttribute()
+    {
         if ($this->hasAttribute('date')) {
             return Str::date($this->attributes['date']);
         }
+
         return '';
     }
 
     /**
      * @return string eg. 'Dec 25, 1975'
      */
-    public function getFriendlyDateStringAttribute() {
+    public function getFriendlyDateStringAttribute()
+    {
         if ($this->hasAttribute('date')) {
             $date = $this->attributes['date'];
             if (! ($date instanceof Carbon)) {
@@ -215,13 +218,15 @@ class Task extends Model
 
             return $date->toFormattedDateString();
         }
+
         return '';
     }
 
     /**
      * @return string eg. '14:15:16'
      */
-    public function getStartTimeStringAttribute() {
+    public function getStartTimeStringAttribute()
+    {
         if ($this->hasAttribute('start') && $this->hasAttribute('date')) {
             return $this->getStartDatetimeAttribute()->toTimeString();
         }
@@ -230,7 +235,8 @@ class Task extends Model
     /**
      * @return string eg. '16:15:14'
      */
-    public function getStopTimeStringAttribute() {
+    public function getStopTimeStringAttribute()
+    {
         if ($this->hasAttribute('stop') && $this->hasAttribute('date')) {
             return $this->getStopDatetimeAttribute()->toTimeString();
         }
@@ -239,7 +245,8 @@ class Task extends Model
     /**
      * @return string eg. '2:15 pm'
      */
-    public function getStartStringAttribute() {
+    public function getStartStringAttribute()
+    {
         if ($this->hasAttribute('start')) {
             return Str::time($this->attributes['start']);
         }
@@ -248,7 +255,8 @@ class Task extends Model
     /**
      * @return string eg. '4:15 pm'
      */
-    public function getStopStringAttribute() {
+    public function getStopStringAttribute()
+    {
         if ($this->hasAttribute('stop')) {
             return Str::time($this->attributes['stop']);
         }
@@ -257,30 +265,32 @@ class Task extends Model
     /**
      * @return string eg. '2:15 pm'
      */
-    public function getStartTimeAttribute() {
+    public function getStartTimeAttribute()
+    {
         return $this->getStartStringAttribute();
     }
 
     /**
      * @return string eg. '4:15 pm'
      */
-    public function getStopTimeAttribute() {
+    public function getStopTimeAttribute()
+    {
         return $this->getStopStringAttribute();
     }
 
-    public function getStartDatetimeAttribute() {
+    public function getStartDatetimeAttribute()
+    {
         if ($this->hasAttribute('start') && $this->hasAttribute('date')) {
             return Carbon::parse(substr($this->attributes['date'], 0, 10).' '.$this->attributes['start']);
         }
     }
 
-    public function getStopDatetimeAttribute() {
+    public function getStopDatetimeAttribute()
+    {
         if ($this->hasAttribute('stop') && $this->hasAttribute('date')) {
             return Carbon::parse(substr($this->attributes['date'], 0, 10).' '.$this->attributes['stop']);
         }
     }
-
-
 
     /**
      * Setters
@@ -289,16 +299,18 @@ class Task extends Model
     /**
      * @param $value
      */
-    public function setDescriptionAttribute($value) {
+    public function setDescriptionAttribute($value)
+    {
         $this->attributes['description'] = trim($value);
     }
 
     /**
      * @param $field
-     * @param null $default
+     * @param  null   $default
      * @return string
      */
-    public function promptForAttribute($field, $default = null) {
+    public function promptForAttribute($field, $default = null)
+    {
         $prompt = parent::promptForAttribute($field, $default);
 
         if (is_null($default)) {
@@ -307,7 +319,7 @@ class Task extends Model
 
         // UPDATE default values
         if ($this->exists) {
-            switch($field) {
+            switch ($field) {
                 case 'start':
                     $default = $this->start_string;
                     break;
@@ -324,7 +336,7 @@ class Task extends Model
 
             // INSERT default values
         } else {
-            switch($field) {
+            switch ($field) {
                 case 'start':
                 case 'stop':
                     $default = Str::time($default);
@@ -352,10 +364,11 @@ class Task extends Model
     }
 
     /**
-     * @param array $where
+     * @param  array $where
      * @return null
      */
-    public function lastTask($where = []) {
+    public function lastTask($where = [])
+    {
         $Latest = null;
         $LastTask = null;
 
@@ -388,10 +401,11 @@ class Task extends Model
 
     /**
      * @param $field
-     * @param null $default
+     * @param  null       $default
      * @return mixed|null
      */
-    public function defaultValue($field, $default = null) {
+    public function defaultValue($field, $default = null)
+    {
         $default = parent::defaultValue($field, $default);
 
         if (! $this->exists) {

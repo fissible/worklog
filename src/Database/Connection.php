@@ -14,7 +14,8 @@ use Illuminate\Database\Capsule\Manager as Capsule;
 
 class Connection
 {
-    public function __construct($config = []) {
+    public function __construct($config = [])
+    {
         $this->capsule = new Capsule;
         $this->capsule->addConnection($config, 'default');
         $this->capsule->setEventDispatcher(new Dispatcher(new Container));

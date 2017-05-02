@@ -8,29 +8,31 @@
 
 namespace Worklog\CommandLine;
 
-
 class Input
 {
     /**
-     * @param null $prompt
-     * @param null $default
+     * @param  null        $prompt
+     * @param  null        $default
      * @return null|string
      */
-    public static function ask($prompt = null, $default = null) {
+    public static function ask($prompt = null, $default = null)
+    {
         if ($prompt) echo $prompt;
         $fp = fopen("php://stdin","r");
         $line = rtrim(fgets($fp, 1024), "\r\n");
+
         return $line ?: $default;
     }
 
     /**
-     * @param null $prompt
-     * @param bool $default
+     * @param  null $prompt
+     * @param  bool $default
      * @return bool
      */
-    public static function confirm($prompt = null, $default = false) {
+    public static function confirm($prompt = null, $default = false)
+    {
         $options = ($default ? ' [Y/n]' : ' [y/N]');
-        if ($prompt)  {
+        if ($prompt) {
             $prompt = trim(trim(trim($prompt), ':'));
             if (! preg_match('/\[[yn]\/[yn]\]/i', $prompt)) {
                 $prompt .= $options;
@@ -55,15 +57,17 @@ class Input
     }
 
     /**
-     * @param null $prompt
+     * @param  null   $prompt
      * @return string
      */
-    public static function secret($prompt = null) {
+    public static function secret($prompt = null)
+    {
         if ($prompt) echo $prompt;
         exec('stty -echo');
         $line = trim(fgets(STDIN));
         exec('stty echo');
         print "\n";
+
         return $line;
     }
 }

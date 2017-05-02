@@ -1,11 +1,11 @@
 <?php
 namespace Worklog\Database;
 
-abstract class Driver {
-	
-	abstract public function connect($config);
+abstract class Driver
+{
+    abstract public function connect($config);
 
-	abstract public function begin_transaction();
+    abstract public function begin_transaction();
 
     abstract public function commit_transaction();
 
@@ -15,30 +15,35 @@ abstract class Driver {
 
     protected $connected = false;
 
-
-    public function first() {
+    public function first()
+    {
         if (isset($this->result)) {
             return array_shift($this->result);
         }
     }
 
-    public function result() {
+    public function result()
+    {
         $result = false;
         if (isset($this->result)) {
             $result = $this->result;
         }
+
         return $result;
     }
 
-    public function count() {
+    public function count()
+    {
         $count = false;
         if (isset($this->count)) {
             $count = $this->count;
         }
+
         return $count;
     }
 
-    public static function prepare_value($value, $quote = "'") {
+    public static function prepare_value($value, $quote = "'")
+    {
         if ($value === true) {
             $value = 'true';
         } elseif ($value === false) {
@@ -56,7 +61,8 @@ abstract class Driver {
         return $value;
     }
 
-    public static function where_string(array $where = [], $join = 'AND') {
+    public static function where_string(array $where = [], $join = 'AND')
+    {
         $_operators = ['LIKE', 'IN', '<=', '>=', '<>', '!=', '==', '=', '<', '>'];
         $values = $_where = [];
 
@@ -80,7 +86,8 @@ abstract class Driver {
         return implode(' '.$join.' ', $_where);
     }
 
-    public static function prepare_where_string(array $where = [], $join = 'AND') {
+    public static function prepare_where_string(array $where = [], $join = 'AND')
+    {
         $_operators = ['LIKE', 'IN', '<=', '>=', '<>', '!=', '==', '=', '<', '>'];
         $values = $_where = [];
 

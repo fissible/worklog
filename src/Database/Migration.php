@@ -39,8 +39,8 @@ class Migration extends File
 
     const DATABASE_TABLE = 'migrations';
 
-
-    public function __construct($db, $name = 'BASE', $path = null) {
+    public function __construct($db, $name = 'BASE', $path = null)
+    {
         $this->set_database_driver($db);
 
         if (! is_null($path)) {
@@ -75,7 +75,8 @@ class Migration extends File
      * Return the migration name (not the filename), eg. create_task_table
      * @return mixed
      */
-    public function migration_name() {
+    public function migration_name()
+    {
         return $this->name;
     }
 
@@ -84,7 +85,8 @@ class Migration extends File
      * @param $name
      * @return $this
      */
-    public function set_migration_name($name) {
+    public function set_migration_name($name)
+    {
         if (! isset($this->name)) {
             if (! is_null($name) && $name !== 'BASE') {
                 $name = str_replace('.php', '', basename($name));
@@ -106,7 +108,8 @@ class Migration extends File
      * @param $name
      * @return $this
      */
-    public function set_class_name($name) {
+    public function set_class_name($name)
+    {
         if (! isset($this->class_name)) {
             $name = $this->trim_date_string(str_replace('.php', '', $name));
             $this->class_name = static::camel_case($name);
@@ -115,7 +118,8 @@ class Migration extends File
         return $this;
     }
 
-    public function set_date() {
+    public function set_date()
+    {
         list($timestamp, $name) = static::trim_date_string(basename($this->get_file_path()), true);
         if ($timestamp) {
             // 2017_03_17_140949
@@ -132,7 +136,8 @@ class Migration extends File
      * Return the path to the file, eg. /migrations/2017_3_14_090300_snake_case_variant.php
      * @return string
      */
-    public function get_file_path() {
+    public function get_file_path()
+    {
         $path = null;
 //        $name = $this->name;
 //        $name = $this->prepend_date_string($name);
@@ -157,7 +162,8 @@ class Migration extends File
      * @param $name
      * @return string
      */
-    public function prepend_date_string($name) {
+    public function prepend_date_string($name)
+    {
         if (! is_numeric(substr($name, 0, 4))) {
             $name = date("Y_m_d_His_").ltrim($name, '_');
         }
@@ -171,7 +177,8 @@ class Migration extends File
      * @param $return_both
      * @return string
      */
-    public static function trim_date_string($input, $return_both = false) {
+    public static function trim_date_string($input, $return_both = false)
+    {
         $timestamp = '';
         $output = $input;
         if (is_numeric(substr($input, 0, 4))) {
@@ -197,7 +204,8 @@ class Migration extends File
 
     }
 
-    public static function set_migrations_path($path) {
+    public static function set_migrations_path($path)
+    {
         if (is_dir($path)) {
             static::$migrations_path = $path;
         } else {
@@ -205,29 +213,34 @@ class Migration extends File
         }
     }
 
-    public function date() {
+    public function date()
+    {
         return $this->date;
     }
 
-    public function set_database_driver(Driver $driver) {
+    public function set_database_driver(Driver $driver)
+    {
         $this->db = $driver;
     }
 
-    public function insert() {
+    public function insert()
+    {
         $migration_name = $this->migration_name();
         if (! is_null($migration_name)) {
             return $this->db->insertRow(self::DATABASE_TABLE, [ 'migration' => $migration_name ]);
         }
     }
 
-    public function delete() {
+    public function delete()
+    {
         $migration_name = $this->migration_name();
         if (! is_null($migration_name)) {
             return $this->db->deleteRow(self::DATABASE_TABLE, [ 'migration' => $migration_name ]);
         }
     }
 
-    public function is_fresh($force_check = false) {
+    public function is_fresh($force_check = false)
+    {
         if ($this->is_setup() && ($force_check || (! isset($this->fresh) || $this->fresh === false))) {
             $this->fresh = true;
             if ($rows = $this->db->select(self::DATABASE_TABLE)) {
@@ -243,7 +256,8 @@ class Migration extends File
         return $this->fresh;
     }
 
-    public static function make($migration_name, $db = null) {
+    public static function make($migration_name, $db = null)
+    {
         if (is_null($db)) {
             $db = App()->db();
         }
@@ -262,7 +276,8 @@ class Migration extends File
         }
     }
 
-    protected static function extract_namespace($filename) {
+    protected static function extract_namespace($filename)
+    {
         $namespace = '';
         $handle = @fopen($filename, "r");
         if ($handle) {
@@ -275,10 +290,12 @@ class Migration extends File
             }
             fclose($handle);
         }
+
         return $namespace;
     }
 
-    public function get() {
+    public function get()
+    {
         $Migrations = [];
         foreach (glob(static::$migrations_path."/*.php") as $filename) {
             $name = static::trim_date_string(str_replace('.php', '', $filename));
@@ -292,7 +309,8 @@ class Migration extends File
         return $Migrations;
     }
 
-    public function get_fresh() {
+    public function get_fresh()
+    {
         $Migrations = $this->get();
         foreach ($Migrations as $key => $Migration) {
             if (! $Migration->is_fresh() || $Migration->name() === 'BASE') {
@@ -303,8 +321,9 @@ class Migration extends File
         return $Migrations;
     }
 
-    public function sort($Migrations, $reverse = false) {
-        uasort($Migrations, function($a, $b) use ($reverse) {
+    public function sort($Migrations, $reverse = false)
+    {
+        uasort($Migrations, function ($a, $b) use ($reverse) {
             if ($a instanceof Migration && $b instanceof Migration) {
                 if ($reverse) {
                     return ($a->date()->timestamp - $b->date()->timestamp) * -1;
@@ -312,13 +331,15 @@ class Migration extends File
                     return $a->date()->timestamp - $b->date()->timestamp;
                 }
             }
+
             return 0;
         });
 
         return $Migrations;
     }
 
-    public function run($up = true) {
+    public function run($up = true)
+    {
         $result = false;
         $fresh = $this->is_fresh();
         $name = $this->migration_name() ?: '';
@@ -350,23 +371,28 @@ class Migration extends File
         return $result;
     }
 
-    protected function up() {
+    protected function up()
+    {
         return ($this->is_fresh(true));
     }
 
-    protected function down() {
+    protected function down()
+    {
         return $this->is_fresh(true);
     }
 
-    public function set_up($content) {
+    public function set_up($content)
+    {
         $this->up_method = $content;
     }
 
-    public function set_down($content) {
+    public function set_down($content)
+    {
         $this->down_method = $content;
     }
 
-    public function is_setup() {
+    public function is_setup()
+    {
         if (! isset(static::$setup) || false === static::$setup) {
             if ($tables = $this->db->getTables()) {
                 static::$setup = in_array(self::DATABASE_TABLE, $tables);
@@ -376,7 +402,8 @@ class Migration extends File
         return static::$setup;
     }
 
-    public function setup() {
+    public function setup()
+    {
         return $this->db->create_table(
             self::DATABASE_TABLE,
             static::$schema['fields'],
@@ -384,7 +411,8 @@ class Migration extends File
         );
     }
 
-    public static function find($name) {
+    public static function find($name)
+    {
         if ($name) {
             $name = str_replace(basename($name), static::snake_case(basename($name)), $name);
             foreach (glob(static::$migrations_path."/*.php") as $filename) {
@@ -396,11 +424,13 @@ class Migration extends File
         }
     }
 
-    public static function get_namespace() {
+    public static function get_namespace()
+    {
         return __NAMESPACE__;
     }
 
-    public function generate() {
+    public function generate()
+    {
         if (! $this->exists() && null === $this->find($this->name)) {
             $NAMESPACE = static::get_namespace();
             $user = exec('whoami');
@@ -410,7 +440,6 @@ class Migration extends File
 <?php
 namespace $NAMESPACE;
 
-use Worklog\Database\Migration;
 
 /**
  * Created by Worklog\Database\Migration.
@@ -421,7 +450,7 @@ use Worklog\Database\Migration;
 class {$this->class_name} extends Migration
 {
     private \$name = '{$this->name}';
-    
+
     private \$class_name = '{$this->class_name}';
 
 EOC;
@@ -432,9 +461,11 @@ EOC;
      * Migrate up
      * @return bool Return TRUE on success, FALSE on failure
      */
-    protected function up() {
+    protected function up()
+    {
         parent::up();
 {$this->up_method}
+
         return (\$this->is_fresh(true));
     }
 
@@ -447,9 +478,11 @@ EOC;
      * Migrate down
      * @return bool Return TRUE on success, FALSE on failure
      */
-    protected function down() {
+    protected function down()
+    {
         parent::down();
 {$this->down_method}
+
         return \$this->is_fresh(true);
     }
 

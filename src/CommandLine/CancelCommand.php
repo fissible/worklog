@@ -10,8 +10,8 @@ use Worklog\CommandLine\Command as Command;
  * Date: 3/7/17
  * Time: 11:32 AM
  */
-class CancelCommand extends Command {
-
+class CancelCommand extends Command
+{
     public $command_name;
 
     public static $description = 'Cancel a started work log entry';
@@ -27,8 +27,8 @@ class CancelCommand extends Command {
         'not_found' => 'No open work items found.'
     ];
 
-
-    public function run() {
+    public function run()
+    {
         parent::run();
 
         $deleted = false;

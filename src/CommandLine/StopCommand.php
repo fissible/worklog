@@ -11,8 +11,8 @@ use Worklog\CommandLine\Command as Command;
  * Date: 2/21/17
  * Time: 4:20 PM
  */
-class StopCommand extends Command {
-
+class StopCommand extends Command
+{
     public $command_name;
 
     public static $description = 'Stop and record a work log entry';
@@ -28,8 +28,8 @@ class StopCommand extends Command {
         'not_found' => 'No open work items found.'
     ];
 
-
-    public function run() {
+    public function run()
+    {
         parent::run();
 
         $cache_name = null;

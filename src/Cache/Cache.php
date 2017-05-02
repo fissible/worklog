@@ -6,57 +6,64 @@ use Worklog\Application;
 /**
  * Cache file wrapper class
  */
-class Cache {
+class Cache
+{
+    private $Item;
 
-	private $Item;
+    private $path;
 
-	private $path;
+    private $driver;
 
-	private $driver;
+    private $registry;
 
-	private $registry;
+    private static $store = [];
 
-	private static $store = [];
+    private static $DO_NOT_PURGE = false;
 
-	private static $DO_NOT_PURGE = false;
+    const DRIVER_ARRAY = 'array';
 
-	const DRIVER_ARRAY = 'array';
+    const DRIVER_FILE = 'file';
 
-	const DRIVER_FILE = 'file';
+    public function __construct($driver = 0)
+    {
+        $this->setDriver($driver);
+        $this->load_registry();
+    }
 
+    public function Item($data = [])
+    {
+        if (! isset($this->Item) || (! empty($data) && isset($data['name']))) {
+            $this->Item = CacheItem::new_from_store($this, $data['name'], $data);
+        }
 
-	public function __construct($driver = 0) {
-		$this->setDriver($driver);
-		$this->load_registry();
-	}
+        return $this->Item;
+    }
 
-	public function Item($data = []) {
-		if (! isset($this->Item) || (! empty($data) && isset($data['name']))) {
-			$this->Item = CacheItem::new_from_store($this, $data['name'], $data);
-		}
-		return $this->Item;
-	}
+    public function setDriver($driver)
+    {
+        $this->driver = $driver;
+    }
 
-	public function setDriver($driver) {
-		$this->driver = $driver;
-	}
-
-    public function setup() {
+    public function setup()
+    {
         $this->registry = [];
+
         return $this->is_setup();
     }
 
-	public function is_setup() {
-		return isset($this->registry);
-	}
+    public function is_setup()
+    {
+        return isset($this->registry);
+    }
 
     /**
      * Load the cache data given a cache key or filename
-     * @param  string $name The cache key name or filename
-     * @param bool $get_raw
-     * @return array The cache data
+     * @param  string $name    The cache key name or filename
+     * @param  bool   $get_raw
+     * @return array  The cache data
      */
-    public function load($name, $get_raw = false, $do_not_delete = false) {
+    public function load($name, $get_raw = false, $do_not_delete = false)
+    {
         if ($this->Item(compact('name'))->is_expired()) {
             $this->garbage_collect($do_not_delete);
         }
@@ -70,53 +77,59 @@ class Cache {
 
     /**
      * Scan cache files and cache their name keys
-     * @param  boolean $force Reload cache registry
+     * @param boolean $force Reload cache registry
      */
-    protected function load_registry($force = false) {
+    protected function load_registry($force = false)
+    {
         $this->setup();
         if (! empty(static::$store)) {
-        	foreach (static::$store as $key => $value) {
-        		$this->register($this->Item(['name' => $key, 'data' => $value]));
-        	}
+            foreach (static::$store as $key => $value) {
+                $this->register($this->Item(['name' => $key, 'data' => $value]));
+            }
         }
     }
 
-	private function garbage_collect($do_not_delete = false) {
-		if ($this->Item()->is_expired()) {
+    private function garbage_collect($do_not_delete = false)
+    {
+        if ($this->Item()->is_expired()) {
             if (! static::$DO_NOT_PURGE && ! $do_not_delete) {
                 $this->delete($this->Item);
             }
         }
-	}
+    }
 
-    protected function register(CacheItem $CacheItem = null) {
-    	if (is_null($CacheItem)) {
-    		$CacheItem = $this->Item();
-    	}
+    protected function register(CacheItem $CacheItem = null)
+    {
+        if (is_null($CacheItem)) {
+            $CacheItem = $this->Item();
+        }
 
         if (! $CacheItem->is_registered()) {
-        	if ($CacheItem->is_valid()) {
-				$this->registry[$CacheItem->name] = $CacheItem;
-            	$CacheItem->register($this);
-			} else {
-				throw new \Exception('Invalid cache item.');
-			}
+            if ($CacheItem->is_valid()) {
+                $this->registry[$CacheItem->name] = $CacheItem;
+                $CacheItem->register($this);
+            } else {
+                throw new \Exception('Invalid cache item.');
+            }
         }
     }
 
-    protected function unregister($name) {
-    	if ($CacheItem = $this->registry($name)) {
-    		$CacheItem->unregister($this);
-    	}
+    protected function unregister($name)
+    {
+        if ($CacheItem = $this->registry($name)) {
+            $CacheItem->unregister($this);
+        }
     }
 
-    public function is_registered(CacheItem $CacheItem) {
-    	if ($CacheItem->name && is_scalar($CacheItem->name)) {
-    		return array_key_exists($CacheItem->name, $this->registry);
-    	}
+    public function is_registered(CacheItem $CacheItem)
+    {
+        if ($CacheItem->name && is_scalar($CacheItem->name)) {
+            return array_key_exists($CacheItem->name, $this->registry);
+        }
     }
 
-    public function registry($name = null) {
+    public function registry($name = null)
+    {
         if (is_null($name)) {
             return $this->registry;
         } elseif (array_key_exists($name, $this->registry)) {
@@ -124,118 +137,123 @@ class Cache {
         }
     }
 
-	/**
-	 * Get/set cached data
-	 * @param  string 	$name               Name of cache key
-	 * @param  mixed 	$new_data  			callable to set (and get)
-	 * @param  array 	$tags 				Array of tags to save to the cache item
-	 * @param  integer 	$expires_in_seconds Number of seconds from "now" when it expires, 0 for never
-	 * @return null|mixed
-	 */
-	public function data($name, $data = null, $tags = [], $expires_in_seconds = 0) {
-		if (is_scalar($name)) {
-			$CacheItem = $this->load($name, false);
-		} else {
-			throw new \InvalidArgumentException('Cache::data(): first argument must be a string.');
-		}
+    /**
+     * Get/set cached data
+     * @param  string     $name               Name of cache key
+     * @param  mixed      $new_data           callable to set (and get)
+     * @param  array      $tags               Array of tags to save to the cache item
+     * @param  integer    $expires_in_seconds Number of seconds from "now" when it expires, 0 for never
+     * @return null|mixed
+     */
+    public function data($name, $data = null, $tags = [], $expires_in_seconds = 0)
+    {
+        if (is_scalar($name)) {
+            $CacheItem = $this->load($name, false);
+        } else {
+            throw new \InvalidArgumentException('Cache::data(): first argument must be a string.');
+        }
 
-		if (! $CacheItem->is_valid() && ! is_null($data)) {
-			// get data from callable $new_data
-			if (is_callable($data)) {
-				try {
-					$param = new \ReflectionParameter($data, 0);
-					if (stristr($param->getClass(), 'Application')) {
-						$data = call_user_func($data, Application::instance());
-					} else {
-						$data = call_user_func($data);
-					}
-				} catch (\Exception $e) {
-					$data = call_user_func($data);
-				}
-			}
+        if (! $CacheItem->is_valid() && ! is_null($data)) {
+            // get data from callable $new_data
+            if (is_callable($data)) {
+                try {
+                    $param = new \ReflectionParameter($data, 0);
+                    if (stristr($param->getClass(), 'Application')) {
+                        $data = call_user_func($data, Application::instance());
+                    } else {
+                        $data = call_user_func($data);
+                    }
+                } catch (\Exception $e) {
+                    $data = call_user_func($data);
+                }
+            }
 
-			$CacheItem = $this->write($CacheItem, $data, $tags, $expires_in_seconds);
+            $CacheItem = $this->write($CacheItem, $data, $tags, $expires_in_seconds);
 
-			$data = $CacheItem->data;
-		}
+            $data = $CacheItem->data;
+        }
 
-		return $data;
-	}
+        return $data;
+    }
 
-	/**
-	 * Delete a cache Item
-	 */
-	public function delete(CacheItem $Item = null) {
-		$deleted = false;
+    /**
+     * Delete a cache Item
+     */
+    public function delete(CacheItem $Item = null)
+    {
+        $deleted = false;
 
-		if (is_null($Item)) {
-			$Item = $this->Item();
-		}
-		if ($name = $Item->name) {
-			$Item->unregister($this);
-			unset($this->registry[$name]);
-			$deleted = $Item->delete();
-		}
+        if (is_null($Item)) {
+            $Item = $this->Item();
+        }
+        if ($name = $Item->name) {
+            $Item->unregister($this);
+            unset($this->registry[$name]);
+            $deleted = $Item->delete();
+        }
 
-		return $deleted;
-	}
+        return $deleted;
+    }
 
     /**
      * Delete a cache file
-     * @param  string $name A cache key or tag name(s)
-     * @param array|bool $tags $name is a tag string (or array of strings), clear entries with tag(s)
-     * @return bool [type]             [description]
+     * @param  string     $name A cache key or tag name(s)
+     * @param  array|bool $tags $name is a tag string (or array of strings), clear entries with tag(s)
+     * @return bool       [type]             [description]
      */
-	public function clear($name = null, $tags = false) {
-		$deleted = false;
+    public function clear($name = null, $tags = false)
+    {
+        $deleted = false;
 
-		if ($this->is_setup()) {
+        if ($this->is_setup()) {
 
-			if ($name instanceof CacheItem) {
-				$name = $name->name;
-			}
+            if ($name instanceof CacheItem) {
+                $name = $name->name;
+            }
 
-			if (is_null($name)) {
-				foreach ($this->registry as $_name => $CacheItem) {
-					$deleted = $this->delete($CacheItem);
-				}
-			} elseif ($tags) {
-				$tags = $name;
-				if (! is_array($tags)) {
-					$tags = [ $tags ];
-				}
-				foreach ($this->registry as $_name => $CacheItem) {
-					if (array_intersect($tags, $CacheItem->tags)) {
-						$deleted = $this->delete($CacheItem);
-					}
-				}
-			} elseif (isset($this->registry[$name])) {
-				$deleted = $this->delete($this->registry[$name]);
-			}
-		}
-		return $deleted;
-	}
+            if (is_null($name)) {
+                foreach ($this->registry as $_name => $CacheItem) {
+                    $deleted = $this->delete($CacheItem);
+                }
+            } elseif ($tags) {
+                $tags = $name;
+                if (! is_array($tags)) {
+                    $tags = [ $tags ];
+                }
+                foreach ($this->registry as $_name => $CacheItem) {
+                    if (array_intersect($tags, $CacheItem->tags)) {
+                        $deleted = $this->delete($CacheItem);
+                    }
+                }
+            } elseif (isset($this->registry[$name])) {
+                $deleted = $this->delete($this->registry[$name]);
+            }
+        }
+
+        return $deleted;
+    }
 
     /**
      * Write the data array to a json cache file
      * @param  string $name The cache key
      * @param  array  $data The cache data
      * @param  array  $tags Tag string (or array of strings) used for taxonomy
-     * @return mixed        The number of bytes written, or false on failure
+     * @return mixed  The number of bytes written, or false on failure
      */
-    public function write($name, $data = [], $tags = [], $expires_in_seconds = 0) {
+    public function write($name, $data = [], $tags = [], $expires_in_seconds = 0)
+    {
         $this->setup();
 
         if ($name instanceof CacheItem) {
-        	$CacheItem = $name;
-        	$name = $CacheItem->name;
+            $CacheItem = $name;
+            $name = $CacheItem->name;
         } else {
-        	$CacheItem = $this->Item(compact('name'));
+            $CacheItem = $this->Item(compact('name'));
         }
 
-    	if ($data) {
-    		$CacheItem->setData($data);
-    	}
+        if ($data) {
+            $CacheItem->setData($data);
+        }
 
         if ($tags) {
             $CacheItem->setTags($tags);
@@ -249,64 +267,69 @@ class Cache {
         return $CacheItem;
     }
 
-	public function load_tags($tags) {
+    public function load_tags($tags)
+    {
         $this->setup();
 
-		$items = [];
-		if (! empty($tags)) {
-			$tags = static::tags($tags);
+        $items = [];
+        if (! empty($tags)) {
+            $tags = static::tags($tags);
 
-			if (isset($this->registry)) {
-				foreach ($this->registry as $name => $CacheItem) {
-					if (array_intersect($tags, $CacheItem->tags)) {
-						if ($CacheItem->is_registered()) {
-							$items[$name] = $CacheItem;
-						}
-					}
-				}
-			}
-			
-		}
+            if (isset($this->registry)) {
+                foreach ($this->registry as $name => $CacheItem) {
+                    if (array_intersect($tags, $CacheItem->tags)) {
+                        if ($CacheItem->is_registered()) {
+                            $items[$name] = $CacheItem;
+                        }
+                    }
+                }
+            }
 
-		return $items;
-	}
+        }
 
-	public static function tags($tags) {
-		if (! empty($tags)) {
-			if (false !== strpos($tags, ',')) {
-				$tags = explode(',', $tags);
-			}
-			if (! is_array($tags)) {
-				$tags = [ $tags ];
-			}
-			$tags = array_map('trim', $tags);
-		}
+        return $items;
+    }
 
-		return $tags;
-	}
+    public static function tags($tags)
+    {
+        if (! empty($tags)) {
+            if (false !== strpos($tags, ',')) {
+                $tags = explode(',', $tags);
+            }
+            if (! is_array($tags)) {
+                $tags = [ $tags ];
+            }
+            $tags = array_map('trim', $tags);
+        }
 
-    public static function disable_purge($set = true) {
+        return $tags;
+    }
+
+    public static function disable_purge($set = true)
+    {
         static::$DO_NOT_PURGE = (bool) $set;
     }
 
-    public static function remember($key, $value = null) {
-		$return = null;
+    public static function remember($key, $value = null)
+    {
+        $return = null;
 
-    	if (is_null($value)) {
-    		if (isset(static::$store[$key])) {
-    			$return = static::$store[$key];
-    		}
-    	} else {
-    		if (! isset(static::$store[$key])) {
-    			static::$store[$key] = null;
-    		}
-    		static::$store[$key] = $value;
-    	}
+        if (is_null($value)) {
+            if (isset(static::$store[$key])) {
+                $return = static::$store[$key];
+            }
+        } else {
+            if (! isset(static::$store[$key])) {
+                static::$store[$key] = null;
+            }
+            static::$store[$key] = $value;
+        }
 
-    	return $return;
+        return $return;
     }
 
-    public static function forget($key) {
-    	unset(static::$store[$key]);
+    public static function forget($key)
+    {
+        unset(static::$store[$key]);
     }
 }

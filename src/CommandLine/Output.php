@@ -1,42 +1,42 @@
 <?php
 namespace Worklog\CommandLine;
 
-class Output {
-
+class Output
+{
     protected static $allow_unicode;
 
-	protected static $line_length;
+    protected static $line_length;
 
     protected static $variant;
 
     protected static $foreground_colors = [
         'black' => '0;30',
-		'dark_gray' => '1;30',
-		'blue' => '0;34',
-		'light_blue' => '1;34',
-		'green' => '0;32',
-		'light_green' => '1;32',
-		'cyan' => '0;36',
-		'light_cyan' => '1;36',
-		'red' => '0;31',
-		'light_red' => '1;31',
-		'purple' => '0;35',
-		'light_purple' => '1;35',
-		'brown' => '0;33',
-		'yellow' => '1;33',
-		'light_gray' => '0;37',
-		'white' => '1;37'
+        'dark_gray' => '1;30',
+        'blue' => '0;34',
+        'light_blue' => '1;34',
+        'green' => '0;32',
+        'light_green' => '1;32',
+        'cyan' => '0;36',
+        'light_cyan' => '1;36',
+        'red' => '0;31',
+        'light_red' => '1;31',
+        'purple' => '0;35',
+        'light_purple' => '1;35',
+        'brown' => '0;33',
+        'yellow' => '1;33',
+        'light_gray' => '0;37',
+        'white' => '1;37'
     ];
 
     protected static $background_colors = [
         'black' => '40',
-		'red' => '41',
-		'green' => '42',
-		'yellow' => '43',
-		'blue' => '44',
-		'magenta' => '45',
-		'cyan' => '46',
-		'light_gray' => '47'
+        'red' => '41',
+        'green' => '42',
+        'yellow' => '43',
+        'blue' => '44',
+        'magenta' => '45',
+        'cyan' => '46',
+        'light_gray' => '47'
     ];
 
     protected static $control_chars = [
@@ -87,8 +87,8 @@ class Output {
 
     private static $temp_config = [];
 
-
-    public static function init($allow_unicode = null, $line_length = null, $variant = null) {
+    public static function init($allow_unicode = null, $line_length = null, $variant = null)
+    {
         if (is_null($allow_unicode) && ! isset(static::$allow_unicode)) {
             $allow_unicode = false;
         }
@@ -114,19 +114,23 @@ class Output {
         }
     }
 
-    public static function cols() {
+    public static function cols()
+    {
         return exec('tput cols');
     }
 
-    public static function rows() {
+    public static function rows()
+    {
         return exec('tput lines');
     }
 
-    public static function bold($input) {
+    public static function bold($input)
+    {
         return static::$control_chars['bold'][0].$input.static::$control_chars['bold'][1];
     }
 
-    public static function color($input, $color, $background_color = false) {
+    public static function color($input, $color, $background_color = false)
+    {
         $out = "";
 
         if (is_object($input)) {
@@ -158,7 +162,8 @@ class Output {
         return $out;
     }
 
-    protected static function control_chars() {
+    protected static function control_chars()
+    {
         $chars = static::$control_chars;
         foreach (static::$foreground_colors as $name => $code) {
             $chars['fg'.$name] = [ "\033[".$code."m", "\033[0m" ];
@@ -170,7 +175,8 @@ class Output {
         return $chars;
     }
 
-    public static function string_length($string) {
+    public static function string_length($string)
+    {
         $control_chars = static::control_chars();
 
         foreach ($control_chars as $name => $chars) {
@@ -192,7 +198,8 @@ class Output {
         return $length;
     }
 
-    public static function uchar($char, $variant = null, $override_allow_unicode = false) {
+    public static function uchar($char, $variant = null, $override_allow_unicode = false)
+    {
         $out = $char;
 
         if (is_null($variant)) {
@@ -227,7 +234,8 @@ class Output {
         return $out;
     }
 
-    public static function non_unicode_variant($input, $variant = null) {
+    public static function non_unicode_variant($input, $variant = null)
+    {
         $out = $input;
 
         if (is_null($variant)) {
@@ -257,8 +265,9 @@ class Output {
         return $out;
     }
 
-	public static function line($string = '', $border = '', $length = null, $pad_char = ' ', $variant = null) {
-	    if (is_null($length)) {
+    public static function line($string = '', $border = '', $length = null, $pad_char = ' ', $variant = null)
+    {
+        if (is_null($length)) {
             $length = static::line_length();
         }
 
@@ -269,10 +278,10 @@ class Output {
         $control_chars = static::control_chars();
 
         if ($border) {
-		    if (is_string($border) && false !== mb_strpos($border, ',')) {
+            if (is_string($border) && false !== mb_strpos($border, ',')) {
                 $border = explode(',', $border);
             }
-		    if (is_array($border)) {
+            if (is_array($border)) {
                 $variant = $border[1];
                 $border = $border[0];
             } else {
@@ -304,23 +313,23 @@ class Output {
                         break;
                 }
             }
-		}
-		
-		if (static::string_length($string) > $length) {
-			$string = wordwrap($string, $length, "\n", true);
-			$string_parts = explode("\n", $string);
-			$string_parts = array_reverse($string_parts);
-			
-			foreach ($string_parts as $_key => $_str) {
-				if (trim($_str) == '') {
-					unset($string_parts[$_key]);
-				} else {
-					break;
-				}
-			}
-			$string_parts = array_reverse($string_parts);
-			$string = implode("\n", $string_parts);
-		}
+        }
+
+        if (static::string_length($string) > $length) {
+            $string = wordwrap($string, $length, "\n", true);
+            $string_parts = explode("\n", $string);
+            $string_parts = array_reverse($string_parts);
+
+            foreach ($string_parts as $_key => $_str) {
+                if (trim($_str) == '') {
+                    unset($string_parts[$_key]);
+                } else {
+                    break;
+                }
+            }
+            $string_parts = array_reverse($string_parts);
+            $string = implode("\n", $string_parts);
+        }
 /*
 $line_length_default = static::line_length();
 $variant_default = static::variant();
@@ -355,80 +364,87 @@ static::set_allow_unicode($allow_unicode_default);
 static::set_line_length($line_length_default);
 static::set_variant($variant_default);
  */
-		if ($border) {
-			if (false !== strpos($string, "\n") && $string !== "\n") {
-				$str_parts = explode("\n", $string);
-				$count = count($str_parts);
-				foreach ($str_parts as $key => $str) {
-					if ($key - 1 == $count && empty($str)) {
-						continue;
-					}
-					$extra_length = 0;
-					foreach ($control_chars as $cc_name => $cc_delims) {
-						if (false !== mb_strpos($str, $cc_delims[0])) {
-							$extra_length += mb_strlen($cc_delims[0]);
-						}
-					}
+        if ($border) {
+            if (false !== strpos($string, "\n") && $string !== "\n") {
+                $str_parts = explode("\n", $string);
+                $count = count($str_parts);
+                foreach ($str_parts as $key => $str) {
+                    if ($key - 1 == $count && empty($str)) {
+                        continue;
+                    }
+                    $extra_length = 0;
+                    foreach ($control_chars as $cc_name => $cc_delims) {
+                        if (false !== mb_strpos($str, $cc_delims[0])) {
+                            $extra_length += mb_strlen($cc_delims[0]);
+                        }
+                    }
                     if (false !== mb_strpos($str, "\033[0m")) {
                         $extra_length += mb_strlen("\033[0m");
                     }
 //					$strlen = mb_strlen($str) - $extra_length;
                     $strlen = static::string_length($str);
 
-					if ($strlen < $length) {
-						$str = mb_str_pad($str, $length + $extra_length, $pad_char);
-					}
-					$str_parts[$key] = $border_left.$pad_char.$str.$pad_char.$border_right;
-				}
-				$string = implode("\n", $str_parts);
-			} else {
-				$extra_length = 0;
-				foreach ($control_chars as $cc_name => $cc_delims) {
-					if (false !== mb_strpos($string, $cc_delims[0])) {
-						$extra_length += mb_strlen($cc_delims[0]);
-					}
-				}
+                    if ($strlen < $length) {
+                        $str = mb_str_pad($str, $length + $extra_length, $pad_char);
+                    }
+                    $str_parts[$key] = $border_left.$pad_char.$str.$pad_char.$border_right;
+                }
+                $string = implode("\n", $str_parts);
+            } else {
+                $extra_length = 0;
+                foreach ($control_chars as $cc_name => $cc_delims) {
+                    if (false !== mb_strpos($string, $cc_delims[0])) {
+                        $extra_length += mb_strlen($cc_delims[0]);
+                    }
+                }
                 if (false !== mb_strpos($string, "\033[0m")) {
                     $extra_length += mb_strlen("\033[0m");
                 }
 //				$strlen = mb_strlen($string) - $extra_length;
                 $strlen = static::string_length($string);
 
-				if ($strlen < $length) {
-					$string = mb_str_pad($string, $length + $extra_length, $pad_char);
-				}
-				$string = $border_left.$pad_char.$string.$pad_char.$border_right;
-			}
-		}
+                if ($strlen < $length) {
+                    $string = mb_str_pad($string, $length + $extra_length, $pad_char);
+                }
+                $string = $border_left.$pad_char.$string.$pad_char.$border_right;
+            }
+        }
 
-		print $string."\n";
-	}
+        print $string."\n";
+    }
 
-    public static function set_allow_unicode($allow = true) {
+    public static function set_allow_unicode($allow = true)
+    {
         static::$allow_unicode = $allow;
     }
 
-	public static function set_line_length($length) {
+    public static function set_line_length($length)
+    {
         static::$line_length = $length;
     }
 
-    public static function set_variant($variant = 'light') {
+    public static function set_variant($variant = 'light')
+    {
         static::$variant = $variant;
     }
 
-    public static function allow_unicode() {
+    public static function allow_unicode()
+    {
         return static::$allow_unicode;
     }
 
-    public static function line_length() {
-    	return static::$line_length;
+    public static function line_length()
+    {
+        return static::$line_length;
     }
 
-    public static function variant() {
+    public static function variant()
+    {
         return static::$variant;
     }
 
-    public static function line_joint($flags, $variant = null) {
+    public static function line_joint($flags, $variant = null)
+    {
         $out = '+';
         if (is_null($variant)) {
             $variant = static::variant();
@@ -469,7 +485,8 @@ static::set_variant($variant_default);
         return $out;
     }
 
-    public static function horizontal_line($flags, $length = null, $variant = null) {
+    public static function horizontal_line($flags, $length = null, $variant = null)
+    {
         if (is_null($length)) {
             $length = static::line_length();
         }
@@ -479,8 +496,6 @@ static::set_variant($variant_default);
         $left = (static::$allow_unicode ? static::uchar('ver_right', $variant) : '+');
         $horizontal = (static::$allow_unicode ? static::uchar('hor', $variant) : '-');
         $right = (static::$allow_unicode ? static::uchar('ver_left', $variant) : '+');
-
-
 
         if (! is_array($flags)) {
             $flags = explode(',', $flags);
@@ -508,7 +523,8 @@ static::set_variant($variant_default);
         return $left . str_repeat($horizontal, $length - (mb_strlen($left) + mb_strlen($right))) . $right;
     }
 
-    private static function calculate_column_widths($lengths = [], $data_array, $max_width) {
+    private static function calculate_column_widths($lengths = [], $data_array, $max_width)
+    {
         $has_unspecified_width = false;
 
         foreach ($lengths as $lkey => $length) {
@@ -542,21 +558,21 @@ static::set_variant($variant_default);
 
     /**
      * Format an array of data into an ASCII grid
-     * @param  array $headers An array of column header strings
-     * @param  array $rows Am array of arrays of strings
-     * @param  string $template The printf string template, eg. "| %-10.10s | %-14.14s | %-55.55s | %-19.19s |"
-     * @param null $max_width
+     * @param  array  $headers   An array of column header strings
+     * @param  array  $rows      Am array of arrays of strings
+     * @param  string $template  The printf string template, eg. "| %-10.10s | %-14.14s | %-55.55s | %-19.19s |"
+     * @param  null   $max_width
      * @return string
      */
-	public static function data_grid($headers, $rows, $template = null, $max_width = null) {
-		$grid = '';
+    public static function data_grid($headers, $rows, $template = null, $max_width = null)
+    {
+        $grid = '';
 
         if (count($rows) > 0) {
             $row_strings = $template_cols = $unspecified_width_keys = [];
             $border = static::uchar('ver');
             $max_line_length = ($max_width ?: static::$line_length);
             $lengths = (is_array($template) ? $template : []);
-
 
             if (empty($lengths)) {
                 $data_array = $rows;
@@ -603,16 +619,17 @@ static::set_variant($variant_default);
             $grid = implode("\n", $row_strings);
         }
 
-		return $grid;
-	}
+        return $grid;
+    }
 
     /**
      * @param $size
-     * @param string $title
-     * @param string $variant
+     * @param  string $title
+     * @param  string $variant
      * @return string
      */
-    public static function box($size, $title = '', $variant = 'light') {
+    public static function box($size, $title = '', $variant = 'light')
+    {
         static::set_config('allow_unicode', true);
         static::set_config('line_length', $size * 2);
         static::set_config('variant', $variant);
@@ -648,25 +665,28 @@ static::set_variant($variant_default);
     /**
      * @param $input
      * @param $length
-     * @param string $suffix
+     * @param  string $suffix
      * @return string
      */
-	public static function str_shorten($input, $length, $suffix = '...') {
-		$output = $input;
-		if (mb_strlen($output) > $length) {
-			$output = substr($output, 0, ($length - mb_strlen($suffix))).$suffix;
-		}
-		return $output;
-	}
+    public static function str_shorten($input, $length, $suffix = '...')
+    {
+        $output = $input;
+        if (mb_strlen($output) > $length) {
+            $output = substr($output, 0, ($length - mb_strlen($suffix))).$suffix;
+        }
+
+        return $output;
+    }
 
     /**
      * @param $setting
      * @param $value
      */
-	public static function set_config($setting, $value) {
+    public static function set_config($setting, $value)
+    {
         $old_value = null;
 
-        switch($setting) {
+        switch ($setting) {
             case 'unicode':
             case 'allow_unicode':
                 $setting = 'allow_unicode';
@@ -686,16 +706,17 @@ static::set_variant($variant_default);
                 break;
         }
 
-	    static::$temp_config[$setting] = $old_value;
+        static::$temp_config[$setting] = $old_value;
     }
 
     /**
      * Reset static config values to prior values
      */
-    public static function reset_config() {
+    public static function reset_config()
+    {
         if (! empty(static::$temp_config)) {
             foreach (static::$temp_config as $setting => $value) {
-                switch($setting) {
+                switch ($setting) {
                     case 'allow_unicode':
                         static::set_allow_unicode($value);
                         break;

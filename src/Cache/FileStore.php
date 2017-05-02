@@ -1,49 +1,51 @@
 <?php
 namespace Worklog\Cache;
 
-use Worklog\Application;
 use Worklog\Filesystem\File;
 
 /**
  * Cache file wrapper class
  */
-class FileStore extends Cache {
+class FileStore extends Cache
+{
+    private $registry = [];
 
-	private $registry = [];
+    private static $DO_NOT_PURGE = false;
 
-	private static $DO_NOT_PURGE = false;
+    private $Item;
 
-	private $Item;
+    public function __construct($path = '')
+    {
+        $this->set_cache_path($path);
+        parent::__construct(self::DRIVER_FILE);
+    }
 
+    public function Item($data = [])
+    {
+        if (! isset($this->Item) || ! empty($data)) {
+            if (isset($data['name'])) {
+                $this->Item = CacheItem::new_from_file($this, $this->filename($data['name']), $data);
+            }
+        }
 
-	public function __construct($path = '') {
-		$this->set_cache_path($path);
-		parent::__construct(self::DRIVER_FILE);
-	}
+        return $this->Item;
+    }
 
-	public function Item($data = []) {
-		if (! isset($this->Item) || ! empty($data)) {
-			if (isset($data['name'])) {
-				$this->Item = CacheItem::new_from_file($this, $this->filename($data['name']), $data);
-			}
-		}
-		
-		return $this->Item;
-	}
-
-	public function set_cache_path($path) {
-		if (! empty($path)) {
-			$this->path = $path;
-		} else {
-			throw new \InvalidArgumentException('Cache path empty');
-		}
-	}
+    public function set_cache_path($path)
+    {
+        if (! empty($path)) {
+            $this->path = $path;
+        } else {
+            throw new \InvalidArgumentException('Cache path empty');
+        }
+    }
 
     /**
      * Scan cache files and cache their name keys
-     * @param  boolean $force Reload cache registry
+     * @param boolean $force Reload cache registry
      */
-    protected function load_registry($force = false) {
+    protected function load_registry($force = false)
+    {
         parent::load_registry($force);
 
         if (empty($this->registry) || $force) {
@@ -53,7 +55,8 @@ class FileStore extends Cache {
         }
     }
 
-    public function setup() {
+    public function setup()
+    {
         if (! $this->is_setup()) {
             parent::setup();
 
@@ -65,32 +68,35 @@ class FileStore extends Cache {
             }
 
         }
+
         return $this->is_setup();
     }
 
-	public function is_setup() {
-	    $setup = false;
+    public function is_setup()
+    {
+        $setup = false;
 
-    	if (! empty($this->path)) {
+        if (! empty($this->path)) {
             $setup = is_dir($this->path);
         }
-        
-		return $setup;
-	}
+
+        return $setup;
+    }
 
     /**
      * Load the cache data given a cache key or filename
-     * @param  string $name The cache key name or filename
-     * @param bool $get_raw
-     * @return array The cache data
+     * @param  string $name    The cache key name or filename
+     * @param  bool   $get_raw
+     * @return array  The cache data
      */
-    public function load($name, $get_raw = false, $do_not_delete = false) {
+    public function load($name, $get_raw = false, $do_not_delete = false)
+    {
         $this->Item = $this->Item(compact('name'));
 
         if ($this->is_setup()) {
-        	if ($this->Item()->is_expired()) {
-	            $this->garbage_collect();
-	        }
+            if ($this->Item()->is_expired()) {
+                $this->garbage_collect();
+            }
         }
 
         if ($get_raw) {
@@ -100,15 +106,16 @@ class FileStore extends Cache {
         }
     }
 
-    public function data($name, $data = null, $tags = [], $expires_in_seconds = 0) {
-    	$data = parent::data($name, $data, $tags, $expires_in_seconds);
+    public function data($name, $data = null, $tags = [], $expires_in_seconds = 0)
+    {
+        $data = parent::data($name, $data, $tags, $expires_in_seconds);
 
-    	if ($this->Item()) {
-    		$this->Item()->setFile(new File($this->filename($name)));
-    		$this->write($this->Item(), $data, $tags, $expires_in_seconds);
-    	}
+        if ($this->Item()) {
+            $this->Item()->setFile(new File($this->filename($name)));
+            $this->write($this->Item(), $data, $tags, $expires_in_seconds);
+        }
 
-    	return $data;
+        return $data;
     }
 
     /**
@@ -116,7 +123,7 @@ class FileStore extends Cache {
      * @param  string $name The cache key
      * @param  array  $data The cache data
      * @param  array  $tags Tag string (or array of strings) used for taxonomy
-     * @return mixed        The number of bytes written, or false on failure
+     * @return mixed  The number of bytes written, or false on failure
      */
     // public function write($name, $data = [], $tags = [], $expires_in_seconds = 0) {
     //     $this->setup();
@@ -136,7 +143,7 @@ class FileStore extends Cache {
         // }
 
     //     $CacheItem->setExpiry($expires_in_seconds);
-        
+
     //     $this->register($CacheItem);
 
     //     $CacheItem->write();
@@ -144,23 +151,27 @@ class FileStore extends Cache {
     //     return $CacheItem;
     // }
 
-	/**
-	 * The cache file filename
-	 * @param  string $name The unique array index
-	 * @return string       The filename for a given cache key
-	 */
-	public function filename($name) {
-		if (substr($name, -5) !== '.json') {
-			$name = $this->path.'/'.File::sanitize(md5($name).'.json');
-		}
-		return $name;
-	}
+    /**
+     * The cache file filename
+     * @param  string $name The unique array index
+     * @return string The filename for a given cache key
+     */
+    public function filename($name)
+    {
+        if (substr($name, -5) !== '.json') {
+            $name = $this->path.'/'.File::sanitize(md5($name).'.json');
+        }
 
-    public static function disable_purge($set = true) {
+        return $name;
+    }
+
+    public static function disable_purge($set = true)
+    {
         static::$DO_NOT_PURGE = (bool) $set;
     }
 
-	private static function is_past($raw_data) {
+    private static function is_past($raw_data)
+    {
         $expired = false;
 
         if (! is_string($raw_data)) {

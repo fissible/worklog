@@ -24,7 +24,8 @@ class Duration
         $this->setMaxInterval($maximum_interval);
     }
 
-    public function setMaxInterval($maximum_interval = null) {
+    public function setMaxInterval($maximum_interval = null)
+    {
         if (! is_null($maximum_interval)) {
             switch ($maximum_interval) {
                 case 'd':
@@ -47,19 +48,24 @@ class Duration
         }
     }
 
-    public function add(\DateInterval $interval) {
+    public function add(\DateInterval $interval)
+    {
         $this->Base->add($interval);
+
         return $this;
     }
 
-    public function diff() {
+    public function diff()
+    {
         if (! isset($this->DiffInterval)) {
             $this->DiffInterval = Carbon::now()->diff($this->Base);
         }
+
         return $this->DiffInterval;
     }
 
-    public function intervals_exceed_max() {
+    public function intervals_exceed_max()
+    {
         $exceeds = false;
         switch ($this->maximum_interval) {
             case 'i':
@@ -80,7 +86,8 @@ class Duration
         return $exceeds;
     }
 
-    public function redistribute() {
+    public function redistribute()
+    {
         while ($this->intervals_exceed_max()) {
             if ($this->maximum_interval == 'd' || $this->maximum_interval == 'h' || $this->maximum_interval == 'i') {
                 if ($this->diff()->m > 0) {
@@ -105,7 +112,8 @@ class Duration
         return $this;
     }
 
-    public function daysString() {
+    public function daysString()
+    {
         $this->redistribute();
         if ($DiffInterval = $this->diff()) {
             if ($DiffInterval->d) {
@@ -114,7 +122,8 @@ class Duration
         }
     }
 
-    public function hoursString() {
+    public function hoursString()
+    {
         $this->redistribute();
         if ($DiffInterval = $this->diff()) {
             if ($DiffInterval->h) {
@@ -123,7 +132,8 @@ class Duration
         }
     }
 
-    public function minutesString() {
+    public function minutesString()
+    {
         $this->redistribute();
         if ($DiffInterval = $this->diff()) {
             if ($DiffInterval->i) {
@@ -132,7 +142,8 @@ class Duration
         }
     }
 
-    public function asString() {
+    public function asString()
+    {
         $duration = [];
 
         if ($days = $this->daysString()) {
@@ -148,11 +159,13 @@ class Duration
         return implode(', ', $duration);
     }
 
-    public function __call($name, $arguments) {
+    public function __call($name, $arguments)
+    {
         return call_user_func_array([ $this->Base, $name ], $arguments);
     }
 
-    public function __toString() {
+    public function __toString()
+    {
         return $this->asString();
     }
 }

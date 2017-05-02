@@ -8,20 +8,19 @@
 
 namespace Worklog\Testing;
 
-use Illuminate\Database\Eloquent\Model;
 // use PHPUnit\Framework\TestCase as BaseTestCase;
 
-class TestCase extends \PHPUnit_Framework_TestCase {
+class TestCase extends \PHPUnit_Framework_TestCase
+{
+    /**
+     * An application instance
+     */
+    protected $app;
 
-	/**
-	 * An application instance
-	 */
-	protected $app;
-
-	/**
-	 * A database driver
-	 */
-	protected $db;
+    /**
+     * A database driver
+     */
+    protected $db;
 
     /**
      * The callbacks that should be run after the application is created.
@@ -29,7 +28,6 @@ class TestCase extends \PHPUnit_Framework_TestCase {
      * @var array
      */
     protected $afterApplicationCreatedCallbacks = [];
-    
 
     /**
      * The callbacks that should be run before the application is destroyed.
@@ -45,7 +43,6 @@ class TestCase extends \PHPUnit_Framework_TestCase {
      */
     protected $setUpHasRun = false;
 
-
     /**
      * Creates the application.
      *
@@ -53,8 +50,9 @@ class TestCase extends \PHPUnit_Framework_TestCase {
      *
      * @return Application
      */
-    public function createApplication() {
-    	return App();
+    public function createApplication()
+    {
+        return App();
     }
 
     /**
@@ -111,9 +109,9 @@ class TestCase extends \PHPUnit_Framework_TestCase {
     /**
      * Assert that a given where condition exists in the database.
      *
-     * @param  string  $table
+     * @param  string $table
      * @param  array  $data
-     * @param  string  $connection
+     * @param  string $connection
      * @return $this
      */
     protected function seeInDatabase($table, array $where)
@@ -122,15 +120,16 @@ class TestCase extends \PHPUnit_Framework_TestCase {
         $this->assertGreaterThan(0, $count, sprintf(
             'Unable to find row in database table [%s] that matched attributes [%s].', $table, json_encode($where)
         ));
+
         return $this;
     }
 
     /**
      * Assert that a given where condition does not exist in the database.
      *
-     * @param  string  $table
+     * @param  string $table
      * @param  array  $data
-     * @param  string  $connection
+     * @param  string $connection
      * @return $this
      */
     protected function notSeeInDatabase($table, array $where)
@@ -139,6 +138,7 @@ class TestCase extends \PHPUnit_Framework_TestCase {
         $this->assertEquals(0, $count, sprintf(
             'Found unexpected row in database table [%s] that matched attributes [%s].', $table, json_encode($where)
         ));
+
         return $this;
     }
 
@@ -170,7 +170,7 @@ class TestCase extends \PHPUnit_Framework_TestCase {
     /**
      * Register a callback to be run after the application is created.
      *
-     * @param  callable  $callback
+     * @param  callable $callback
      * @return void
      */
     public function afterApplicationCreated(callable $callback)
@@ -184,7 +184,7 @@ class TestCase extends \PHPUnit_Framework_TestCase {
     /**
      * Register a callback to be run before the application is destroyed.
      *
-     * @param  callable  $callback
+     * @param  callable $callback
      * @return void
      */
     protected function beforeApplicationDestroyed(callable $callback)

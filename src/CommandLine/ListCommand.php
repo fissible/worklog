@@ -11,8 +11,8 @@ use Worklog\Services\TaskService;
  * Date: 2/23/17
  * Time: 8:34 AM
  */
-class ListCommand extends Command {
-
+class ListCommand extends Command
+{
     public $command_name;
 
     public static $description = 'Show work log entries';
@@ -23,8 +23,8 @@ class ListCommand extends Command {
     public static $arguments = [ 'issue' ];
     public static $menu = true;
 
-
-    public function run() {
+    public function run()
+    {
         parent::run();
 
         $where = [];

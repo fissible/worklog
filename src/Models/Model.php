@@ -41,17 +41,18 @@ class Model extends Eloquent
 
     protected static $display_headers = [/* 'id' => 'ID' */];
 
-
-
-    public function classname() {
+    public function classname()
+    {
         return get_class($this);
     }
 
-    public function display_headers() {
+    public function display_headers()
+    {
         return static::$display_headers;
     }
 
-    public function hasAttribute($attr) {
+    public function hasAttribute($attr)
+    {
         return array_key_exists($attr, $this->attributes);
     }
 
@@ -59,7 +60,8 @@ class Model extends Eloquent
      * @param $field
      * @return mixed
      */
-    public static function field($field) {
+    public static function field($field)
+    {
         if (!is_string($field)) {
             throw new \InvalidArgumentException('Model::field("") requires a string as the first parameter');
         }
@@ -72,16 +74,18 @@ class Model extends Eloquent
     /**
      * @return array
      */
-    public static function fields() {
+    public static function fields()
+    {
         return static::$fields;
     }
 
     /**
      * Return true if all required fields have values
-     * @param bool $get_config
+     * @param  bool  $get_config
      * @return array
      */
-    public static function required_fields($get_config = false) {
+    public static function required_fields($get_config = false)
+    {
         $fields = [];
         foreach (static::fields() as $field => $config) {
             if (isset($config['required']) && $config['required']) {
@@ -98,10 +102,11 @@ class Model extends Eloquent
 
     /**
      * @param $field
-     * @param null $default
+     * @param  null   $default
      * @return string
      */
-    public function promptForAttribute($field, $default = null) {
+    public function promptForAttribute($field, $default = null)
+    {
         $prompt = sprintf('What is the %s?', Str::snake($field, ' '));
 
         if (is_null($default)) {
@@ -124,11 +129,13 @@ class Model extends Eloquent
         return $prompt;
     }
 
-    public static function required($field) {
+    public static function required($field)
+    {
         return in_array($field, static::required_fields());
     }
 
-    public function satisfied($field = null) {
+    public function satisfied($field = null)
+    {
         $satisfied = false;
         if (is_null($field)) {
             $satisfied = $this->valid();
@@ -143,7 +150,8 @@ class Model extends Eloquent
      * Return true if all required fields have values
      * @return bool
      */
-    public function valid() {
+    public function valid()
+    {
         $valid = true;
         foreach (static::required_fields() as $field) {
             if (! $this->hasAttribute($field) || strlen($this->attributes[$field]) < 1) {
@@ -155,7 +163,8 @@ class Model extends Eloquent
         return $valid;
     }
 
-    public function defaultValue($field, $default = null) {
+    public function defaultValue($field, $default = null)
+    {
         if (is_null($default) && $this->exists) {
             $default = $this->{$field};
         }

@@ -11,9 +11,8 @@ namespace Worklog\CommandLine;
 use Worklog\Filesystem\File;
 use Worklog\Str;
 
-
-class UpdateEnvCommand extends Command {
-
+class UpdateEnvCommand extends Command
+{
     public $command_name;
 
     public static $description = 'Update local .env';
@@ -25,8 +24,8 @@ class UpdateEnvCommand extends Command {
     public static $usage = '%s [-ilt] [date [end_date]]';
     public static $menu = false;
 
-
-    public function run() {
+    public function run()
+    {
         parent::run();
 
         $env = $env_example = [ 'file' => null, 'data' => [] ];
@@ -135,7 +134,8 @@ class UpdateEnvCommand extends Command {
      * @param $line
      * @return array
      */
-    private function parse_line($line) {
+    private function parse_line($line)
+    {
         $key = $val = null;
 
         if (! empty($line)) {
@@ -155,11 +155,13 @@ class UpdateEnvCommand extends Command {
     /**
      * @param $file
      */
-    private function write_file($file) {
+    private function write_file($file)
+    {
         $lines = [];
         foreach ($file['data'] as $key => $val) {
             $lines[] = $key.'='.$val;
         }
+
         return $file['file']->overwrite($lines, "\n");
     }
 }

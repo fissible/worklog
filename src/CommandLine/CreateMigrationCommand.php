@@ -9,8 +9,8 @@ use Worklog\Database\Migration;
  * Date: 3/17/17
  * Time: 2:27 PM
  */
-class CreateMigrationCommand extends Command {
-
+class CreateMigrationCommand extends Command
+{
     public $command_name;
 
     public static $description = 'Generate a new Migration';
@@ -22,8 +22,8 @@ class CreateMigrationCommand extends Command {
         'unknown' => 'Unable to generate new Migration'
     ];
 
-
-    public function run() {
+    public function run()
+    {
         parent::run();
 
         $name = $this->expectData('name')->getData('name');

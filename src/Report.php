@@ -43,24 +43,25 @@ class Report
         'no_entries' => 'No entries found'
     ];
 
-
     /**
      * Report constructor.
      * @param null $StartDate
      * @param null $EndDate
      * @param null $issue
      */
-    public function __construct($StartDate = null, $EndDate = null, $issue = null) {
+    public function __construct($StartDate = null, $EndDate = null, $issue = null)
+    {
         $this->setStartDate($StartDate);
         $this->setEndDate($EndDate);
         $this->setIssue($issue);
     }
 
     /**
-     * @param null $issue
+     * @param  null  $issue
      * @return $this
      */
-    public function setIssue($issue = null) {
+    public function setIssue($issue = null)
+    {
         $this->issue = $issue;
 
         return $this;
@@ -69,7 +70,8 @@ class Report
     /**
      * @return mixed
      */
-    public function rangeInDays() {
+    public function rangeInDays()
+    {
         return $this->DateRange[0]->diffInDays($this->DateRange[1]);
     }
 
@@ -78,7 +80,8 @@ class Report
      * @param $Record
      * @return array
      */
-    protected function transformEntity($Record) {
+    protected function transformEntity($Record)
+    {
         $record = [
             'issue' => ($Record->hasAttribute('issue') && $Record->issue ? $Record->issue : self::NO_GROUP_KEY_FLAG),
             'description' => $Record->description,
@@ -113,11 +116,12 @@ class Report
 
     /**
      * @param $data
-     * @param null $group
+     * @param  null   $group
      * @return string
      * @internal param bool $borderless
      */
-    protected function formatEntity($data, $group = null) {
+    protected function formatEntity($data, $group = null)
+    {
         $group_by = isset($this->group_by) ? $this->group_by : null;
         $prefix = '';
 
@@ -151,7 +155,7 @@ class Report
                     $minimum_string_length = max($minimum_string_length, $label_string_length);
 
                     if ($minimum_string_length > 0) {
-                        switch($this->same_iteration_values($data, $group)) {
+                        switch ($this->same_iteration_values($data, $group)) {
                             case true:
                                 $prefix = str_repeat(' ', $minimum_string_length);
                                 break;
@@ -173,10 +177,11 @@ class Report
     /**
      * @param $data
      * @param $key
-     * @param null $group
+     * @param  null $group
      * @return null
      */
-    protected function formatEntityField($data, $key, $group = null) {
+    protected function formatEntityField($data, $key, $group = null)
+    {
         $array_key_exists = array_key_exists($key, $data);
         $new_value = ($array_key_exists ? $data[$key] : null);
 
@@ -198,14 +203,16 @@ class Report
     /**
      * @return bool
      */
-    public function hasData() {
+    public function hasData()
+    {
         return $this->dataCount() > 0;
     }
 
     /**
      * @return int
      */
-    public function dataCount() {
+    public function dataCount()
+    {
         if (is_object($this->data) && method_exists($this->data, 'count')) {
            return $this->data->count();
         }
@@ -214,11 +221,12 @@ class Report
     }
 
     /**
-     * @param Carbon $Date
-     * @param null $DateEnd
+     * @param  Carbon $Date
+     * @param  null   $DateEnd
      * @return $this
      */
-    public function forDate(Carbon $Date, $DateEnd = null) {
+    public function forDate(Carbon $Date, $DateEnd = null)
+    {
         $this->setStartDate($Date);
 
         if ($DateEnd instanceof Carbon) {
@@ -237,14 +245,16 @@ class Report
     /**
      * @return Report
      */
-    public function forToday() {
+    public function forToday()
+    {
         return $this->forDate(Carbon::today());
     }
 
     /**
      * @return Report
      */
-    public function forLastWeek() {
+    public function forLastWeek()
+    {
         $this->DateRange[0] = Carbon::today()->startOfWeek()->subWeek();
         $this->DateRange[1] = Carbon::today()->endOfWeek()->subDay()->subWeek();
 
@@ -252,10 +262,11 @@ class Report
     }
 
     /**
-     * @param null $StartDate
+     * @param  null  $StartDate
      * @return $this
      */
-    public function setStartDate($StartDate = null) {
+    public function setStartDate($StartDate = null)
+    {
         if (is_null($StartDate)) {
             $StartDate = Carbon::today()->startOfWeek();
         }
@@ -265,10 +276,11 @@ class Report
     }
 
     /**
-     * @param null $EndDate
+     * @param  null  $EndDate
      * @return $this
      */
-    public function setEndDate($EndDate = null) {
+    public function setEndDate($EndDate = null)
+    {
         if (is_null($EndDate)) {
             $EndDate = Carbon::today()->endOfWeek()->subDay();
         }
@@ -280,7 +292,8 @@ class Report
     /**
      * @return $this
      */
-    private function setRangeTimes() {
+    private function setRangeTimes()
+    {
         if (array_key_exists(0, $this->DateRange)) {
             $this->DateRange[0]->setTime(5, 0);
         }
@@ -294,11 +307,13 @@ class Report
     /**
      * @return bool
      */
-    public function isForToday() {
+    public function isForToday()
+    {
         return ($this->DateRange[0]->isToday() && $this->DateRange[1]->isToday());
     }
 
-    public function orderBy($order_by = []) {
+    public function orderBy($order_by = [])
+    {
         $this->order_by = $order_by;
 
         return $this;
@@ -309,13 +324,15 @@ class Report
      * @return $this
      * @internal param $input
      */
-    public function groupBy($key) {
+    public function groupBy($key)
+    {
         $this->group_by = $key;
 
         return $this;
     }
 
-    private function groupData() {
+    private function groupData()
+    {
         if ($this->hasData() && isset($this->group_by)) {
             $data = $this->data;
             $this->data = [];
@@ -335,7 +352,7 @@ class Report
             }
 
             if ($this->group_by == 'issue') {
-                uksort($this->data, function($a, $b) {
+                uksort($this->data, function ($a, $b) {
                     if ($a == $b) {
                         return 0;
                     }
@@ -345,6 +362,7 @@ class Report
                     if ($b == self::NO_GROUP_KEY_FLAG) {
                         return -1;
                     }
+
                     return strcmp($a, $b);
                 });
             }
@@ -356,7 +374,8 @@ class Report
     /**
      * @return mixed
      */
-    protected function query() {
+    protected function query()
+    {
         $Query = Task::query();
 
         if (isset($this->issue)) {
@@ -391,7 +410,8 @@ class Report
      * @return array
      * @throws \Exception
      */
-    public function run() {
+    public function run()
+    {
         $this->setData($this->query()->get());
 
         if ($this->dataCount() > 0) {
@@ -410,10 +430,11 @@ class Report
     }
 
     /**
-     * @param array $data
+     * @param  array $data
      * @return $this
      */
-    private function setData($data) {
+    private function setData($data)
+    {
         if ($data instanceof Collection) {
             foreach ($data as $key => $Record) {
                 $this->data[] = $this->transformEntity($Record);
@@ -428,7 +449,8 @@ class Report
      * @param null $max_metric
      * @internal param string $max_metric h=hour, m=minute
      */
-    public function table($borderless = false, $max_metric = null) {
+    public function table($borderless = false, $max_metric = null)
+    {
         $variant = 'heavy';
         $DateStart = $this->DateRange[0];
         $DateEnd = $this->DateRange[1];
@@ -551,10 +573,11 @@ class Report
 
     /**
      * @param $data
-     * @param null $group
+     * @param  null      $group
      * @return bool|null
      */
-    private function same_iteration_values($data, $group = null) {
+    private function same_iteration_values($data, $group = null)
+    {
         $same = true;
 
         if (! is_null($group) && ! is_null($this->last_group) && $group !== $this->last_group) {
@@ -596,10 +619,11 @@ class Report
 
     /**
      * @param $data
-     * @param null $group
+     * @param  null  $group
      * @return $this
      */
-    private function update_iteration_values($data, $group = null) {
+    private function update_iteration_values($data, $group = null)
+    {
         if ($data['date'] instanceof Carbon) {
             $data['date'] = $this->formatEntityField($data, 'date', $group);
         }
@@ -610,11 +634,12 @@ class Report
     }
 
     /**
-     * @param string $pos
-     * @param string $variant
+     * @param  string $pos
+     * @param  string $variant
      * @return string
      */
-    protected function horizontal_line($pos = 'mid', $variant = 'light') {
+    protected function horizontal_line($pos = 'mid', $variant = 'light')
+    {
         $line_length = $this->line_length();
 
         if (Output::allow_unicode()) {
@@ -629,7 +654,8 @@ class Report
     /**
      * @return mixed
      */
-    protected function line_length($shorten_by = 0) {
+    protected function line_length($shorten_by = 0)
+    {
         return Output::line_length() - $shorten_by;
     }
 }

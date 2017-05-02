@@ -7,31 +7,31 @@ use Carbon\Carbon;
 /**
  * Command
  */
-class Command {
+class Command
+{
+    public $command_name;
 
-	public $command_name;
+    protected $App;
 
-	protected $App;
+    protected $db;
 
-	protected $db;
-
-	protected $internally_invoked;
+    protected $internally_invoked;
 
     protected $pid;
 
     protected $output;
 
-	private $required_data = [];
+    private $required_data = [];
 
-	private $data;
+    private $data;
 
-	private $Options;
+    private $Options;
 
-	private $shortopts = '';
+    private $shortopts = '';
 
-	private $longopts = [];
+    private $longopts = [];
 
-	protected static $_data;
+    protected static $_data;
 
     protected static $exception_strings = [
         'date_format' => 'Date must be a valid format, eg. YYYY-MM-DD',
@@ -39,79 +39,84 @@ class Command {
         'no_input' => 'Command has no input'
     ];
 
-	protected static $registry;
+    protected static $registry;
 
-	protected static $aliases = [];
+    protected static $aliases = [];
 
-	const ERROR_UNREGISTERED_COMMAND = "Invalid command \"%s\"";
+    const ERROR_UNREGISTERED_COMMAND = "Invalid command \"%s\"";
 
+    public function __construct($command = [])
+    {
+        $this->App = App();
+        $this->db = $this->App()->db();
+    }
 
-	public function __construct($command = []) {
-		$this->App = App();
-		$this->db = $this->App()->db();
-	}
+    public function name()
+    {
+        $name = '';
+        if (isset($this->command_name)) {
+            $name = $this->command_name;
+        }
 
-	public function name() {
-		$name = '';
-		if (isset($this->command_name)) {
-			$name = $this->command_name;
-		}
-		return $name;
-	}
+        return $name;
+    }
 
-	/**
-	 * New up the specified class and give $App as the first argument.
-	 * Based on Laravel's ServiceContainer
-	 * @param  mixed $concrete Name of the class to create
-	 * @param  array $parameters constructor parameters
-	 * @param  Application $App he Application instance
-	 * @return object
-	 */
-	public function build($concrete, $App = null, array $parameters = []) {
-		if ($concrete instanceof Closure) {
+    /**
+     * New up the specified class and give $App as the first argument.
+     * Based on Laravel's ServiceContainer
+     * @param  mixed       $concrete   Name of the class to create
+     * @param  array       $parameters constructor parameters
+     * @param  Application $App        he Application instance
+     * @return object
+     */
+    public function build($concrete, $App = null, array $parameters = [])
+    {
+        if ($concrete instanceof Closure) {
             return $concrete($App, $parameters);
         }
-		$reflector = new \ReflectionClass($concrete);
-		$constructor = $reflector->getConstructor();
+        $reflector = new \ReflectionClass($concrete);
+        $constructor = $reflector->getConstructor();
 
-		if (is_null($constructor)) {
+        if (is_null($constructor)) {
             return new $concrete();
         }
 
         return $reflector->newInstanceArgs($parameters);
-	}
+    }
 
     /**
      * Register a Command class to a string command
      * @param $commands
-     * @param  array $config The command configuration array
+     * @param array $config The command configuration array
      * @internal param string $command The command line string name, eg. "list"
      */
-	public static function bind($commands, $config = []) {
-		if (! is_array($commands)) $commands = [ $commands ];
-		if (! is_array($config)) $config = [ 'class' => $config ];
-		if (! array_key_exists('class', $config)) {
-			throw new \InvalidArgumentException('Command configuration array requires a "class" key');
-		}
-		$class = new \ReflectionClass($config['class']);
-		$command = '';
-		foreach ($class->getStaticProperties() as $propertyName => $value) {
-			if (in_array($propertyName, [ 'arguments', 'description', 'options', 'usage', 'menu' ])) {
-		    	$config[$propertyName] = $value;
-			}
-		}
-		foreach ($commands as $key => $alias) {
-			if ($key == 0) {
-				$command = $alias;
-				static::register_command($command, $config);
-			} else {
-				static::register_alias($command, $alias);
-			}
-		}
-	}
+    public static function bind($commands, $config = [])
+    {
+        if (! is_array($commands)) $commands = [ $commands ];
+        if (! is_array($config)) $config = [ 'class' => $config ];
+        if (! array_key_exists('class', $config)) {
+            throw new \InvalidArgumentException('Command configuration array requires a "class" key');
+        }
+        $class = new \ReflectionClass($config['class']);
+        $command = '';
+        foreach ($class->getStaticProperties() as $propertyName => $value) {
+            if (in_array($propertyName, [ 'arguments', 'description', 'options', 'usage', 'menu' ])) {
+                $config[$propertyName] = $value;
+            }
+        }
+        foreach ($commands as $key => $alias) {
+            if ($key == 0) {
+                $command = $alias;
+                static::register_command($command, $config);
+            } else {
+                static::register_alias($command, $alias);
+            }
+        }
+    }
 
-	public static function call($Command, $decorate = null) {
-	    if (!($Command instanceof Command)) {
+    public static function call($Command, $decorate = null)
+    {
+        if (!($Command instanceof Command)) {
             $Command = new $Command();
         }
         if (is_callable($decorate)) {
@@ -120,304 +125,337 @@ class Command {
         $Command->run();
     }
 
-	public static function instance($App, $command) {
-		if (strlen($command) < 1) {
-			throw new \InvalidArgumentException('No command specified');
-		}
-		$AbstractCommand = new static();
-		$Command = $AbstractCommand->build(static::$registry[$command]['class'], $App);
-		$Command->command_name = $command;
+    public static function instance($App, $command)
+    {
+        if (strlen($command) < 1) {
+            throw new \InvalidArgumentException('No command specified');
+        }
+        $AbstractCommand = new static();
+        $Command = $AbstractCommand->build(static::$registry[$command]['class'], $App);
+        $Command->command_name = $command;
 
-		return $Command;
-	}
+        return $Command;
+    }
 
-	public function set_invocation_flag($value = true) {
-		$this->internally_invoked = $value;
-	}
+    public function set_invocation_flag($value = true)
+    {
+        $this->internally_invoked = $value;
+    }
 
-	public function internally_invoked() {
-		return (bool) $this->internally_invoked;
-	}
+    public function internally_invoked()
+    {
+        return (bool) $this->internally_invoked;
+    }
 
-	/**
-	 * Register a command configuration
-	 * @param  string $command The command line input "name"
-	 * @param  array  $config  The command configuration array
-	 * @return null
-	 */
-	protected static function register_command($command, $config) {
-		static::$registry[$command] = $config;
-	}
+    /**
+     * Register a command configuration
+     * @param  string $command The command line input "name"
+     * @param  array  $config  The command configuration array
+     * @return null
+     */
+    protected static function register_command($command, $config)
+    {
+        static::$registry[$command] = $config;
+    }
 
-	/**
-	 * Register a command alias
-	 * @param  string $command The command line input "name"
-	 * @param  string $alias   The command line input string representing $command
-	 * @return null
-	 */
-	protected static function register_alias($command, $alias) {
-		static::$aliases[$alias] = $command;
-	}
+    /**
+     * Register a command alias
+     * @param  string $command The command line input "name"
+     * @param  string $alias   The command line input string representing $command
+     * @return null
+     */
+    protected static function register_alias($command, $alias)
+    {
+        static::$aliases[$alias] = $command;
+    }
 
-	public function register_option(Option $Option) {
-		if ($option_str = $Option->get_option_string()) {
-			if ($Option->is_short()) {
-				$this->shortopts($option_str);
-			} else {
-				$this->longopts($option_str);
-			}
-		}
-		return $this;
-	}
+    public function register_option(Option $Option)
+    {
+        if ($option_str = $Option->get_option_string()) {
+            if ($Option->is_short()) {
+                $this->shortopts($option_str);
+            } else {
+                $this->longopts($option_str);
+            }
+        }
 
-	public function shortopts($value = null) {
-		if (! is_null($value)) {
-			$this->shortopts .= $value;
-		}
-		return $this->shortopts;
-	}
+        return $this;
+    }
 
-	public function longopts($value = null) {
-		if (! is_null($value)) {
-			$this->longopts[] = $value;
-		}
-		return $this->longopts;
-	}
+    public function shortopts($value = null)
+    {
+        if (! is_null($value)) {
+            $this->shortopts .= $value;
+        }
 
-	public static function registry() {
-		return static::$registry;
-	}
+        return $this->shortopts;
+    }
 
-	public static function normalize_args($args = []) {
-		if (! is_array($args)) {
-			$args = [ $args ];
-		}
-		if (empty($args)) {
-			$args = Options::argv();
-		}
-		return $args;
-	}
+    public function longopts($value = null)
+    {
+        if (! is_null($value)) {
+            $this->longopts[] = $value;
+        }
 
-	/**
-	 * Determine which command was run (from argv OR $_REQUEST)
-	 * @return [type] [description]
-	 */
-	public function infer($args = []) {
-		$command = '';
-		$default = (defined('DEFAULT_COMMAND') ? DEFAULT_COMMAND : 'help');
-		$args = static::normalize_args($args);
-		$arg_count = count($args);
-		
-		if (isset(static::$registry)) {
-			if ($arg_count > 0) {
-				if ($matches = array_intersect($args, array_keys(static::$registry))) {
-					foreach ($matches as $key => $argument) {
-						if ($this->validate_command($argument)) {
-							$command = $args[$key] = $this->alias($argument);
-							break;
-						}
-					}
-				}
-				if (! $command) {
-					foreach ($args as $key => $argument) {
-						if ($this->validate_command($argument)) {
-							$command = $args[$key] = $this->alias($argument);
-							break;
-						}
-					}
-				}
-			}
-		}
+        return $this->longopts;
+    }
 
-		if (empty($command)) {
-			$command = $default;
-		}
+    public static function registry()
+    {
+        return static::$registry;
+    }
 
-		return $command;
-	}
+    public static function normalize_args($args = [])
+    {
+        if (! is_array($args)) {
+            $args = [ $args ];
+        }
+        if (empty($args)) {
+            $args = Options::argv();
+        }
 
-	/**
-	 * Parse command arguments and return a Command object
-	 * @param  array  $args The command and command arguments
-	 * @return Command
-	 */
-	public function resolve($args = []) {
-		$args = static::normalize_args($args);
+        return $args;
+    }
 
-		if ($command = $this->infer($args)) {
-			$Command = static::instance($this->App(), $command);
-			$Command->setOptions();
-			$Command->parse_static_data();
-			// $Command->parse_arguments($args);
-		} else {
-			throw new \InvalidArgumentException(sprintf("Invalid command \"%s\"", $args[0]));
-		}
+    /**
+     * Determine which command was run (from argv OR $_REQUEST)
+     * @return [type] [description]
+     */
+    public function infer($args = [])
+    {
+        $command = '';
+        $default = (defined('DEFAULT_COMMAND') ? DEFAULT_COMMAND : 'help');
+        $args = static::normalize_args($args);
+        $arg_count = count($args);
 
-		return $Command;
-	}
+        if (isset(static::$registry)) {
+            if ($arg_count > 0) {
+                if ($matches = array_intersect($args, array_keys(static::$registry))) {
+                    foreach ($matches as $key => $argument) {
+                        if ($this->validate_command($argument)) {
+                            $command = $args[$key] = $this->alias($argument);
+                            break;
+                        }
+                    }
+                }
+                if (! $command) {
+                    foreach ($args as $key => $argument) {
+                        if ($this->validate_command($argument)) {
+                            $command = $args[$key] = $this->alias($argument);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
 
-	/**
-	 * Parse command arguments into Command data
-	 * @param  array  $args The $argv array
-	 * @param  array  $keys An array of keys to map values against
-	 */
-	private function parse_arguments($args = []) {
-		$keys = [];
-		$command = $this->name();
+        if (empty($command)) {
+            $command = $default;
+        }
 
-		if (isset(static::$arguments)) {
-			$keys = static::$arguments;
-		} elseif (isset(static::$registry[$command]['arguments'])) {
-			$keys = static::$registry[$command]['arguments'];
-		}
-		
-		if (count($args) > 0) {
-			// remove the command and any options/flags
-			foreach ($args as $key => $arg) {
-				if ($arg == $command || substr($arg, 0, 1) == '-' || strlen($arg) === 0) {
-					unset($args[$key]);
-				}
-			}
-		}
+        return $command;
+    }
 
-		if (count($args) > 0) {
-			$args = array_values($args);
-			if (count($args) == count($keys)) {
-				foreach (array_combine($keys, $args) as $key => $value) {
-					$this->addData($key, $value);
-				}
-			} else {
-				$name = '';
-				$arg_index = 0;
-				foreach ($args as $key => $value) {
-					if (isset($keys[$key])) {
-						$name = $keys[$key];
-					}
-					if (is_int($name) || strlen($name) < 1) {
-						$name = $arg_index;
-					}
-					$this->addData($name, $value);
-					$arg_index++;
-				}
-			}
-		}
-	}
+    /**
+     * Parse command arguments and return a Command object
+     * @param  array   $args The command and command arguments
+     * @return Command
+     */
+    public function resolve($args = [])
+    {
+        $args = static::normalize_args($args);
 
-	/**
-	 * Parse default data into Command instance
-	 * @return null
-	 */
-	private function parse_static_data() {
-		$command = $this->name();
-		if (isset(static::$registry[$command]['data'])) {
-			foreach (static::$registry[$command]['data'] as $key => $value) {
-				$this->setData($key, $value);
-			}
-		}
-	}
+        if ($command = $this->infer($args)) {
+            $Command = static::instance($this->App(), $command);
+            $Command->setOptions();
+            $Command->parse_static_data();
+            // $Command->parse_arguments($args);
+        } else {
+            throw new \InvalidArgumentException(sprintf("Invalid command \"%s\"", $args[0]));
+        }
 
-	/**
-	 * Check if the command is configured
-	 * @param  string $command The command name
-	 * @return [type]          [description]
-	 */
-	public function validate_command($command) {
-		$exists = false;
-		if (isset(static::$registry)) {
-			if (! $exists = array_key_exists($command, static::$registry)) {
-				$exists = $this->alias($command, false);
-			}
-		}
-		return $exists;
-	}
+        return $Command;
+    }
 
-	/**
-	 * Return the command the alias points to
-	 * @param  string $alias
-	 * @param  bool $normalize Returns a string when set to true
-	 * @return string
-	 */
-	public function alias($alias, $normalize = true) {
-		$command = ($normalize ? $alias : false);
-		if (isset(static::$registry)) {
-			if (! array_key_exists($alias, static::$registry)) {
-				$command = ($normalize ? '' : false);
-				if (array_key_exists($alias, static::$aliases)) {
-					$command = ($normalize ? static::$aliases[$alias] : true);
-				}
-			} elseif (! $normalize) {
-				$command = true;
-			}
-		}
-		return $command;
-	}
+    /**
+     * Parse command arguments into Command data
+     * @param array $args The $argv array
+     * @param array $keys An array of keys to map values against
+     */
+    private function parse_arguments($args = [])
+    {
+        $keys = [];
+        $command = $this->name();
 
-	/**
-	 * Get an option
-	 * @param  string  $name The flag/option name
-	 * @param  boolean $flag Option is a flag (boolean)
-	 * @return mixed
-	 */
-	public function option($name, $flag = null) {
-		$name = ltrim($name, '-');
-		if ($Options = $this->Options()) {
-		    if ($Options->Option($name)) {
+        if (isset(static::$arguments)) {
+            $keys = static::$arguments;
+        } elseif (isset(static::$registry[$command]['arguments'])) {
+            $keys = static::$registry[$command]['arguments'];
+        }
+
+        if (count($args) > 0) {
+            // remove the command and any options/flags
+            foreach ($args as $key => $arg) {
+                if ($arg == $command || substr($arg, 0, 1) == '-' || strlen($arg) === 0) {
+                    unset($args[$key]);
+                }
+            }
+        }
+
+        if (count($args) > 0) {
+            $args = array_values($args);
+            if (count($args) == count($keys)) {
+                foreach (array_combine($keys, $args) as $key => $value) {
+                    $this->addData($key, $value);
+                }
+            } else {
+                $name = '';
+                $arg_index = 0;
+                foreach ($args as $key => $value) {
+                    if (isset($keys[$key])) {
+                        $name = $keys[$key];
+                    }
+                    if (is_int($name) || strlen($name) < 1) {
+                        $name = $arg_index;
+                    }
+                    $this->addData($name, $value);
+                    $arg_index++;
+                }
+            }
+        }
+    }
+
+    /**
+     * Parse default data into Command instance
+     * @return null
+     */
+    private function parse_static_data()
+    {
+        $command = $this->name();
+        if (isset(static::$registry[$command]['data'])) {
+            foreach (static::$registry[$command]['data'] as $key => $value) {
+                $this->setData($key, $value);
+            }
+        }
+    }
+
+    /**
+     * Check if the command is configured
+     * @param  string $command The command name
+     * @return [type] [description]
+     */
+    public function validate_command($command)
+    {
+        $exists = false;
+        if (isset(static::$registry)) {
+            if (! $exists = array_key_exists($command, static::$registry)) {
+                $exists = $this->alias($command, false);
+            }
+        }
+
+        return $exists;
+    }
+
+    /**
+     * Return the command the alias points to
+     * @param  string $alias
+     * @param  bool   $normalize Returns a string when set to true
+     * @return string
+     */
+    public function alias($alias, $normalize = true)
+    {
+        $command = ($normalize ? $alias : false);
+        if (isset(static::$registry)) {
+            if (! array_key_exists($alias, static::$registry)) {
+                $command = ($normalize ? '' : false);
+                if (array_key_exists($alias, static::$aliases)) {
+                    $command = ($normalize ? static::$aliases[$alias] : true);
+                }
+            } elseif (! $normalize) {
+                $command = true;
+            }
+        }
+
+        return $command;
+    }
+
+    /**
+     * Get an option
+     * @param  string  $name The flag/option name
+     * @param  boolean $flag Option is a flag (boolean)
+     * @return mixed
+     */
+    public function option($name, $flag = null)
+    {
+        $name = ltrim($name, '-');
+        if ($Options = $this->Options()) {
+            if ($Options->Option($name)) {
                 if ($flag !== false && $Options->Option($name)->is_flag()) {
                     return $Options->exist($name)/* || (bool) $this->getData($name)*/;
                 } else {
                     return $Options->Option($name)->value()/* || $this->getData($name)*/;
                 }
             }
-		}
-	}
+        }
+    }
 
-	protected function arguments() {
-		return $this->Options()->args();
-	}
+    protected function arguments()
+    {
+        return $this->Options()->args();
+    }
 
-	protected function flags() {
-		return $this->Options()->all();
-	}
+    protected function flags()
+    {
+        return $this->Options()->all();
+    }
 
-	public function setArgument($offset, $value) {
-		$this->Options()->setArgument($offset, $value);
-	}
+    public function setArgument($offset, $value)
+    {
+        $this->Options()->setArgument($offset, $value);
+    }
 
-	public function getArgument($offset) {
-		return $this->Options()->getArgument($offset);
-	}
+    public function getArgument($offset)
+    {
+        return $this->Options()->getArgument($offset);
+    }
 
-	public function unsetArgument($offset) {
-		$this->Options()->unsetArgument($offset);
-	}
+    public function unsetArgument($offset)
+    {
+        $this->Options()->unsetArgument($offset);
+    }
 
-	public function setOption($offset, $value) {
-		$this->Options()->setOption($offset, $value);
-	}
+    public function setOption($offset, $value)
+    {
+        $this->Options()->setOption($offset, $value);
+    }
 
-	public function getOption($offset) {
-		return $this->Options()->getOption($offset);
-	}
+    public function getOption($offset)
+    {
+        return $this->Options()->getOption($offset);
+    }
 
-	public function unsetOption($offset) {
-		$this->Options()->unsetOption($offset);
-	}
+    public function unsetOption($offset)
+    {
+        $this->Options()->unsetOption($offset);
+    }
 
     /**
      * Get the process ID
-     * 
+     *
      * @return int
      */
-    public function pid(){
+    public function pid()
+    {
         return $this->pid;
     }
 
-	/**
-	 * Run this command
-	 */
-	public function run() {
-	    if (method_exists($this, 'init')) {
-	        $this->init();
+    /**
+     * Run this command
+     */
+    public function run()
+    {
+        if (method_exists($this, 'init')) {
+            $this->init();
         }
         if ($args = func_get_args()) {
             foreach (args as $name) {
@@ -425,170 +463,189 @@ class Command {
             }
         }
 
-		return $this->getOutput();
-	}
+        return $this->getOutput();
+    }
 
-	public function getOutput() {
-		if (isset($this->output)) {
-			return $this->output;
-		}
-	}
+    public function getOutput()
+    {
+        if (isset($this->output)) {
+            return $this->output;
+        }
+    }
 
-	public function scan() {
-		if (! $this->Options()->Command()) {
-			$this->Options()->set_Command($this);
-		}
-		$this->Options()->scan();
-		return $this;
-	}
+    public function scan()
+    {
+        if (! $this->Options()->Command()) {
+            $this->Options()->set_Command($this);
+        }
+        $this->Options()->scan();
 
-	/**
-	 * Return usage information in an array of strings (lines)
-	 * @param  boolean $long  [description]
-	 * @param  boolean $short [description]
-	 * @return array
-	 */
-	public function usage($long = false, $short = false) {
-		$lines = $options_lines = [];
-		$options_string = '';
+        return $this;
+    }
 
-		if (isset($this->command_name)) {
-			if (isset(static::$options)) {
-				foreach (static::$options as $option => $option_config) {
-					if (empty($options_string)) $options_string .= '-';
-					$options_string .= $option;
-					$options_lines[$option] = sprintf("%19.19s %-5.5s %-78.78s\n",
-						'-'.$option, '', $option_config['description']
-					);
-				}
-				if (! empty($options_string)) $options_string = '['.$options_string.']';
-			}
+    /**
+     * Return usage information in an array of strings (lines)
+     * @param  boolean $long  [description]
+     * @param  boolean $short [description]
+     * @return array
+     */
+    public function usage($long = false, $short = false)
+    {
+        $lines = $options_lines = [];
+        $options_string = '';
 
-			if ($long) {
+        if (isset($this->command_name)) {
+            if (isset(static::$options)) {
+                foreach (static::$options as $option => $option_config) {
+                    if (empty($options_string)) $options_string .= '-';
+                    $options_string .= $option;
+                    $options_lines[$option] = sprintf("%19.19s %-5.5s %-78.78s\n",
+                        '-'.$option, '', $option_config['description']
+                    );
+                }
+                if (! empty($options_string)) $options_string = '['.$options_string.']';
+            }
 
-				if (! $short && isset(static::$description)) {
-					$lines[] = static::$description."\n";
-				}
+            if ($long) {
 
-				if (isset(static::$usage)) {
-					$lines[] = sprintf("Usage: %-93.93s\n",
-						SCRIPT_NAME.' '.sprintf(static::$usage, $this->command_name)
-					);
-				} else {
-					$usage_line = SCRIPT_NAME.' '.$this->command_name;
-					if (! empty($options_string)) {
-						$usage_line .= ' '.$options_string;
-					}
-					$lines[] = sprintf("Usage: %-93.93s\n", $usage_line);
-				}
+                if (! $short && isset(static::$description)) {
+                    $lines[] = static::$description."\n";
+                }
 
-				if (! empty($options_lines)) {
-					$lines = array_merge($lines, $options_lines);
-				}
-			} else {
-				$description = (isset(static::$description) ? static::$description : '');
-				$lines[] = sprintf("%19.19s %-10.10s %-71.71s\n",
-					$this->command_name, $options_string, $description
-				);
-			}
-		}
-		
-		return $lines;
-	}
+                if (isset(static::$usage)) {
+                    $lines[] = sprintf("Usage: %-93.93s\n",
+                        SCRIPT_NAME.' '.sprintf(static::$usage, $this->command_name)
+                    );
+                } else {
+                    $usage_line = SCRIPT_NAME.' '.$this->command_name;
+                    if (! empty($options_string)) {
+                        $usage_line .= ' '.$options_string;
+                    }
+                    $lines[] = sprintf("Usage: %-93.93s\n", $usage_line);
+                }
 
-	public function App() {
-		if (isset($this->App)) {
-			return $this->App;
-		}
-		throw new \Exception('App object not set on the Command');
-	}
+                if (! empty($options_lines)) {
+                    $lines = array_merge($lines, $options_lines);
+                }
+            } else {
+                $description = (isset(static::$description) ? static::$description : '');
+                $lines[] = sprintf("%19.19s %-10.10s %-71.71s\n",
+                    $this->command_name, $options_string, $description
+                );
+            }
+        }
 
-	public function Options() {
-		return $this->Options;
-	}
+        return $lines;
+    }
 
-	public function setOptions() {
-		if (isset(static::$registry)) {
-			$this->Options = new Options(static::$registry, $this);
-		}
-		return $this->Options;
-	}
+    public function App()
+    {
+        if (isset($this->App)) {
+            return $this->App;
+        }
+        throw new \Exception('App object not set on the Command');
+    }
 
-	public function setData($name, $value) {
-		if (! isset($this->data)) $this->data = [];
-		$this->data[$name] = $value;
-		return $this;
-	}
+    public function Options()
+    {
+        return $this->Options;
+    }
 
-	public function addData($name, $value) {
-		if (! isset($this->data)) $this->data = [];
-		if (! isset($this->data[$name]) || is_null($this->getData($name))) {
-			$this->data[$name] = $value;
-		} else {
-			$data = $this->getData($name) ?: [];
-			if (! is_array($data)) {
-				$data = [ $data ];
-			}
-			$data[] = $value;
-			$this->setData($name, $data);
-		}
-		return $this;
-	}
+    public function setOptions()
+    {
+        if (isset(static::$registry)) {
+            $this->Options = new Options(static::$registry, $this);
+        }
 
-	public function getData($name, $default = null) {
-		if (isset($this->data) && array_key_exists($name, $this->data)) {
-			return $this->data[$name];
-		}
-		return static::get_data($name, $default);
-	}
+        return $this->Options;
+    }
+
+    public function setData($name, $value)
+    {
+        if (! isset($this->data)) $this->data = [];
+        $this->data[$name] = $value;
+
+        return $this;
+    }
+
+    public function addData($name, $value)
+    {
+        if (! isset($this->data)) $this->data = [];
+        if (! isset($this->data[$name]) || is_null($this->getData($name))) {
+            $this->data[$name] = $value;
+        } else {
+            $data = $this->getData($name) ?: [];
+            if (! is_array($data)) {
+                $data = [ $data ];
+            }
+            $data[] = $value;
+            $this->setData($name, $data);
+        }
+
+        return $this;
+    }
+
+    public function getData($name, $default = null)
+    {
+        if (isset($this->data) && array_key_exists($name, $this->data)) {
+            return $this->data[$name];
+        }
+
+        return static::get_data($name, $default);
+    }
 
     /**
      * Throws an exception if the key is not set on data
-     * @param  mixed $name
-     * @param string $exception_message
+     * @param  mixed      $name
+     * @param  string     $exception_message
      * @return $this
      * @throws \Exception
      */
-	public function expectData($name = null, $exception_message = '') {
-		if (is_string($name) && ! empty($name)) {
-			if (false === $this->getData($name, false)) {
-				throw new \Exception($exception_message ?: sprintf('Command expecting data at index "%s"', $name));
-			}
-		} else {
-			if (is_array($name)) {
-				foreach ($name as $key => $_name) {
-					$this->required_data[] = $_name;
-				}
-			}
-			if (! empty($this->required_data)) {
-				foreach ($this->required_data as $name) {
-					$this->expectData($name);
-				}
-			}
-		}
+    public function expectData($name = null, $exception_message = '')
+    {
+        if (is_string($name) && ! empty($name)) {
+            if (false === $this->getData($name, false)) {
+                throw new \Exception($exception_message ?: sprintf('Command expecting data at index "%s"', $name));
+            }
+        } else {
+            if (is_array($name)) {
+                foreach ($name as $key => $_name) {
+                    $this->required_data[] = $_name;
+                }
+            }
+            if (! empty($this->required_data)) {
+                foreach ($this->required_data as $name) {
+                    $this->expectData($name);
+                }
+            }
+        }
 
-		return $this;
-	}
+        return $this;
+    }
 
-	public static function set_data($name, $value) {
-		if (! isset(static::$_data)) static::$_data = [];
-		static::$_data[$name] = $value;
-	}
+    public static function set_data($name, $value)
+    {
+        if (! isset(static::$_data)) static::$_data = [];
+        static::$_data[$name] = $value;
+    }
 
-	public static function get_data($name, $default = null) {
-		if (isset(static::$_data)) {
-			if (array_key_exists($name, static::$_data)) {
-				return static::$_data[$name];
-			}
-		}
-		return $default;
-	}
+    public static function get_data($name, $default = null)
+    {
+        if (isset(static::$_data)) {
+            if (array_key_exists($name, static::$_data)) {
+                return static::$_data[$name];
+            }
+        }
 
-	protected function data() {
-		if (isset($this->data)) {
-			return $this->data;
-		}
-	}
+        return $default;
+    }
+
+    protected function data()
+    {
+        if (isset($this->data)) {
+            return $this->data;
+        }
+    }
 
     /**
      * Parse a date string representation
@@ -597,7 +654,8 @@ class Command {
      * @return string
      * @throws \Exception
      */
-    protected static function parse_date_input($response, $return_obj = false) {
+    protected static function parse_date_input($response, $return_obj = false)
+    {
         $Date = false;
 
         if (false !== strpos($response, ' ')) {
@@ -665,7 +723,8 @@ class Command {
     /*
      * Parse string time input into 24 hr format
      */
-    protected static function parse_time_input($response) {
+    protected static function parse_time_input($response)
+    {
         $Now = Carbon::now();
         $hour = 0;
         $minute = 0;
@@ -755,8 +814,10 @@ class Command {
         return sprintf('%02d:%02d', $hour, $minute);
     }
 
-    protected static function get_twelve_hour_time($time_str) {
+    protected static function get_twelve_hour_time($time_str)
+    {
         $Date = Carbon::parse(date("Y-m-d").' '.$time_str);
+
         return $Date->format('g:i a');
     }
 }

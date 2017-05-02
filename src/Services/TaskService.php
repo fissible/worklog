@@ -11,8 +11,8 @@ use Worklog\Models\Task;
  * Date: 2/22/17
  * Time: 8:56 AM
  */
-class TaskService extends ModelService {
-
+class TaskService extends ModelService
+{
     protected static $entity_class = '\Worklog\Models\Task';
 
     protected static $display_headers = [
@@ -27,15 +27,16 @@ class TaskService extends ModelService {
 
     const CACHE_TAG = 'start';
 
-
-    public function __construct($entity_class = null) {
+    public function __construct($entity_class = null)
+    {
         if (is_null($entity_class)) {
             $entity_class = static::$entity_class;
         }
         parent::__construct($entity_class);
     }
 
-    public function lastTask($where = []) {
+    public function lastTask($where = [])
+    {
         $Latest = null;
         $LastTask = null;
 
@@ -66,7 +67,8 @@ class TaskService extends ModelService {
         return $LastTask;
     }
 
-    public static function cached($disable_purge = false) {
+    public static function cached($disable_purge = false)
+    {
         $last_index = 1;
         $cache_name = null;
         $filename = null;

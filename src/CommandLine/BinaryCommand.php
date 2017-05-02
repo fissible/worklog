@@ -29,8 +29,8 @@ abstract class BinaryCommand extends Command
 
     protected static $flags_before_arguments = false;
 
-
-    public function __construct($command = [], $in_background = false) {
+    public function __construct($command = [], $in_background = false)
+    {
         parent::__construct();
         $this->setRawCommand($command, $in_background);
 
@@ -39,7 +39,8 @@ abstract class BinaryCommand extends Command
         }
     }
 
-    protected function init() {
+    protected function init()
+    {
         deubg('parent::init()', 'blue');
         $this->initialized(true);
     }
@@ -54,11 +55,13 @@ abstract class BinaryCommand extends Command
     //     return $name;
     // }
 
-    public function setBinary($binary) {
+    public function setBinary($binary)
+    {
         $this->binary = $binary;
     }
 
-    public function setRawCommand($command = [], $in_background = false) {
+    public function setRawCommand($command = [], $in_background = false)
+    {
         if (! empty($command)) {
             $this->raw_command = [];
             $this->pushCommand($command);
@@ -67,11 +70,13 @@ abstract class BinaryCommand extends Command
         }
     }
 
-    public function backgroundRawCommand($bool = true) {
+    public function backgroundRawCommand($bool = true)
+    {
         $this->raw_command_background = (bool) $bool;
     }
 
-    public function command($reprocess = false) {
+    public function command($reprocess = false)
+    {
         if (! $this->initialized()) {
             $this->init();
         }
@@ -102,7 +107,8 @@ abstract class BinaryCommand extends Command
         return $this->final_command;
     }
 
-    private function pushOptions() {
+    private function pushOptions()
+    {
         $pushFlags = function ($flags) {
             foreach ($flags as $key => $value) {
                 $prefix = (strlen($key) == 1 ? '-' : '--');
@@ -122,15 +128,18 @@ abstract class BinaryCommand extends Command
         }
     }
 
-    public function pushCommand($token, $check_exists = false) {
+    public function pushCommand($token, $check_exists = false)
+    {
         return $this->_pushCommand($token, false, $check_exists);
     }
-    
-    protected function pushFinalCommand($token, $check_exists = false) {
+
+    protected function pushFinalCommand($token, $check_exists = false)
+    {
         return $this->_pushCommand($token, true, $check_exists);
     }
 
-    private function _pushCommand($token, $final, $check_exists = false) {
+    private function _pushCommand($token, $final, $check_exists = false)
+    {
         $command = ($final ? 'final_command' : 'raw_command');
         if (is_array($token)) {
             foreach ($token as $key => $_token) {
@@ -143,7 +152,8 @@ abstract class BinaryCommand extends Command
         return $this;
     }
 
-    public function initialized($set = null) {
+    public function initialized($set = null)
+    {
         if (! is_null($set)) {
             $this->initialized = (bool) $set;
         }
@@ -151,7 +161,8 @@ abstract class BinaryCommand extends Command
         return $this->initialized;
     }
 
-    public function ready($set = null) {
+    public function ready($set = null)
+    {
         if (! is_null($set)) {
             $this->ready = (bool) $set;
         }
@@ -159,7 +170,8 @@ abstract class BinaryCommand extends Command
         return $this->ready;
     }
 
-    public function executed($set = null) {
+    public function executed($set = null)
+    {
         if (! is_null($set)) {
             $this->executed = (bool) $set;
         }
@@ -169,15 +181,16 @@ abstract class BinaryCommand extends Command
 
     /**
      * Pass arbitrary command to exec(). Obviously, be careful.
-     * 
+     *
      * @param $command array|string
      * @throws \InvalidArgumentException
      */
-    protected function raw($command = [], $in_background = false) {
+    protected function raw($command = [], $in_background = false)
+    {
         if (! empty($command)) {
             $this->setRawCommand($command, $in_background);
         }
-        
+
         // localize raw command, fallsback to the binary (could be null)
         $command = $this->command(! $this->ready());
 
@@ -195,13 +208,13 @@ abstract class BinaryCommand extends Command
                     $command .= ' > `tty`';
                 }
             }
-            
+
             debug($command, 'red');
             $this->output = [];
             exec($command, $this->output);
 
             if (isset($this->output[0])) {
-                $this->pid = (int)$this->output[0];
+                $this->pid = (int) $this->output[0];
             }
             $this->executed(true);
             $this->ready(false);
@@ -216,7 +229,8 @@ abstract class BinaryCommand extends Command
     /**
      * Run this command
      */
-    public function run() {
+    public function run()
+    {
         parent::run();
 
         chdir(dirname(APPLICATION_PATH));
@@ -228,8 +242,8 @@ abstract class BinaryCommand extends Command
         return $this->getOutput();
     }
 
-
-    protected static function set_flags_before_arguments($bool = true) {
+    protected static function set_flags_before_arguments($bool = true)
+    {
         static::$flags_before_arguments = (bool) $bool;
     }
 

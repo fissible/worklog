@@ -2,7 +2,6 @@
 namespace Worklog\Services;
 
 use Carbon\Carbon;
-use Worklog\Services\Service;
 use Worklog\CommandLine\Output;
 
 /**
@@ -25,19 +24,21 @@ class ModelService extends Service
 
     const UPDATE = 11;
 
-
-    public function __construct($entity_class = null) {
+    public function __construct($entity_class = null)
+    {
         if (is_null($entity_class)) {
             $entity_class = static::$entity_class;
         }
         static::set_entity_class($entity_class);
     }
 
-    protected static function set_entity_class($entity_class) {
+    protected static function set_entity_class($entity_class)
+    {
         static::$entity_class = $entity_class;
     }
 
-    public function make(array $data = []) {
+    public function make(array $data = [])
+    {
         if (static::$entity_class == '\stdClass') {
             $obj = new static::$entity_class($this->db);
             foreach ($data as $key => $value) {
@@ -50,26 +51,34 @@ class ModelService extends Service
         return $obj;
     }
 
-    public static function Model(array $data = []) {
+    public static function Model(array $data = [])
+    {
         return new static::$entity_class($data);
     }
 
-    public static function primary_key() {
+    public static function primary_key()
+    {
         $Model = static::Model();
+
         return $Model->getKeyName();
     }
 
-    public function display_headers() {
+    public function display_headers()
+    {
         $Model = static::Model();
+
         return $Model->display_headers();
     }
 
-    public static function fields() {
+    public static function fields()
+    {
         $Model = static::Model();
+
         return $Model::fields();
     }
 
-    public static function field($field) {
+    public static function field($field)
+    {
         $fields = static::fields();
         if (! is_string($field)) {
             throw new \InvalidArgumentException('ModelService::field() requires a string as the first parameter');
@@ -79,16 +88,20 @@ class ModelService extends Service
         }
     }
 
-    protected function DateTime($time = 'now', $timezone = null) {
+    protected function DateTime($time = 'now', $timezone = null)
+    {
         return new Carbon($time, $timezone);
     }
 
-    protected function now_string($format = 'Y-m-d H:i', $time = 'now', $timezone = null) {
+    protected function now_string($format = 'Y-m-d H:i', $time = 'now', $timezone = null)
+    {
         $Date = $this->DateTime($time, $timezone);
+
         return $Date->format($format);
     }
 
-    protected static function strParse($input, $type) {
+    protected static function strParse($input, $type)
+    {
         $output = $input;
         switch ($type) {
             case 'args':
@@ -112,12 +125,13 @@ class ModelService extends Service
     }
 
     /**
-     * @param array $where
-     * @param array $order_by
-     * @param integer $limit
+     * @param  array                    $where
+     * @param  array                    $order_by
+     * @param  integer                  $limit
      * @return \Worklog\Database\Driver
      */
-    public function select($where = [], $order_by = null, $limit = 0) {
+    public function select($where = [], $order_by = null, $limit = 0)
+    {
         $Model = $this->make();
         $Query = $Model->newQuery();
 
@@ -138,16 +152,19 @@ class ModelService extends Service
         return $Query;
     }
 
-    public function result() {
+    public function result()
+    {
         deprecated();//deprecated(__CLASS__, __METHOD__, __LINE__);
+
         return $this->db->result();
     }
 
     /**
-     * @param array $where
+     * @param  array $where
      * @return array
      */
-    public function delete($where = []) {
+    public function delete($where = [])
+    {
         $deleted = 0;
         if ($Records = $this->select($where)->get()) {
             foreach ($Records as $Record) {
@@ -160,7 +177,8 @@ class ModelService extends Service
         return $deleted;
     }
 
-    public function ascii_table() {
+    public function ascii_table()
+    {
         $args = func_get_args();
 
         if (func_num_args() < 1) {
@@ -181,7 +199,7 @@ class ModelService extends Service
 
             foreach ($display_headers as $name => $header) {
                 $data[$name] = '';
-                
+
                 if (! isset($headers[$name])) {
                     $headers[$name] = $header;
                     $col_widths[$name] = 0;
