@@ -19,9 +19,6 @@
     "illuminate/console": "^5.4"
   },
   "autoload": {
-    "classmao": [
-      "database"
-    ],
     "psr-4": {
       "Worklog\\": "src/"
     }

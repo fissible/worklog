@@ -44,11 +44,6 @@ class TestCase extends \PHPUnit_Framework_TestCase {
      * @var bool
      */
     protected $setUpHasRun = false;
-    
-
-	public function __construct() {
-		require_once(dirname(__DIR__).'/bootstrap.php');
-	}
 
 
     /**
@@ -69,6 +64,8 @@ class TestCase extends \PHPUnit_Framework_TestCase {
      */
     protected function setUp()
     {
+        require_once(dirname(__DIR__).'/bootstrap.php');
+
         if (! $this->app) {
             $this->refreshApplication();
         }

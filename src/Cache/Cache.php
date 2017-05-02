@@ -58,7 +58,7 @@ class Cache {
      */
     public function load($name, $get_raw = false, $do_not_delete = false) {
         if ($this->Item(compact('name'))->is_expired()) {
-            $this->garbage_collect();
+            $this->garbage_collect($do_not_delete);
         }
 
         if ($get_raw) {
@@ -81,7 +81,7 @@ class Cache {
         }
     }
 
-	private function garbage_collect() {
+	private function garbage_collect($do_not_delete = false) {
 		if ($this->Item()->is_expired()) {
             if (! static::$DO_NOT_PURGE && ! $do_not_delete) {
                 $this->delete($this->Item);
