@@ -12,13 +12,12 @@ use Worklog\CommandLine\Output;
 date_default_timezone_set('America/Los_Angeles');
 
 define('APPLICATION_PATH', __DIR__);
-
-$app_dir = dirname(APPLICATION_PATH);
-define('VENDOR_PATH', $app_dir.'/vendor');
+define('ROOT_PATH', dirname(APPLICATION_PATH));
+define('VENDOR_PATH', ROOT_PATH.'/vendor');
 $cache_dir = '/'.trim((getenv('CACHE_DIRECTORY') ?: 'cache'), '/');
 $script = (isset($argv) ? ltrim(ltrim(basename($argv[0], '.'), '/')) : basename(__FILE__));
 $loader = require(VENDOR_PATH.'/autoload.php');
-$dotenv = new Dotenv\Dotenv($app_dir);
+$dotenv = new Dotenv\Dotenv(ROOT_PATH);
 $dotenv->load();
 
 define('DEVELOPMENT_MODE', filter_var(getenv('DEVELOPMENT_MODE'), FILTER_VALIDATE_BOOLEAN));
@@ -26,7 +25,7 @@ define('DEVELOPMENT_MODE', filter_var(getenv('DEVELOPMENT_MODE'), FILTER_VALIDAT
 include(__DIR__.'/functions.php');
 
 define('MINIMUM_PHP_VERSION', '5.5.0');
-define('CACHE_PATH', $app_dir.$cache_dir);
+define('CACHE_PATH', ROOT_PATH.$cache_dir);
 define('DATABASE_PATH', dirname(APPLICATION_PATH).'/database');
 define('DATABASE_MIGRATIONS', DATABASE_PATH.'/migrations');
 define('DEFAULT_COMMAND', 'today');
@@ -68,6 +67,8 @@ Command::bind('delete', 'Worklog\CommandLine\DeleteCommand');
 Command::bind('list', 'Worklog\CommandLine\ListCommand');
 Command::bind('report', 'Worklog\CommandLine\ReportCommand');
 Command::bind('today', 'Worklog\CommandLine\TodayCommand');
+
+Command::bind('text', 'Worklog\CommandLine\LaunchEditorCommand');
 
 // Admin/Dev Commands
 Command::bind('env', 'Worklog\CommandLine\UpdateEnvCommand');

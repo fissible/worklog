@@ -41,7 +41,9 @@ abstract class BinaryCommand extends Command
 
     protected function init()
     {
-        deubg('parent::init()', 'blue');
+        if ($config_file = $this->option('configuration')) {
+            $this->config_file = $config_file;
+        }
         $this->initialized(true);
     }
 
@@ -209,7 +211,7 @@ abstract class BinaryCommand extends Command
                 }
             }
 
-            debug($command, 'red');
+            // debug($command, 'red');
             $this->output = [];
             exec($command, $this->output);
 

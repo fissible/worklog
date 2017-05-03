@@ -1,24 +1,27 @@
 <?php
 namespace Worklog\CommandLine;
 
+use Worklog\Str;
 use Worklog\Filesystem\File;
 
 /**
  * LaunchEditorCommand
  * Launch an editor to create/edit the SQL for given ticket number (value required)
  */
-class LaunchEditorCommand extends Command
+class LaunchEditorCommand extends BinaryCommand
 {
     public $command_name;
 
     public static $description = 'Launch text-editor';
-    private $required_data = [ 'file' ];
-    private $text_editor_binary = 'vim';
 
-    public function run()
+    public static $arguments = [ 'file' ];
+
+    private $required_data = [ 'file' ];
+
+
+    protected function init()
     {
-        parent::run();
-        $file = File::sanitize($this->getData('file'));
-        exec($this->text_editor_binary.' '.$file." > `tty`");
+        $this->setBinary(env('BINARY_TEXT_EDITOR'));
+        parent::init();
     }
 }

@@ -12,11 +12,11 @@ namespace Worklog\CommandLine;
 class ComposerCommand extends BinaryCommand
 {
     public static $description = 'Run composer';
-    public static $options = [
-        // 'nodev' => ['req' => null, 'description' => 'Do not install development dependencies'],
-        // 'test' => ['req' => null, 'description' => 'test']
-    ];
+
+    public static $options = [];
+
     public static $arguments = [];
+    
 
     protected function init()
     {
