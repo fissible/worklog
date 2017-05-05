@@ -6,7 +6,7 @@ namespace Worklog\CommandLine;
  * Abstract binary command
  */
 
-abstract class BinaryCommand extends Command
+class BinaryCommand extends Command
 {
 
     public static $menu = false;
@@ -39,10 +39,65 @@ abstract class BinaryCommand extends Command
         }
     }
 
-    protected function init()
+    public function init()
     {
-        deubg('parent::init()', 'blue');
+        if (! $this->initialized()) {
+            if ($config_file = $this->option('configuration')) {
+                $this->config_file = $config_file;
+            }
+        }
+        
         $this->initialized(true);
+    }
+
+    public static function call($decorate = null, $Command = BinaryCommand::class, $borrow_binary = true)
+    {
+        $Parent = new static();
+        $Parent->init();
+
+        if (!($Command instanceof Command)) {
+            $Command = new $Command();
+        }
+
+        if (! is_callable($decorate)) {
+            if (is_string($decorate)) {
+                $decorate = (array) $decorate;
+            }
+            if (is_array($decorate) && is_a($Command, BinaryCommand::class)) {
+                if ($borrow_binary && $binary = $Parent->getBinary()) {
+                    if (! isset($decorate[0]) || $decorate[0] !== $binary) {
+                        array_unshift($decorate, $binary);
+                    }
+                }
+            }
+
+            $Command = new $Command($decorate);
+        }
+
+        $Command->resolve();
+
+        if (is_callable($decorate)) {
+            $Command = call_user_func($decorate, $Command);
+        }
+
+        return $Command->run();
+    }
+
+    /**
+     * Parse command arguments and return a Command object
+     * @param  array   $args The command and command arguments
+     * @return Command
+     */
+    public function resolve($args = [])
+    {
+        $this->setOptions();
+        $this->parse_static_data();
+        
+        if (! empty($args)) {
+            $this->setRawCommand($args);
+        }
+
+        return $this;
     }
 
     // public function name() {
@@ -58,6 +113,13 @@ abstract class BinaryCommand extends Command
     public function setBinary($binary)
     {
         $this->binary = $binary;
+    }
+
+    public function getBinary()
+    {
+        if (isset($this->binary)) {
+            return $this->binary;
+        }
     }
 
     public function setRawCommand($command = [], $in_background = false)
@@ -86,7 +148,7 @@ abstract class BinaryCommand extends Command
 
             // Add the binary
             if (isset($this->binary)) {
-                $this->final_command[] = $this->binary;
+                $this->final_command[] = escapeshellcmd($this->binary);
             }
 
             // Pass in "--flags" and "arguments"
@@ -197,17 +259,21 @@ abstract class BinaryCommand extends Command
         if ($command && $this->ready()) {
             $command = implode(' ', $command);
 
-            if ($this->raw_command_background) {
-            // execute the command in background
-                if (false === strpos($command, '&')) {
-                    $command .= ' > /dev/null &';
-                }
-            } else {
-                // redirect to stdout
-                if (false === strpos($command, 'tty')) {
-                    $command .= ' > `tty`';
+            // output redirection
+            if (false === strpos($command, '>')) {
+                if ($this->raw_command_background) {
+                // execute the command in background
+                    if (false === strpos($command, '&')) {
+                        $command .= ' > /dev/null &';
+                    }
+                } else {
+                    // redirect to stdout
+                    if (false === strpos($command, 'tty')) {
+                        $command .= ' > `tty`';
+                    }
                 }
             }
+            
 
             debug($command, 'red');
             $this->output = [];
@@ -231,20 +297,142 @@ abstract class BinaryCommand extends Command
      */
     public function run()
     {
-        parent::run();
-
         chdir(dirname(APPLICATION_PATH));
 
          if (! $this->executed()) {
              $this->raw();
          }
 
-        return $this->getOutput();
+        return parent::run();
     }
 
     protected static function set_flags_before_arguments($bool = true)
     {
         static::$flags_before_arguments = (bool) $bool;
+    }
+
+    protected function authorizeSubcommand($subcommand)
+    {
+        $can = false;
+
+        if (! is_null($subcommand) && $this->validateSubcommand($subcommand)) {
+            $can = true;
+        } else {
+            throw new \InvalidArgumentException('Valid subcommands: '.implode(', ', $this->getValidSubcommands()), 1);
+        }
+
+        return $can;
+    }
+
+    public function getSubcommand($subcommand = null)
+    {
+        if (is_null($subcommand)) {
+            if (isset($this->subcommand))
+                return $this->subcommand;
+        } else {
+            if ($this->validateSubcommand($subcommand)) {
+                return $this->subcommands[$subcommand];
+            }
+        }
+    }
+
+    protected function getValidSubcommands()
+    {
+        $commands = [];
+
+        if (isset($this->subcommands)) {
+            $commands = array_keys($this->subcommands);
+        }
+
+        return $commands;
+    }
+
+    protected function runSubcommand($subcommand)
+    {
+        if (false !== $this->authorizeSubcommand($subcommand)) {
+            $this->setSubcommand($subcommand);
+            if (is_callable($this->subcommands[$subcommand])) {
+                $function = $this->subcommands[$subcommand];
+                return $function($this);
+            } else {
+                return call_user_func_array([ $this, '_'.ltrim($subcommand, '_') ], []);
+            }
+        }
+    }
+
+    protected function setSubcommand($subcommand)
+    {
+        if ($this->validateSubcommand($subcommand)) {
+            $this->subcommand = $subcommand;
+        } else {
+            throw static::getInvalidSubcommandException(
+                $subcommand,
+                sprintf("%s is not callable nor a local method", $callable_or_method)
+            );
+        }
+
+        return $this;
+    }
+
+    public function validateSubcommand($subcommand, $callable_or_method = null)
+    {
+        $valid = false;
+        $valid_subcommands = $this->getValidSubcommands();
+
+        if (is_null($callable_or_method) && in_array($subcommand, $valid_subcommands)) {
+            $valid = true;
+        } elseif (! is_null($callable_or_method)) {
+            // callable is valid
+            $valid = is_callable($callable_or_method);
+            
+            // invalidate $subcommand = '_something' to prevent "__something" from being invoked
+            if (! $valid && substr($callable_or_method, 0, 1) !== '_') {
+                // local _ prefixed method is valid
+                $valid = method_exists($this, '_'.$callable_or_method);
+            }
+        }
+
+        return $valid;
+    }
+
+    protected function registerSubcommand($subcommand, $callable_or_method = null)
+    {
+        if (is_null($callable_or_method))
+            $callable_or_method = $subcommand;
+
+        if ($this->validateSubcommand($subcommand, $callable_or_method)) {
+            if (! isset($this->subcommands)) {
+                $this->subcommands = [];
+            }
+            if (! array_key_exists($subcommand, $this->subcommands)) {
+                $this->subcommands[$subcommand] = $callable_or_method;
+            } else {
+                throw static::getSubcommandRegisteredException($subcommand);
+            }
+        } else {
+            throw static::getInvalidSubcommandException(
+                $subcommand,
+                sprintf("%s is not callable nor a local method", $callable_or_method)
+            );
+        }
+    }
+
+    private static function getInvalidSubcommandException($subcommand, ...$append)
+    {
+        $message = sprintf("%s: invalid sub-command", $subcommand);
+        foreach ($append as $key => $value) {
+            $message .= ', '.$value;
+        }
+        return new \InvalidArgumentException($message);
+    }
+
+    private static function getSubcommandRegisteredException($subcommand, ...$append)
+    {
+        $message = sprintf("Error: subcommand %s is already registered", $subcommand);
+        foreach ($append as $key => $value) {
+            $message .= ', '.$value;
+        }
+        return new \InvalidArgumentException($message);
     }
 
 }
