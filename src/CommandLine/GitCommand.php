@@ -13,7 +13,9 @@ class GitCommand extends BinaryCommand
 {
     public static $description = 'Run composer';
 
-    public static $options = [];
+    public static $options = [
+        'l' => ['req' => null, 'description' => 'Search for tags with a particular pattern']
+    ];
 
     public static $arguments = [ 'subcommand' ];
 
@@ -26,6 +28,7 @@ class GitCommand extends BinaryCommand
             $this->setBinary(env('BINARY_GIT'));
             $this->registerSubcommand('record');
             $this->registerSubcommand('status');
+            $this->registerSubcommand('tag');
             $this->registerSubcommand('versions');
 
             parent::init();
@@ -91,6 +94,29 @@ class GitCommand extends BinaryCommand
     protected function _status()
     {
         return $this->call('status --short');
+    }
+
+    protected function _tag()
+    {
+        $arguments = $this->arguments();
+        $flags = $this->flags();
+
+        // if (array_key_exists('l', $flags)) {
+        //     debug('-l');
+        // }
+
+        return;
+
+        $command = [ 'tag' ];
+        if (IS_CLI) {
+            if ($input = Input::ask('Annotaed tag description (optional): ')) {
+                $input = trim($input);
+                if (strlen($input)) {
+                    $message = $input;
+                }
+            }
+        }
+        return $this->call('tag');
     }
 
     protected function _versions()
