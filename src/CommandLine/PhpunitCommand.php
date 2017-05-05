@@ -11,8 +11,6 @@ namespace Worklog\CommandLine;
 
 class PhpunitCommand extends BinaryCommand
 {
-    public $command_name = 'test';
-
     public static $description = 'Run PhpUnit tests';
 
     public static $options = [];
@@ -25,7 +23,7 @@ class PhpunitCommand extends BinaryCommand
         'file' => 'phpunit.xml'
     ];
 
-    protected function init()
+    public function init()
     {
         $this->setBinary(env('BINARY_PHPUNIT'));
         if ($config_file = $this->option('configuration')) {

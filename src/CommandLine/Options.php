@@ -96,8 +96,6 @@ class Options implements \ArrayAccess
     {
         if (! empty($registry)) {
             $this->command_registry = $registry;
-        } else {
-            throw new \InvalidArgumentException('Options::set_command_registry() requires a non-empty array');
         }
     }
 
@@ -268,7 +266,9 @@ class Options implements \ArrayAccess
 
     public function unsetArgument($offset)
     {
+    	debug('unset('.$offset.')', 'red');
         if (isset($this->arguments[$offset])) {
+        	unset($this->arguments[$offset]);
             unset($this->arguments[$offset]);
         }
     }

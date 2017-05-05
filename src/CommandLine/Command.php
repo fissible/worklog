@@ -15,6 +15,8 @@ class Command
 
     protected $db;
 
+    protected $initialized = false;
+
     protected $internally_invoked;
 
     protected $pid;
@@ -62,17 +64,17 @@ class Command
     }
 
     /**
-     * New up the specified class and give $App as the first argument.
+     * New up the specified class.
      * Based on Laravel's ServiceContainer
      * @param  mixed       $concrete   Name of the class to create
      * @param  array       $parameters constructor parameters
      * @param  Application $App        he Application instance
      * @return object
      */
-    public function build($concrete, $App = null, array $parameters = [])
+    public function build($concrete, array $parameters = [])
     {
         if ($concrete instanceof Closure) {
-            return $concrete($App, $parameters);
+            return $concrete($parameters);
         }
         $reflector = new \ReflectionClass($concrete);
         $constructor = $reflector->getConstructor();
@@ -117,21 +119,28 @@ class Command
     public static function call($Command, $decorate = null)
     {
         if (!($Command instanceof Command)) {
-            $Command = new $Command();
+        	if (! is_callable($decorate)) {
+        		$Command = new $Command($decorate);
+        	} else {
+        		$Command = new $Command();
+        	}
         }
+
+        $Command->resolve();
+
         if (is_callable($decorate)) {
             $Command = call_user_func($decorate, $Command);
         }
-        $Command->run();
+        return $Command->run();
     }
 
-    public static function instance($App, $command)
+    public static function instance($command)
     {
         if (strlen($command) < 1) {
             throw new \InvalidArgumentException('No command specified');
         }
         $AbstractCommand = new static();
-        $Command = $AbstractCommand->build(static::$registry[$command]['class'], $App);
+        $Command = $AbstractCommand->build(static::$registry[$command]['class']);
         $Command->command_name = $command;
 
         return $Command;
@@ -266,7 +275,7 @@ class Command
         $args = static::normalize_args($args);
 
         if ($command = $this->infer($args)) {
-            $Command = static::instance($this->App(), $command);
+            $Command = static::instance($command);
             $Command->setOptions();
             $Command->parse_static_data();
             // $Command->parse_arguments($args);
@@ -329,14 +338,21 @@ class Command
      * Parse default data into Command instance
      * @return null
      */
-    private function parse_static_data()
+    public function parse_static_data()
     {
         $command = $this->name();
-        if (isset(static::$registry[$command]['data'])) {
-            foreach (static::$registry[$command]['data'] as $key => $value) {
-                $this->setData($key, $value);
-            }
-        }
+        if (isset(static::$registry[$command])) {
+	        if (isset(static::$registry[$command]['data'])) {
+	            foreach (static::$registry[$command]['data'] as $key => $value) {
+	                $this->setData($key, $value);
+	            }
+	        }
+	    }
+	    if (isset(static::$data)) {
+	    	foreach (static::$data as $key => $value) {
+	    		$this->setData($key, $value);
+	    	}
+	    }
     }
 
     /**
@@ -388,6 +404,7 @@ class Command
     public function option($name, $flag = null)
     {
         $name = ltrim($name, '-');
+
         if ($Options = $this->Options()) {
             if ($Options->Option($name)) {
                 if ($flag !== false && $Options->Option($name)->is_flag()) {
@@ -399,44 +416,76 @@ class Command
         }
     }
 
+    protected function argument($name) {
+    	foreach ($this->Options()->args() as $key => $value) {
+    		if ($key == $name) {
+    			return $value;
+    		}
+    	}
+    }
+
     protected function arguments()
     {
-        return $this->Options()->args();
+        $args = [];
+
+        if ($Options = $this->Options()) {
+        	$args = $this->Options()->args();
+        }
+
+        return $args;
     }
 
     protected function flags()
     {
-        return $this->Options()->all();
+        $flags = [];
+        
+        if ($Options = $this->Options()) {
+        	$flags = $this->Options()->all();
+        }
+
+        return $flags;
     }
 
     public function setArgument($offset, $value)
     {
-        $this->Options()->setArgument($offset, $value);
+        if ($Options = $this->Options()) {
+        	$Options->setArgument($offset, $value);
+        }
     }
 
     public function getArgument($offset)
     {
-        return $this->Options()->getArgument($offset);
+        if ($Options = $this->Options()) {
+        	return $Options->getArgument($offset);
+        }
     }
 
     public function unsetArgument($offset)
     {
-        $this->Options()->unsetArgument($offset);
+        if ($Options = $this->Options()) {
+        	$Options->unsetArgument($offset);
+        }
     }
 
     public function setOption($offset, $value)
     {
-        $this->Options()->setOption($offset, $value);
+        if ($Options = $this->Options()) {
+        	$Options->setOption($offset, $value);
+        }
     }
 
     public function getOption($offset)
     {
-        return $this->Options()->getOption($offset);
+        if ($Options = $this->Options()) {
+        	return $Options->getOption($offset);
+        }
     }
 
     public function unsetOption($offset)
     {
-        $this->Options()->unsetOption($offset);
+        if ($Options = $this->Options()) {
+        	$Options->unsetOption($offset);
+        }
     }
 
     /**
@@ -454,7 +503,7 @@ class Command
      */
     public function run()
     {
-        if (method_exists($this, 'init')) {
+        if (method_exists($this, 'init') && $this->initialized === false) {
             $this->init();
         }
         if ($args = func_get_args()) {
@@ -468,7 +517,7 @@ class Command
 
     public function getOutput()
     {
-        if (isset($this->output)) {
+    	if (isset($this->output)) {
             return $this->output;
         }
     }

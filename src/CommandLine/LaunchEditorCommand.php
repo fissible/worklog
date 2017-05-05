@@ -19,7 +19,7 @@ class LaunchEditorCommand extends BinaryCommand
     private $required_data = [ 'file' ];
 
 
-    protected function init()
+    public function init()
     {
         $this->setBinary(env('BINARY_TEXT_EDITOR'));
         parent::init();

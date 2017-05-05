@@ -84,6 +84,7 @@ Command::bind('clear-cache', 'Worklog\CommandLine\ClearCacheCommand');
 Command::bind('table-search', 'Worklog\CommandLine\DatabaseTableSearchCommand');
 
 // Binary Commands
+Command::bind('vcr', 'Worklog\CommandLine\GitCommand');
 Command::bind('test', 'Worklog\CommandLine\PhpunitCommand');
 Command::bind('vendor', 'Worklog\CommandLine\ComposerCommand');
 

@@ -18,7 +18,7 @@ class ComposerCommand extends BinaryCommand
     public static $arguments = [];
     
 
-    protected function init()
+    public function init()
     {
         $this->setBinary(env('BINARY_COMPOSER'));
         if ($config_file = $this->option('configuration')) {

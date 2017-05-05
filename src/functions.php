@@ -53,9 +53,9 @@ function caller($key = null, $index = 0)
     return $caller;
 }
 
-function debug($input, $color = 'yellow', $internally_invoked = false)
+function debug($input = '', $color = 'yellow', $internally_invoked = false)
 {
-    if (DEVELOPMENT_MODE == true) {
+    if (DEVELOPMENT_MODE == true && ! empty($input)) {
         $bordr = Output::color(Output::uchar('ver', 'heavy'), $color);
         $width = floor(Output::cols() / 1.5);
 
