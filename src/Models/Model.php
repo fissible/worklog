@@ -41,6 +41,7 @@ class Model extends Eloquent
 
     protected static $display_headers = [/* 'id' => 'ID' */];
 
+
     public function classname()
     {
         return get_class($this);

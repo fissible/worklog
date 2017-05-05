@@ -147,6 +147,8 @@ function env($key, $default = null)
 
 /**
  * Add an error to the errors array
+ * @param null $error_msg
+ * @param null $command
  */
 function error($error_msg = null, $command = null)
 {
@@ -165,6 +167,8 @@ function error($error_msg = null, $command = null)
 
 /**
  * Output errors and return with status code 1
+ * @param null $error_msg
+ * @param int $exit_code
  */
 function error_exit($error_msg = null, $exit_code = 1)
 {
@@ -173,9 +177,9 @@ function error_exit($error_msg = null, $exit_code = 1)
     show_errors();
     exit($exit_code);
 }
+
 /**
  * Output errors
- * @return [type] [description]
  */
 function show_errors()
 {
@@ -262,13 +266,66 @@ if (! function_exists('tap')) {
     }
 }
 
-function database_config($key = '')
-{
-    global $db_config;
-    if ($key) {
-        return $db_config[$key];
-    } else {
-        return $db_config;
+if (! function_exists('config')) {
+    function config($key)
+    {
+        $config = null;
+
+        if (false !== strpos($key, '.')) {
+            $parts = explode('.', $key);
+        } else {
+            $parts = (array) $key;
+        }
+
+        if (count($parts) > 0) {
+            switch ($parts[0]) { // config('database')
+                case 'database':
+                    $config = include(DATABASE_PATH.'/config/'.(env('APP_ENV') ?: 'local').'.php');
+
+                    if (isset($parts[1])) { // config('database.sqlite')
+                        $driver = $parts[1];
+
+                        if (isset($config[$driver])) {
+                            $config = $config[$driver];
+
+                            switch (strtolower($driver)) {
+                                case 'sqlite':
+                                    $config['driver'] = 'sqlite';
+                                    $config['database'] = $config['path'];
+
+                                    if (! isset($config['prefix'])) {
+                                        $config['prefix'] = '';
+                                    }
+                                    break;
+                                case 'mysql':
+                                    $config['driver'] = 'mysql';
+                                    $config['database'] = $config['path'];
+
+                                    if (! isset($config['charset'])) {
+                                        $config['charset'] = 'utf8mb4';
+                                    }
+                                    if (! isset($config['collation'])) {
+                                        $config['collation'] = 'utf8mb4_unicode_ci';
+                                    }
+                                    if (! isset($config['prefix'])) {
+                                        $config['prefix'] = '';
+                                    }
+                                    break;
+                            }
+
+                            if (isset($parts[2])) { // config('database.sqlite.collation')
+                                if (isset($config[$parts[2]])) {
+                                    $config = $config[$parts[2]];
+                                }
+                            }
+                        }
+                    }
+                    break;
+
+            }
+        }
+
+        return $config;
     }
 }
 
@@ -281,22 +338,10 @@ function database_config($key = '')
 function database($driver, $attempts = 0)
 {
     $Handle = null;
-    $db_config = include(DATABASE_PATH.'/config/local.php');
-
-    $config = $db_config[$driver];
+    $config = config('database.'.$driver);
 
     // Illuminate/Capsule BEGIN
-    $_config = [];
-    switch ($driver) {
-        case 'Sqlite':
-            $_config = [
-                'driver'   => 'sqlite',
-                'database' => $config['path'],
-                'prefix'   => '',
-            ];
-            break;
-    }
-    $Connection = new Worklog\Database\Connection($_config);
+    eloquent();
     // Illuminate/Capsule END
 
     if (false === strpos($driver, 'Worklog\\Database\\Drivers')) {
@@ -315,13 +360,17 @@ function database($driver, $attempts = 0)
             passthru('bash '.APPLICATION_PATH.'/start-redis-server > /dev/null');
             sleep(1);
 
-            return database($driver, $config, ++$attempts);
+            return database($driver, ++$attempts);
         } else {
             throw $e;
         }
     }
 
     return $Handle;
+}
+
+function eloquent() {
+    return Worklog\Database\Connection::getInstance(config('database.'.getenv('DATABASE_DRIVER')));
 }
 
 function mb_str_pad($str, $pad_len, $pad_str = ' ', $dir = STR_PAD_RIGHT)

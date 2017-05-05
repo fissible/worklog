@@ -63,7 +63,6 @@ class CacheItem
 
         if ($path instanceof File) {
             $File = $path;
-            $path = $File->path();
         } else {
             $File = new File($path);
         }

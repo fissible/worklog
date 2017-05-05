@@ -92,7 +92,7 @@ Command::bind('help', 'Worklog\CommandLine\UsageCommand');
 
 // Disabled Commands
 //Command::bind('table-info', 'Worklog\CommandLine\DatabaseTableInfoCommand');
-//Command::bind('table-data', 'Worklog\CommandLine\DatabaseTableDataCommand');
+Command::bind('table-data', 'Worklog\CommandLine\DatabaseTableDataCommand');
 
 $db = database(getenv('DATABASE_DRIVER'));
 

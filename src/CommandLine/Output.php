@@ -540,7 +540,7 @@ static::set_variant($variant_default);
                 $length = mb_strlen($cell_value);
 
                 if (! isset($lengths[$colkey]) || $length > $lengths[$colkey]) {
-                    $lengths[$colkey] = $length;
+                    $lengths[$colkey] = min($length, ($max_width / 2));
                 }
             }
         }
@@ -671,8 +671,15 @@ static::set_variant($variant_default);
     public static function str_shorten($input, $length, $suffix = '...')
     {
         $output = $input;
-        if (mb_strlen($output) > $length) {
-            $output = substr($output, 0, ($length - mb_strlen($suffix))).$suffix;
+        $input_length = mb_strlen($input);
+        if ($input_length > $length) {
+            $suffix_length = mb_strlen($suffix);
+
+            if ($input_length >= $suffix_length) {
+                $output = substr($output, 0, ($length - $suffix_length)).$suffix;
+            } else {
+                $output = substr($output, 0, ($length - 2)).'-';
+            }
         }
 
         return $output;

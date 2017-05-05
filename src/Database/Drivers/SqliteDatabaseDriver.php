@@ -525,10 +525,10 @@ class SqliteDatabaseDriver extends Driver
     public function numRows()
     {
         $nrows = 0;
-        $this->result->reset();
+//        $this->result->reset();
         while ($this->result->fetchAll())
             $nrows++;
-        $this->result->reset();
+//        $this->result->reset();
 
         return $nrows;
     }
