@@ -26,6 +26,7 @@ class GitCommand extends BinaryCommand
     {
         if (! $this->initialized()) {
             $this->setBinary(env('BINARY_GIT'));
+            $this->registerSubcommand('diff');
             $this->registerSubcommand('record');
             $this->registerSubcommand('status');
             $this->registerSubcommand('tag');
@@ -59,6 +60,20 @@ class GitCommand extends BinaryCommand
 
 
     // subcommand implementations _{subcommand}()
+
+    protected function _diff()
+    {
+        $arguments = $this->arguments();
+        $flags = $this->flags();
+
+        $command = [ 'diff' ];
+
+        if (isset($arguments[1])) {
+            $command[] = $arguments[1];
+        }
+        
+        return $this->call($command);
+    }
 
     /**
      * Stage all files and commit to git repository

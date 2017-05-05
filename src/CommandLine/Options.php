@@ -266,8 +266,7 @@ class Options implements \ArrayAccess
 
     public function unsetArgument($offset)
     {
-    	debug('unset('.$offset.')', 'red');
-        if (isset($this->arguments[$offset])) {
+    	if (isset($this->arguments[$offset])) {
         	unset($this->arguments[$offset]);
             unset($this->arguments[$offset]);
         }
