@@ -13,6 +13,7 @@ date_default_timezone_set('America/Los_Angeles');
 
 define('APPLICATION_PATH', __DIR__);
 define('ROOT_PATH', dirname(APPLICATION_PATH));
+define('TESTS_PATH', ROOT_PATH.'/tests');
 define('VENDOR_PATH', ROOT_PATH.'/vendor');
 $cache_dir = '/'.trim((getenv('CACHE_DIRECTORY') ?: 'cache'), '/');
 $script = (isset($argv) ? ltrim(ltrim(basename($argv[0], '.'), '/')) : basename(__FILE__));

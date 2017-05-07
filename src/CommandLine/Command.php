@@ -51,6 +51,12 @@ class Command
     {
         $this->App = App();
         $this->db = $this->App()->db();
+
+        $command = (array) $command;
+
+        if (isset($command[0])) {
+        	$this->command_name = $command[0];
+        }
     }
 
     public function name()
@@ -118,6 +124,9 @@ class Command
 
     public static function call($Command, $decorate = null)
     {
+    	if (is_string($Command) && isset(static::$registry[$Command])) {
+    		$Command = Command::instance($Command);
+    	}
         if (!($Command instanceof Command)) {
         	if (! is_callable($decorate)) {
         		$Command = new $Command($decorate);

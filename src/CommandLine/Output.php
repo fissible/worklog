@@ -189,7 +189,7 @@ class Output
         }
 
         if (function_exists('mb_strlen') && function_exists('mb_detect_encoding')) {
-            $length = mb_strlen($string, mb_detect_encoding($string));
+            $length = mb_strlen($string, (mb_detect_encoding($string) ?: 'utf8'));
         } else {
             $string = iconv('ASCII' , 'ASCII', $string);
             $length = strlen($string);
