@@ -245,7 +245,10 @@ class BinaryCommand extends Command
 
     public static function collect_output($collect = true)
     {
+        $original = static::$collect_output;
         static::$collect_output = (bool) $collect;
+
+        return $original;
     }
 
     /**

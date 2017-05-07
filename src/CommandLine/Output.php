@@ -330,40 +330,7 @@ class Output
             $string_parts = array_reverse($string_parts);
             $string = implode("\n", $string_parts);
         }
-/*
-$line_length_default = static::line_length();
-$variant_default = static::variant();
-$allow_unicode_default = static::allow_unicode();
-static::set_allow_unicode(true);
-static::set_line_length($size * 2);
-static::set_variant($variant);
-$isize = ($size - 2);
-$border = (static::allow_unicode() ? static::uchar('ver') : '|');
 
-ob_start();
-
-printl(static::horizontal_line('top'));
-for ($i = 0; $i <= $isize; $i++) {
-    if (strlen($title) > 0) {
-        if ($i == 0) {
-            static::line($title, $border);
-        } elseif ($i == 1) {
-            printl(static::horizontal_line('mid'));
-        } else {
-            static::line(' ', $border);
-        }
-    } else {
-        static::line(' ', $border);
-    }
-}
-printl(static::horizontal_line('bot'));
-
-$out = ob_get_clean();
-
-static::set_allow_unicode($allow_unicode_default);
-static::set_line_length($line_length_default);
-static::set_variant($variant_default);
- */
         if ($border) {
             if (false !== strpos($string, "\n") && $string !== "\n") {
                 $str_parts = explode("\n", $string);

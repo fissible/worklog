@@ -104,11 +104,11 @@ class GitCommand extends BinaryCommand
             }
         }
         
-        $this->call(  'add .');
+        $this->call('add .');
         $this->call([ 'commit -m', escapeshellarg($commit_message) ]);
 
         if (array_key_exists('p', $flags)) {
-            $this->call( 'push');
+            $this->call('push');
         }
 
     }
