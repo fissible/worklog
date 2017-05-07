@@ -16,6 +16,9 @@ class CommandTest extends TestCase {
 	protected function setUp()
 	{
 		parent::setUp();
+
+        Command::bind('bin', 'Worklog\CommandLine\BinaryCommand');
+        Command::bind('help', 'Worklog\CommandLine\UsageCommand');
 	}
 
 
@@ -25,7 +28,6 @@ class CommandTest extends TestCase {
     {
         $Com = $this->make('help');
         $this->assertEquals('help', $Com->name());
-
         $BinCom = $Com->build(BinaryCommand::class);
         $BinCom->setBinary('echo');
         $this->assertEquals('echo', $BinCom->getBinary());
@@ -37,10 +39,7 @@ class CommandTest extends TestCase {
     {
         $input = escapeshellarg('¸.·´¯`·.´¯`·.¸¸.·´¯`·.¸><(((º>');
         $BinCom = $this->makeBinary([ 'echo', $input ]);
-
-        ob_start();
         $output = $BinCom->run();
-        ob_end_clean();
         $this->assertEquals($input, escapeshellarg($output[0]));
     }
     
@@ -48,16 +47,11 @@ class CommandTest extends TestCase {
      */
     public function testCommandBinding()
     {
-        $Com = $this->make();
-        Command::bind('bin', BinaryCommand::class);
-        Command::bind('help', 'Worklog\CommandLine\UsageCommand');
-
-        $this->assertTrue($Com->validate_command('bin'));
-        $this->assertTrue($Com->validate_command('help'));
-
+        $Command = $this->make();
+        $this->assertTrue($Command->validate_command('bin'));
+        $this->assertTrue($Command->validate_command('help'));
         $BinaryCommand = Command::instance('bin');
         $UsageCommand = Command::instance('help');
-
         $this->assertTrue($BinaryCommand instanceof \Worklog\CommandLine\BinaryCommand);
         $this->assertTrue($UsageCommand instanceof \Worklog\CommandLine\UsageCommand);
     }
@@ -68,7 +62,6 @@ class CommandTest extends TestCase {
     {
         BinaryCommand::collect_output(true);
         $output = BinaryCommand::call(['ls']);
-
         $this->assertContains('database', $output);
         $this->assertContains('src', $output);
         $this->assertContains('tests', $output);
