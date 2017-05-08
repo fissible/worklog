@@ -190,7 +190,8 @@ class Options implements \ArrayAccess
     {
         $config = (isset($this->config) ? $this->config : []);
 
-        if (! ($this->Command instanceof BinaryCommand)) {
+        if (! ($this->Command instanceof BinaryCommand) || isset($this->command)) {
+
             if (isset($this->command)) {
                 if (array_key_exists($this->command, $this->command_registry)) {
                     $config = $this->command_registry[$this->command];
@@ -293,6 +294,8 @@ class Options implements \ArrayAccess
 
     public function parse_args($args)
     {
+        $config = $this->config('options');
+
         if (is_string($args)) {
 
             // Cleanup characters to place them back in args.
@@ -311,10 +314,16 @@ class Options implements \ArrayAccess
         $args_size = count($args);
         for ($i = 0; $i < $args_size; $i++) {
             $value = false;
+
             // command --abc
             if (substr($args[$i], 0, 2) == '--') {
                 $key = rtrim(substr($args[$i], 2), '=');
-                $out[$key] = true;
+
+                if ((isset($config[$key]) && ! is_bool($config[$key]['req']))) {
+                    $value = $args[$i];
+                } else {
+                    $out[$key] = true;
+                }
             // command -a
             } elseif (substr($args[$i], 0, 1) == '-') {
                 $key = rtrim(substr($args[$i], 1), '=');
@@ -327,8 +336,14 @@ class Options implements \ArrayAccess
                         $key = $opt[$n];
                         $out[$key] = true;
                     }
+                } else { // flag
+                    if ((isset($config[$key]) && is_bool($config[$key]['req']))) {
+                        $out[$key] = true;
+                    } else {
+                        $value = $args[$i];
+                    }
                 }
-            } else {
+            } else { //  argument
                 $value = $args[$i];
             }
 

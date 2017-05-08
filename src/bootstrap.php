@@ -88,7 +88,7 @@ Command::bind('vcr', 'Worklog\CommandLine\GitCommand');
 Command::bind('test', 'Worklog\CommandLine\PhpunitCommand');
 Command::bind('vendor', 'Worklog\CommandLine\ComposerCommand');
 
-// Usage/autcompletion commands
+// Usage/autocompletion commands
 Command::bind('listopts', 'Worklog\CommandLine\ListOptionsCommand');
 Command::bind('help', 'Worklog\CommandLine\UsageCommand');
 

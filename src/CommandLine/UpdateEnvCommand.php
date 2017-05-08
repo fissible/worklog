@@ -20,8 +20,8 @@ class UpdateEnvCommand extends Command
         'a' => ['req' => null, 'description' => 'Prompt for all values'],
         'q' => ['req' => null, 'description' => 'Check if .env is missing keys from .env.example'],
     ];
-    public static $arguments = [ 'date', 'date_end' ];
-    public static $usage = '%s [-ilt] [date [end_date]]';
+    public static $arguments = [ 'key' ];
+    public static $usage = '%s [-aq]';
     public static $menu = false;
 
     public function run()
@@ -32,6 +32,7 @@ class UpdateEnvCommand extends Command
         $base_path = dirname(APPLICATION_PATH);
         $env['file'] = new File($base_path.'/.env');
         $env_example['file'] = new File($base_path.'/.env.example');
+        $key = $this->getData('key') ?: false;
         $update = false;
         $query = false;
         $all = false;
@@ -45,35 +46,37 @@ class UpdateEnvCommand extends Command
             $query = true;
         }
 
+        // read .env.example values into array
         foreach ($env_example['file']->lines() as $line) {
-            list($key, $val) = $this->parse_line($line);
-            if ($key) {
-                $env_example['data'][$key] = $val;
+            list($_key, $val) = $this->parse_line($line);
+            if ($_key) {
+                $env_example['data'][$_key] = $val;
             }
         }
 
         if ($env['file']->exists()) {
+            // read.env values into array
             foreach ($env['file']->lines() as $line) {
-                list($key, $val) = $this->parse_line($line);
-                if ($key) {
-                    $env['data'][$key] = $val;
+                list($_key, $val) = $this->parse_line($line);
+                if ($_key) {
+                    $env['data'][$_key] = $val;
                 }
             }
 
-            foreach ($env_example['data'] as $key => $eg_val) {
-                if ($all || ! array_key_exists($key, $env['data'])) {
-                    if ($query) {
+            foreach ($env_example['data'] as $_key => $eg_val) {
+                if ($all || $key == $_key || ! array_key_exists($_key, $env['data'])) {
+                    if ($query && ! array_key_exists($_key, $env['data'])) {
                         $update = true;
                     } else {
-                        $prompt = $key;
-                        $default = (array_key_exists($key, $env['data']) ? $env['data'][$key] : $eg_val);
+                        $prompt = $_key;
+                        $default = (array_key_exists($_key, $env['data']) ? $env['data'][$_key] : $eg_val);
                         if (strlen($default) > 0) {
                             $prompt .= ' [' . $default . ']';
                         }
                         $prompt .= ': ';
                         $response = Str::parse(Input::ask($prompt, $default));
 
-                        if (! array_key_exists($key, $env['data']) || $response !== $env['data'][$key]) {
+                        if (! array_key_exists($_key, $env['data']) || $response !== $env['data'][$_key]) {
                             if (! is_string($response)) {
                                 switch (true) {
                                     case (true === $response):
@@ -85,7 +88,7 @@ class UpdateEnvCommand extends Command
                                 }
                             }
 
-                            $env['data'][$key] = $response;
+                            $env['data'][$_key] = $response;
                             $update = true;
                         }
                     }
