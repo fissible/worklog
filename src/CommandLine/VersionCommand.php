@@ -112,17 +112,18 @@ class VersionCommand extends Command
     protected function _switch($internally_invoked = false, $new = null)
     {
         $switched_to = false;
+        $force_newest = is_null($new);
 
-        if (is_null($new)) {
+        if ($force_newest) {
             $new = $this->getData('version');
+        } else {
+            list($new, $diff) = $this->_check(true, $new);
         }
-
-        list($new, $diff) = $this->_check(true, $new);
 
         debug(compact('new', 'diff'), 'cyan');
 
 
-        if ($diff) {
+        if ($new) {
             if ($hash = $this->gitHashForTag($new)) {
                 $switched_to = $new;
                 Command::call(GitCommand::class, 'fetch -q');
