@@ -46,42 +46,19 @@ class VersionCommand extends Command
         if ($tag = $this->gitTagFor('HEAD')) {
             return $tag;
         } else {
-            return 'Your local repository is not synced with a perticular version.';
+            return 'Your local repository is not synced with a particular version.';
         }
-/*
-
-- get commit from tag
--
-$ git rev-list -n 1 2.0.0
-78f0ff1537630f362835b6acf1ca621a85056431
-
-
-- get current commit
--
-$ git rev-parse HEAD
-fa8bf050a0e1736d23b9868b16e8eaa98a2bba3e
-
-
-- get tag from commit
--
-$ git show-ref --tags -d | grep ^78f0ff1537630f362835b6acf1ca621a85056431 | sed -e 's,.* refs/tags/,,' -e 's/\^{}//'
-2.0.0
-
-*/
-//        $commands = $this->getData('command');
-//        $long = $this->option('l');
-//        $short = $this->option('s');
-
-//        $commitHash = Command::call(GitCommand::class, 'rev-parse HEAD');
-
     }
 
 
+    /**
+     * @return mixed
+     */
     protected function _switch()
     {
         if ($hash = $this->gitHashForTag($this->getData('version'))) {
             Command::call(GitCommand::class, sprintf('checkout %s', $hash));
-            Command::call(ComposerCommand::class, 'dump-autoload');
+            Command::call(ComposerCommand::class, 'install');
         }
 
         return $hash;

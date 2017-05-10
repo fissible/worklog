@@ -90,16 +90,6 @@ class BinaryCommand extends Command
         return $this;
     }
 
-    // public function name() {
-    //     $name = '';
-    //     if (isset($this->binary)) {
-    //         $name = $this->binary;
-    //     } elseif (isset($this->command_name)) {
-    //         $name = $this->command_name;
-    //     }
-    //     return $name;
-    // }
-
     public function setBinary($binary)
     {
         $this->binary = $binary;
