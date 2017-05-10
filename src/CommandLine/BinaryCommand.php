@@ -365,10 +365,7 @@ class BinaryCommand extends Command
         if ($this->validateSubcommand($subcommand)) {
             $this->subcommand = $subcommand;
         } else {
-            throw static::getInvalidSubcommandException(
-                $subcommand,
-                sprintf("%s is not callable nor a local method", $callable_or_method)
-            );
+            throw static::getInvalidSubcommandException($subcommand);
         }
 
         return $this;

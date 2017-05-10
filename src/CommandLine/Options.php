@@ -319,7 +319,7 @@ class Options implements \ArrayAccess
             if (substr($args[$i], 0, 2) == '--') {
                 $key = rtrim(substr($args[$i], 2), '=');
 
-                if ((isset($config[$key]) && ! is_bool($config[$key]['req']))) {
+                if ((isset($config[$key]) && is_bool($config[$key]['req']))) {
                     $value = $args[$i];
                 } else {
                     $out[$key] = true;
@@ -355,6 +355,7 @@ class Options implements \ArrayAccess
                     } else {
                         // You could add type checking here but ftw
                         //$out[$key] = trim($out[$key].' '.$value); // this was too greedy
+                        $out[$value] = $value;
                     }
                 } else {
                     $out[$key] = $value;
@@ -437,11 +438,16 @@ class Options implements \ArrayAccess
                     $last_flag_gets_value = false;
                     $last_arg_was_option = false;
 
+                    if (false !== ($_data_key_key = array_search('subcommand', $data_keys)) && $Command->validateSubcommand($argv[0])) {
+                        unset($data_keys[$_data_key_key]);
+                    }
+
                     foreach ($argv as $key => $argument) {
+
                         if (! empty($data_keys) && ! array_key_exists($data_key, $data_keys)) {
                             break;
                         }
-                        $dynamic_option = false;
+
                         $is_option = substr($argument, 0, 1) == '-';
                         $option = ltrim($argument, '-');
 
@@ -453,12 +459,11 @@ class Options implements \ArrayAccess
                             } else {
                                 $last_flag_gets_value = substr($argument, 0, 2) == '--' && $key != ($argv_count -1);
                                 $this->add($option, ['req' => ($last_flag_gets_value ? false : null), 'description' => 'Dynamic option']);
-                                $dynamic_option = true;
                             }
                             $last_arg_was_option = true;
                             $last_arg = $option;
-
                             continue;
+
                         } elseif ($argument !== $this->Command->name()) {
                             if (! $last_arg_was_option || (! in_array($last_arg, $flags_with_values) && ! $last_flag_gets_value)) {
                                 $this->arguments[] = $argument;

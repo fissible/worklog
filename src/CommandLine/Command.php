@@ -435,6 +435,17 @@ class Command
         return $args;
     }
 
+    protected function flag($key)
+    {
+        $return = false;
+        $flags = $this->flags();
+        if (array_key_exists($key, $flags)) {
+            $return = $flags[$key];
+        }
+
+        return $return;
+    }
+
     protected function flags()
     {
         $flags = [];
