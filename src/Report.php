@@ -35,12 +35,14 @@ class Report
 
     private $TotalDuration;
 
+    const CACHE_TAG = 'Report';
+
     const NO_GROUP_KEY_FLAG = 'NA';
 
     protected static $exception_strings = [
         'dates_flipped' => 'End date cannot be before start date',
         'issue_not_found' => 'Issue %s not found',
-        'no_entries' => 'No entries found'
+        'no_entries' => 'No entries'
     ];
 
     /**
@@ -82,6 +84,14 @@ class Report
      */
     protected function transformEntity($Record)
     {
+        if ($Record instanceof \stdClass) {
+            $Record = json_decode(json_encode($Record), true);
+            $Record['date'] = $Record['date']['date']; 
+        }
+        if (is_array($Record)) {
+            $Record = new Task($Record);
+        }
+
         $record = [
             'issue' => ($Record->hasAttribute('issue') && $Record->issue ? $Record->issue : self::NO_GROUP_KEY_FLAG),
             'description' => $Record->description,
@@ -389,9 +399,6 @@ class Report
         if ($this->DateRange[0]->toDateString() === $this->DateRange[1]->toDateString()) {
             $Query->whereDate('date', $this->DateRange[0]->toDateString());
         } else {
-            // $Query->whereBetween('date', [ $this->DateRange[0]->toDatetimeString(), $this->DateRange[1]->toDatetimeString() ]);
-
-            // SqlLite compatible
             $Query->whereRaw('(DATE(date) <= \''.$this->DateRange[1]->toDateString().'\' AND DATE(date) >= \''.$this->DateRange[0]->toDateString().'\')');
         }
 
@@ -406,13 +413,96 @@ class Report
         return $Query;
     }
 
+    public static function bust_cache(Carbon $DateStart, Carbon $DateEnd = null)
+    {
+        $count = 0;
+
+        if (is_null($DateEnd)) {
+            $DateEnd = $DateStart->copy();
+        }
+        $Cache = App()->Cache();
+
+        foreach ($Cache->Items() as $Item) {
+            $pare = false;
+
+            $CacheDateStart = $Item->meta('date_start') ? Carbon::parse($Item->meta('date_start')) : null;
+            $CacheDateStop = $Item->meta('date_stop') ? Carbon::parse($Item->meta('date_stop')) : null;
+
+            if (null !== $CacheDateStart && null !== $CacheDateStop) {
+                if ($DateStart->eq($DateEnd) && ($CacheDateStart->eq($DateStart) || $CacheDateStop->eq($DateStart))) {
+                    $pare = true;
+                } elseif ($CacheDateStart->between($DateStart, $DateEnd) || $CacheDateStop->between($DateStart, $DateEnd)) {
+                    $pare = true;
+                }
+            } elseif (null !== $CacheDateStart) {
+                if ($DateStart->eq($DateEnd) && $CacheDateStart->eq($DateStart)) {
+                    $pare = true;
+                } elseif ($CacheDateStart->between($DateStart, $DateEnd)) {
+                    $pare = true;
+                }
+            } elseif (null !== $CacheDateStop) {
+                if ($DateStart->eq($DateEnd) && $CacheDateStop->eq($DateStart)) {
+                    $pare = true;
+                } elseif ($CacheDateStop->between($DateStart, $DateEnd)) {
+                    $pare = true;
+                }
+            }
+
+            if ($pare) {
+                if ($Cache->clear($Item)) {
+                    $count++;
+                }
+            }
+        }
+
+        return $count;
+    }
+
+    /**
+     * Query the results of a given query
+     */
+    protected function queryCacheData($clear = false)
+    {
+        $Cache = App()->Cache();
+        $Query = $this->query();
+        $QueryBuilder = $Query->getQuery();
+        $cache_name = base64_encode($QueryBuilder->toSql());
+
+        // -c to bust/clear cache
+        if ($clear) {
+            $deleted = $Cache->clear($cache_name);
+        }
+
+        // Do retrieve or exe/store/return
+        $data = $Cache->data(
+            $cache_name, function() use ($Query) {
+                $Collection = $Query->get();
+
+                $decorator = function($CacheItem) use ($Collection) {
+                    // Add meta data for cach busting
+                    $CacheItem->meta('date_start', $this->DateRange[0]->toDateString());
+                    $CacheItem->meta('date_stop', $this->DateRange[1]->toDateString());
+
+                    // always return the data
+                    return $Collection;
+                };
+
+                return $decorator;
+            }, [ self::CACHE_TAG ], Carbon::now()->diffInSeconds(Carbon::now()->addDays(2))
+        );
+        
+        $this->setData($data);
+
+        return $this->data;
+    }
+
     /**
      * @return array
      * @throws \Exception
      */
-    public function run()
+    public function run($clear_cache = false)
     {
-        $this->setData($this->query()->get());
+        $this->queryCacheData($clear_cache);
 
         if ($this->dataCount() > 0) {
             if (isset($this->group_by)) {
@@ -420,7 +510,7 @@ class Report
             }
         } else {
             if ($this->issue) {
-                throw new \Exception(sprintf(static::$exception_strings['issue_not_found'], $this->issue));
+                throw new \InvalidArgumentException(sprintf(static::$exception_strings['issue_not_found'], $this->issue));
             } else {
                 throw new \Exception(static::$exception_strings['no_entries']);
             }
@@ -436,8 +526,11 @@ class Report
     private function setData($data)
     {
         if ($data instanceof Collection) {
-            foreach ($data as $key => $Record) {
-                $this->data[] = $this->transformEntity($Record);
+            $data = $data->toArray();
+        }
+        if (is_array($data)) {
+            foreach ($data as $key => $record) {
+                $this->data[] = $this->transformEntity($record);
             }
         }
 
@@ -449,7 +542,7 @@ class Report
      * @param null $max_metric
      * @internal param string $max_metric h=hour, m=minute
      */
-    public function table($borderless = false, $max_metric = null)
+    public function table($borderless = false, $max_metric = null, $clear_cache = false)
     {
         $variant = 'heavy';
         $DateStart = $this->DateRange[0];
@@ -464,7 +557,7 @@ class Report
         }
 
         if (empty($this->data)) {
-            $this->run();
+            $this->run($clear_cache);
         }
 
         $this->TotalDuration = new Duration($this->max_metric);

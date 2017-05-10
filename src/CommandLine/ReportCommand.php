@@ -17,6 +17,7 @@ class ReportCommand extends Command
 
     public static $description = 'Report work log entries';
     public static $options = [
+        'c' => ['req' => null, 'description' => 'Clear the cached report data.'],
         'i' => ['req' => true, 'description' => 'The Jira Issue key'],
         'j' => ['req' => null, 'description' => 'Output as JSON'],
         'l' => ['req' => null, 'description' => 'Entries from last week'],
@@ -43,6 +44,7 @@ class ReportCommand extends Command
     {
         parent::run();
 
+        $clear_cache = (bool) $this->option('c');
         $group_by_overidden = false;
         $group_by = $this->option('g');
         $json = $this->option('j');
@@ -101,12 +103,22 @@ class ReportCommand extends Command
 
         $Report->orderBy([ 'date' => 'asc', 'start' => 'asc' ]);
 
-        if ($json) {
-            return json_encode($Report->run());
-        } elseif (IS_CLI) {
-            $Report->table($this->option('n'));
-        } else {
-            return $Report->run();
+        try {
+            if ($json) {
+                return json_encode($Report->run($clear_cache));
+            } elseif (IS_CLI) {
+                $Report->table($this->option('n'), null, $clear_cache);
+            } else {
+                return $Report->run($clear_cache);
+            }
+        } catch (\InvalidArgumentException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            if ($e->getMessage() == 'No items') {
+                return sprintf('%s here%s...', $e->getMessage(), (rand(0, 99) > 96 ? (rand(0, 1) ? ', pal' : ', mate') : ''));
+            } else {
+                throw $e;
+            }
         }
     }
 }

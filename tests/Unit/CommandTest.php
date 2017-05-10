@@ -69,12 +69,32 @@ class CommandTest extends TestCase {
     }
 
     /**
-     * @expect 
+     */
+    public function testInferResolve()
+    {
+        $Command = $this->make();
+        $inferred = $Command->infer([ 'help' ]);
+        $this->assertEquals('help', $inferred);
+
+        $Resolved = $Command->resolve([ 'help' ]);
+        $this->assertTrue($Resolved instanceof \Worklog\CommandLine\UsageCommand);
+    }
+
+    /**
      */
     public function testCommandBindException()
     {
         $this->expectException(\InvalidArgumentException::class);
         Command::bind('fails', []);
+    }
+
+    /**
+     */
+    public function testResolutionException()
+    {
+        $Command = $this->make();
+        $this->expectException(\InvalidArgumentException::class);
+        $Resolved = $Command->resolve([]);
     }
 
 

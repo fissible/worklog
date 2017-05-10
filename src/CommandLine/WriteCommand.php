@@ -2,6 +2,7 @@
 namespace Worklog\CommandLine;
 
 use Carbon\Carbon;
+use Worklog\Report;
 use Worklog\Models\Task;
 use Worklog\Services\TaskService;
 
@@ -134,7 +135,9 @@ class WriteCommand extends Command
             } while (! $this->Task->valid());
         }
 
-        $result = $this->Task->save();
+        if ($result = $this->Task->save()) {
+            Report::bust_cache($this->Task->date);
+        }
 
         if ($this->getData('RETURN_RESULT')) {
             return $result;

@@ -1,6 +1,7 @@
 <?php
 namespace Worklog\CommandLine;
 
+use Worklog\Report;
 use Worklog\Models\Task;
 
 /**
@@ -38,6 +39,8 @@ class DeleteCommand extends Command
             if (! IS_CLI || $this->option('f') || Input::confirm($prompt, true)) {
                 if ($Task->delete()) {
                     $out = sprintf('Deleted Task %d', $id);
+
+                    Report::bust_cache($Task->date);
                 }
             }
         } else {

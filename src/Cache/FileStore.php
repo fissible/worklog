@@ -14,6 +14,9 @@ class FileStore extends Cache
 
     private $Item;
 
+    protected static $file_type = 'json';
+
+
     public function __construct($path = '')
     {
         $this->set_cache_path($path);
@@ -24,7 +27,7 @@ class FileStore extends Cache
     {
         if (! isset($this->Item) || ! empty($data)) {
             if (isset($data['name'])) {
-                $this->Item = CacheItem::new_from_file($this, $this->filename($data['name']), $data);
+                $this->Item = CacheItem::new_from_file($this, $data['name'], $data);
             }
         }
 
@@ -40,6 +43,13 @@ class FileStore extends Cache
         }
     }
 
+    public function path()
+    {
+        if (isset($this->path)) {
+            return $this->path;
+        }
+    }
+
     /**
      * Scan cache files and cache their name keys
      * @param boolean $force Reload cache registry
@@ -49,7 +59,7 @@ class FileStore extends Cache
         parent::load_registry($force);
 
         if (empty($this->registry) || $force) {
-            foreach (glob($this->path.'/*.json') as $key => $filename) {
+            foreach (glob($this->path.'/*.'.static::$file_type) as $key => $filename) {
                 $this->register($this->load($filename, false, true));
             }
         }
@@ -108,48 +118,52 @@ class FileStore extends Cache
 
     public function data($name, $data = null, $tags = [], $expires_in_seconds = 0)
     {
-        $data = parent::data($name, $data, $tags, $expires_in_seconds);
+        // $data = parent::data($name, $data, $tags, $expires_in_seconds);
 
-        if ($this->Item()) {
-            $this->Item()->setFile(new File($this->filename($name)));
-            $this->write($this->Item(), $data, $tags, $expires_in_seconds);
+        // if ($this->Item()) {
+        //     $this->Item()->setFile(new File($this->filename($name)));
+        //     $this->write($this->Item(), $data, $tags, $expires_in_seconds);
+        // }
+
+        // return $data;
+
+        if (is_scalar($name)) {
+            $CacheItem = $this->load($name, false);
+        } else {
+            throw new \InvalidArgumentException('FileStore::data(): first argument must be a string.');
+        }
+
+        if (! $CacheItem->is_valid() && ! is_null($data)) {
+            // get data from callable $new_data
+            if (is_callable($data)) {
+                try {
+                    $param = new \ReflectionParameter($data, 0);
+                    if (stristr($param->getClass(), 'Application')) {
+                        $data = call_user_func($data, Application::instance());
+                    } else {
+                        $data = call_user_func($data);
+                    }
+                } catch (\Exception $e) {
+                    $data = call_user_func($data);
+                }
+
+                // decorator function
+                if (is_callable($data)) {
+                    $data = $data($CacheItem);
+                }
+            }
+
+            $CacheItem = $this->write($CacheItem, $data, $tags, $expires_in_seconds);
+
+            $data = $CacheItem->data;
+        } else {
+            $data = $CacheItem->data;
         }
 
         return $data;
     }
 
-    /**
-     * Write the data array to a cache json file
-     * @param  string $name The cache key
-     * @param  array  $data The cache data
-     * @param  array  $tags Tag string (or array of strings) used for taxonomy
-     * @return mixed  The number of bytes written, or false on failure
-     */
-    // public function write($name, $data = [], $tags = [], $expires_in_seconds = 0) {
-    //     $this->setup();
-
-    //     if ($name instanceof CacheItem) {
-    //     	$CacheItem = $name;
-    //     } else {
-    //     	$CacheItem = $this->Item(compact('name', 'data', 'tags'));
-    //     }
-
-    // 	if ($data) {
-    // 		$CacheItem->setData($data);
-    // 	}
-
-    //     if ($tags) {
-        //     $CacheItem->setTags($tags);
-        // }
-
-    //     $CacheItem->setExpiry($expires_in_seconds);
-
-    //     $this->register($CacheItem);
-
-    //     $CacheItem->write();
-
-    //     return $CacheItem;
-    // }
+    
 
     /**
      * The cache file filename
@@ -158,11 +172,16 @@ class FileStore extends Cache
      */
     public function filename($name)
     {
-        if (substr($name, -5) !== '.json') {
-            $name = $this->path.'/'.File::sanitize(md5($name).'.json');
+        if (substr($name, -5) !== '.'.static::$file_type) {
+            $name = $this->path.'/'.File::sanitize(md5($name).'.'.static::$file_type);
         }
 
         return $name;
+    }
+
+    public static function file_type()
+    {
+        return static::$file_type;
     }
 
     public static function disable_purge($set = true)

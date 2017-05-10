@@ -264,6 +264,9 @@ class Command
                         }
                     }
                 }
+                if (! $command) {
+                	throw new \InvalidArgumentException(sprintf("Invalid command \"%s\"", $args[0]));
+                }
             }
         }
 
