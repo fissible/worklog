@@ -80,10 +80,8 @@ $ git show-ref --tags -d | grep ^78f0ff1537630f362835b6acf1ca621a85056431 | sed 
     protected function _switch()
     {
         if ($hash = $this->gitHashForTag($this->getData('version'))) {
-            GitCommand::collect_output(true);
-            $output = Command::call(GitCommand::class, sprintf('checkout %s', $hash));
-
-            debug($output, 'red');
+            Command::call(GitCommand::class, sprintf('checkout %s', $hash));
+            Command::call(ComposerCommand::class, 'dump-autoload');
         }
 
         return $hash;
