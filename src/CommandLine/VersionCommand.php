@@ -61,53 +61,85 @@ class VersionCommand extends Command
      * @return mixed
      * @throws \Exception
      */
-    protected function _check()
+    protected function _check($internally_invoked = false, $tag = null)
     {
         Command::call(GitCommand::class, 'fetch -q');
 
         $tags = Command::call(GitCommand::class, 'tag');
         $args = $this->arguments();
 
-        if (isset($args[1])) {
-            $tag = $args[1];
+        // Current version
+        if (is_null($tag)) {
+            if (isset($args[1])) {
+                $tag = $args[1];
 
-            if (! in_array($tag, $tags)) {
-                throw new \Exception(static::$exception_strings['invalid_tag']);
+                if (! in_array($tag, $tags)) {
+                    throw new \Exception(static::$exception_strings['invalid_tag']);
+                }
+            } else {
+                $tag = $this->gitTagFor('HEAD');
             }
-        } else {
-            $tag = $this->gitTagFor('HEAD');
         }
 
         $latest_tag = $tag;
         $latest_result = null;
 
         foreach ($tags as $key => $_tag) {
+            $comp = version_compare($tag, $_tag);
 
-            if (($result = strcmp($_tag, $tag)) > 1) {
+            if ($comp > -1 || $comp > $latest_result) {
                 $latest_tag = $_tag;
-                $latest_result = $result;
+                $latest_result = $comp;
             }
         }
 
-        if ($latest_result) {
-            return sprintf('Later version %s available', $latest_tag);
+        if ($internally_invoked) {
+            return [$latest_tag, $latest_result];
         } else {
-            return 'You have the most up to date version';
+            if ($latest_result) {
+                return sprintf('Later version %s available', $latest_tag);
+            } else {
+                return 'You have the most up to date version';
+            }
         }
     }
 
     /**
+     * @param bool $internally_invoked
+     * @param null $new
      * @return mixed
      */
-    protected function _switch()
+    protected function _switch($internally_invoked = false, $new = null)
     {
-        if ($hash = $this->gitHashForTag($this->getData('version'))) {
-            Command::call(GitCommand::class, 'fetch -q');
-            Command::call(GitCommand::class, sprintf('checkout %s -q', $hash));
-            Command::call(ComposerCommand::class, 'install');
+        $switched_to = false;
+
+        if (is_null($new)) {
+            $new = $this->getData('version');
         }
 
-        return $hash;
+        list($new, $diff) = $this->_check(true, $new);
+
+        debug(compact('new', 'diff'), 'cyan');
+
+
+        if ($diff) {
+            if ($hash = $this->gitHashForTag($new)) {
+                $switched_to = $new;
+                Command::call(GitCommand::class, 'fetch -q');
+                Command::call(GitCommand::class, sprintf('checkout %s -q', $hash));
+                Command::call(ComposerCommand::class, 'install');
+            }
+        }
+
+        if ($internally_invoked) {
+            return $switched_to;
+        } else {
+            if ($switched_to) {
+                return sprintf('Switched to version %s', $switched_to);
+            } else {
+                return 'You have the most up to date version';
+            }
+        }
     }
 
     /**
@@ -157,5 +189,35 @@ class VersionCommand extends Command
         }
 
         return false;
+    }
+
+    /**
+     * @param bool $return_diff
+     * @return array|null
+     */
+    private function gitLatestVersion($return_diff = false)
+    {
+        $tags = Command::call(GitCommand::class, 'tag');
+
+        $latest_tag = null;
+        $latest_result = null;
+
+        foreach ($tags as $key => $_tag) {
+
+            if (is_null($latest_tag)) {
+                $latest_tag = $_tag;
+            }
+
+            if (($result = strcmp($_tag, $latest_tag)) > 0) {
+                $latest_tag = $_tag;
+                $latest_result = $result;
+            }
+        }
+
+        if ($return_diff) {
+            return [ $latest_tag, $latest_result ];
+        } else {
+            return $latest_tag;
+        }
     }
 }
