@@ -8,9 +8,9 @@ use Worklog\Application;
  */
 class Cache
 {
-    private $Item;
+    protected $path;
 
-    private $path;
+    private $Item;
 
     private $driver;
 

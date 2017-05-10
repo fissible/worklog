@@ -52,10 +52,10 @@ class CacheItem
 
         if (array_key_exists('path', $data)) {
             $this->File($data['path']);
+        }
 
         if (array_key_exists('expiry', $data)) {
             $this->setExpiry($data['expiry']);
-        }
         }
 
         if (array_key_exists('tags', $data)) {
@@ -337,7 +337,7 @@ class CacheItem
 
     public function setExpiry($value)
     {
-        if ($value < strtotime('now')) {
+        if ($value < (31536000 * 2)) { // 1 yr in seconds * 2
             $value = strtotime('now') + $value;
         }
         $this->expiry = $value;
