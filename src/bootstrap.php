@@ -92,6 +92,7 @@ Command::bind('vendor', 'Worklog\CommandLine\ComposerCommand');
 // Usage/autocompletion commands
 Command::bind('listopts', 'Worklog\CommandLine\ListOptionsCommand');
 Command::bind('help', 'Worklog\CommandLine\UsageCommand');
+Command::bind('version', 'Worklog\CommandLine\VersionCommand');
 
 // Disabled Commands
 //Command::bind('table-info', 'Worklog\CommandLine\DatabaseTableInfoCommand');

@@ -266,6 +266,19 @@ if (! function_exists('tap')) {
     }
 }
 
+if (! function_exists('unwrap')) {
+    function unwrap($input, $check_if_one = true)
+    {
+        $output = $input;
+
+        if (is_array($input) && isset($input[0]) && (true !== $check_if_one || count($input) === 1)) {
+            $output = $input[0];
+        }
+
+        return $output;
+    }
+}
+
 if (! function_exists('config')) {
     function config($key)
     {

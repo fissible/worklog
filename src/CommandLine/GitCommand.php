@@ -35,6 +35,7 @@ class GitCommand extends BinaryCommand
             $this->registerSubcommand('status');
             $this->registerSubcommand('tag');
             $this->registerSubcommand('versions');
+            $this->registerSubcommand('currentHash');
 
             parent::init();
         }
@@ -64,6 +65,11 @@ class GitCommand extends BinaryCommand
 
 
     // subcommand implementations _{subcommand}()
+
+    protected function _currentHash()
+    {
+        return $this->call('rev-parse HEAD');
+    }
 
     protected function _diff()
     {

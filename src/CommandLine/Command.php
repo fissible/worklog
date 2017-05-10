@@ -59,6 +59,140 @@ class Command
         }
     }
 
+    public function init()
+    {
+        if (! $this->initialized()) {
+            if ($config_file = $this->option('configuration')) {
+                $this->config_file = $config_file;
+            }
+        }
+
+        $this->initialized(true);
+    }
+
+    public function initialized($set = null) {
+        if (!is_null($set)) {
+            $this->initialized = (bool)$set;
+        }
+
+        return $this->initialized;
+    }
+
+    protected static function getSubcommandRegisteredException($subcommand, ...$append) {
+        $message = sprintf("Error: subcommand %s is already registered", $subcommand);
+        foreach ($append as $key => $value) {
+            $message .= ', ' . $value;
+        }
+
+        return new \InvalidArgumentException($message);
+    }
+
+    protected static function getInvalidSubcommandException($subcommand, ...$append) {
+        $message = sprintf("%s: invalid sub-command", $subcommand);
+        foreach ($append as $key => $value) {
+            $message .= ', ' . $value;
+        }
+
+        return new \InvalidArgumentException($message);
+    }
+
+    public function getSubcommand($subcommand = null) {
+        if (is_null($subcommand)) {
+            if (isset($this->subcommand))
+                return $this->subcommand;
+        } else {
+            if ($this->validateSubcommand($subcommand)) {
+                return $this->subcommands[$subcommand];
+            }
+        }
+    }
+
+    public function validateSubcommand($subcommand, $callable_or_method = null) {
+        $valid = false;
+        $valid_subcommands = $this->getValidSubcommands();
+
+        if (is_null($callable_or_method) && in_array($subcommand, $valid_subcommands)) {
+            $valid = true;
+        } elseif (!is_null($callable_or_method)) {
+            // callable is valid
+            $valid = is_callable($callable_or_method);
+
+            // invalidate $subcommand = '_something' to prevent "__something" from being invoked
+            if (!$valid && substr($callable_or_method, 0, 1) !== '_') {
+                // local _ prefixed method is valid
+                $valid = method_exists($this, '_' . $callable_or_method);
+            }
+        }
+
+        return $valid;
+    }
+
+    protected function authorizeSubcommand($subcommand) {
+        $can = false;
+
+        if (!is_null($subcommand) && $this->validateSubcommand($subcommand)) {
+            $can = true;
+        } else {
+            throw new \InvalidArgumentException('Valid subcommands: ' . implode(', ', $this->getValidSubcommands()), 1);
+        }
+
+        return $can;
+    }
+
+    protected function getValidSubcommands() {
+        $commands = [];
+
+        if (isset($this->subcommands)) {
+            $commands = array_keys($this->subcommands);
+        }
+
+        return $commands;
+    }
+
+    protected function runSubcommand($subcommand) {
+        if (false !== $this->authorizeSubcommand($subcommand)) {
+            $this->setSubcommand($subcommand);
+            if (is_callable($this->subcommands[$subcommand])) {
+                $function = $this->subcommands[$subcommand];
+
+                return $function($this);
+            } else {
+                return call_user_func_array([$this, '_' . ltrim($subcommand, '_')], []);
+            }
+        }
+    }
+
+    protected function setSubcommand($subcommand) {
+        if ($this->validateSubcommand($subcommand)) {
+            $this->subcommand = $subcommand;
+        } else {
+            throw static::getInvalidSubcommandException($subcommand);
+        }
+
+        return $this;
+    }
+
+    protected function registerSubcommand($subcommand, $callable_or_method = null) {
+        if (is_null($callable_or_method))
+            $callable_or_method = $subcommand;
+
+        if ($this->validateSubcommand($subcommand, $callable_or_method)) {
+            if (!isset($this->subcommands)) {
+                $this->subcommands = [];
+            }
+            if (!array_key_exists($subcommand, $this->subcommands)) {
+                $this->subcommands[$subcommand] = $callable_or_method;
+            } else {
+                throw static::getSubcommandRegisteredException($subcommand);
+            }
+        } else {
+            throw static::getInvalidSubcommandException(
+                $subcommand,
+                sprintf("%s is not callable nor a local method", $callable_or_method)
+            );
+        }
+    }
+
     public function name()
     {
         $name = '';
