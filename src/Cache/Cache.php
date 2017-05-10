@@ -8,9 +8,9 @@ use Worklog\Application;
  */
 class Cache
 {
-    private $Item;
+    protected $path;
 
-    private $path;
+    private $Item;
 
     private $driver;
 
@@ -122,7 +122,7 @@ class Cache
         }
     }
 
-    private function garbage_collect($do_not_delete = false)
+    protected function garbage_collect($do_not_delete = false)
     {
         if ($this->Item()->is_expired()) {
             if (! static::$DO_NOT_PURGE && ! $do_not_delete) {

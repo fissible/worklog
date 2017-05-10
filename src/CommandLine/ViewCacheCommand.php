@@ -69,40 +69,41 @@ class ViewCacheCommand extends Command
             }
         }
         
-        $grid_data = $raw_cache_data = [];
+        $grid_data = [];
         $registry = $this->App()->Cache()->registry();
-        // $template = [ 40, 38, 40, 19, 21 ];
-        $template = [ 40, 38, null, null, null ];
+        $template = null;
 
         if (count($registry)) {
-            foreach ($registry as $cache_name => $path) {
-                $raw_cache_data = $this->App()->Cache()->load($cache_name, true);
+            foreach ($registry as $cache_name => $CacheItem) {
+                $path = $CacheItem->filepath();
 
-                if ($tags && ! array_intersect($tags, $raw_cache_data['tags'])) {
+                if (isset($tags) && ! empty($tags) && ! array_intersect($tags, $CacheItem->tags)) {
                     continue;
                 }
 
                 $data_out = '-';
-                if (is_scalar($raw_cache_data['data'])) {
-                    $data_out = $raw_cache_data['data'];
-                } elseif (is_array($raw_cache_data['data'])) {
-                    $data_out = print_r($raw_cache_data['data'], 1);
+                if (is_scalar($CacheItem->data)) {
+                    $data_out = $CacheItem->data;
+                } elseif (is_array($CacheItem->data)) {
+                    $data_out = print_r($CacheItem->data, true);
+                } elseif ($CacheItem->data instanceof \stdClass) {
+                    $data_out = print_r(json_decode(json_encode($CacheItem->data), true), true);
                 } else {
-                    $data_out = get_class($raw_cache_data['data']);
+                    $data_out = get_class($CacheItem->data);
                 }
                 $data_out = preg_replace('/[\r\n\s]+/', ' ', $data_out);
 
                 $grid_data[] = [
-                    $raw_cache_data['name'],
+                    $CacheItem->name,
                     basename($path),
                     $data_out,
-                    date("Y-m-d H:i:s", $raw_cache_data['expiry']),
-                    implode(', ', $raw_cache_data['tags'])
+                    ($CacheItem->expiry > 0 ? date("Y-m-d g:i a", $CacheItem->expiry) : '-'),
+                    implode(', ', $CacheItem->tags)
                 ];
             }
 
             if (count($grid_data)) {
-                $output = Output::data_grid([ 'Name', 'File', 'Data', 'Expiry', 'Tags' ], $grid_data/*, $template*/);
+                $output = Output::data_grid([ 'name', 'file', 'data', 'expiry', 'tags' ], $grid_data, $template);
             }
         }
 
