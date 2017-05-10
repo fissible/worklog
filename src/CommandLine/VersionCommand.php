@@ -57,7 +57,8 @@ class VersionCommand extends Command
     protected function _switch()
     {
         if ($hash = $this->gitHashForTag($this->getData('version'))) {
-            Command::call(GitCommand::class, sprintf('checkout %s', $hash));
+            Command::call(GitCommand::class, 'fetch');
+            Command::call(GitCommand::class, sprintf('checkout tags/%s', $hash));
             Command::call(ComposerCommand::class, 'install');
         }
 
