@@ -14,6 +14,7 @@ class GitCommand extends BinaryCommand
     public static $description = 'Run composer';
 
     public static $options = [
+        'p' => ['req' => null, 'description' => 'Push the commit after recording it.'],
         'a' => ['req' => null, 'description' => 'Annotated tag'],
         'd' => ['req' => null, 'description' => 'Delete a tag'],
         'l' => ['req' => null, 'description' => 'Search for tags with a particular pattern'],
@@ -83,6 +84,8 @@ class GitCommand extends BinaryCommand
      */
     protected function _record()
     {
+        $flags = $this->flags();
+
         // get last commit message
         $commit_message = $this->getCommitMessageAtRevision('HEAD');
 
@@ -104,8 +107,12 @@ class GitCommand extends BinaryCommand
             }
         }
         
-        $this->call(  'add .');
+        $this->call('add .');
         $this->call([ 'commit -m', escapeshellarg($commit_message) ]);
+
+        if (array_key_exists('p', $flags)) {
+            $this->call('push');
+        }
 
     }
 

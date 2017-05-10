@@ -2,6 +2,7 @@
 namespace Worklog\CommandLine;
 
 use Carbon\Carbon;
+use Worklog\Report;
 use Worklog\Models\Task;
 use Worklog\Services\TaskService;
 
@@ -17,7 +18,7 @@ class ListCommand extends Command
 
     public static $description = 'Show work log entries';
     public static $options = [
-        'i' => ['req' => true, 'description' => 'The JIRA Issue key'],
+        'i' => ['req' => true, 'description' => 'The Jira Issue key'],
         'l' => ['req' => null, 'description' => 'Entries from last week']
     ];
     public static $arguments = [ 'issue' ];

@@ -39,6 +39,34 @@ class Cache
         return $this->Item;
     }
 
+    public function Items($filter = null)
+    {
+        $Items = [];
+        $apply_filter = function($_Item) use ($filter) {
+            if (is_array($filter)) {
+                foreach ($filter as $key => $value) {
+                    if (isset($_Item->{$key}) && $_Item->{$key} == $value) {
+                        return true;
+                    }
+                }
+            } elseif (is_callable($filter)) {
+                if ($filter($_Item)) {
+                    return true;
+                }
+            }
+
+            return false;
+        };
+
+        foreach ($this->registry as $name => $CacheItem) {
+            if (is_null($filter) || $apply_filter($CacheItem) === true) {
+                $Items[] = $CacheItem;
+            }
+        }
+
+        return collect($Items);
+    }
+
     public function setDriver($driver)
     {
         $this->driver = $driver;
@@ -53,7 +81,12 @@ class Cache
 
     public function is_setup()
     {
-        return isset($this->registry);
+        return isset($this->registry) && ! empty($this->registry);
+    }
+
+    public static function file_type()
+    {
+        return self::DRIVER_ARRAY;
     }
 
     /**
@@ -123,7 +156,7 @@ class Cache
 
     public function is_registered(CacheItem $CacheItem)
     {
-        if ($CacheItem->name && is_scalar($CacheItem->name)) {
+        if ($CacheItem->name && is_scalar($CacheItem->name) && isset($this->registry)) {
             return array_key_exists($CacheItem->name, $this->registry);
         }
     }
@@ -166,14 +199,17 @@ class Cache
                 } catch (\Exception $e) {
                     $data = call_user_func($data);
                 }
+
+                // decorator function
+                if (is_callable($data)) {
+                    $data = $data($CacheItem);
+                }
             }
 
             $CacheItem = $this->write($CacheItem, $data, $tags, $expires_in_seconds);
-
-            $data = $CacheItem->data;
         }
 
-        return $data;
+        return $CacheItem->data;
     }
 
     /**
@@ -211,18 +247,27 @@ class Cache
                 $name = $name->name;
             }
 
-            if (is_null($name)) {
-                foreach ($this->registry as $_name => $CacheItem) {
-                    $deleted = $this->delete($CacheItem);
+            if (is_null($name) && ! $tags) {
+                if (! is_null($this->registry)) {
+                    foreach ($this->registry as $_name => $CacheItem) {
+                        $deleted = $this->delete($CacheItem);
+                    }
                 }
+                
             } elseif ($tags) {
-                $tags = $name;
+                if (is_bool($tags)) {
+                    $tags = (array) $name;
+                    $name = null;
+                }
+                
                 if (! is_array($tags)) {
                     $tags = [ $tags ];
                 }
-                foreach ($this->registry as $_name => $CacheItem) {
-                    if (array_intersect($tags, $CacheItem->tags)) {
-                        $deleted = $this->delete($CacheItem);
+                if (! is_null($this->registry)) {
+                    foreach ($this->registry as $_name => $CacheItem) {
+                        if (array_intersect($tags, $CacheItem->tags)) {
+                            $deleted = $this->delete($CacheItem);
+                        }
                     }
                 }
             } elseif (isset($this->registry[$name])) {
@@ -267,6 +312,8 @@ class Cache
         return $CacheItem;
     }
 
+    /*
+     */
     public function load_tags($tags)
     {
         $this->setup();
@@ -277,14 +324,37 @@ class Cache
 
             if (isset($this->registry)) {
                 foreach ($this->registry as $name => $CacheItem) {
-                    if (array_intersect($tags, $CacheItem->tags)) {
-                        if ($CacheItem->is_registered()) {
-                            $items[$name] = $CacheItem;
+                    if (array_intersect($tags, $CacheItem->tags) && $CacheItem->is_registered()) {
+                        $items[$name] = $CacheItem;
+                    }
+                }
+            }
+        }
+
+        return $items;
+    }
+
+    /*
+     */
+    public function load_tagsMatch($match)
+    {
+        $this->setup();
+
+        $items = [];
+        if (! empty($match)) {
+            $match = static::tags($match);
+
+            if (isset($this->registry)) {
+                foreach ($this->registry as $name => $CacheItem) {
+                    foreach ($CacheItem->tags as $key => $value) {
+                        foreach ($match as $_key => $_match) {
+                            if (preg_match($_match, $value) && $CacheItem->is_registered()) {
+                                $items[$name] = $CacheItem;
+                            }
                         }
                     }
                 }
             }
-
         }
 
         return $items;

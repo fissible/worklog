@@ -13,6 +13,8 @@ class BinaryCommand extends Command
 
     protected $binary;
 
+    protected static $collect_output = false;
+
     protected $config_file;
 
     protected $initialized = false;
@@ -241,6 +243,14 @@ class BinaryCommand extends Command
         return $this->executed;
     }
 
+    public static function collect_output($collect = true)
+    {
+        $original = static::$collect_output;
+        static::$collect_output = (bool) $collect;
+
+        return $original;
+    }
+
     /**
      * Pass arbitrary command to exec(). Obviously, be careful.
      *
@@ -268,14 +278,15 @@ class BinaryCommand extends Command
                     }
                 } else {
                     // redirect to stdout
-                    if (false === strpos($command, 'tty')) {
+                    if ((static::$collect_output && false !== strpos($command, 'tty')) || (! static::$collect_output) && false === strpos($command, 'tty')) {
+                        $command = str_replace('tty', ' ', $command);
                         $command .= ' > `tty`';
                     }
                 }
             }
             
 
-            debug($command, 'red');
+            // debug($command, 'red');
             $this->output = [];
             exec($command, $this->output);
 
