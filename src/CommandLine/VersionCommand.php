@@ -23,9 +23,16 @@ class VersionCommand extends Command
 //    public static $usage = '%s [-ls] [opt1]';
     public static $menu = true;
 
+    protected static $exception_strings = [
+        'detached_head' => 'Your local repository is not synced with a particular version',
+        'invalid_tag' => 'The supplied version does not exist'
+    ];
+
+
     public function init()
     {
         if (! $this->initialized()) {
+            $this->registerSubcommand('check');
             $this->registerSubcommand('switch');
 
             parent::init();
@@ -45,10 +52,49 @@ class VersionCommand extends Command
         if ($tag = $this->gitTagFor('HEAD')) {
             return $tag;
         } else {
-            return 'Your local repository is not synced with a particular version.';
+            throw new \Exception(static::$exception_strings['detached_head']);
         }
     }
 
+
+    /**
+     * @return mixed
+     * @throws \Exception
+     */
+    protected function _check()
+    {
+        Command::call(GitCommand::class, 'fetch -q');
+
+        $tags = Command::call(GitCommand::class, 'tag');
+        $args = $this->arguments();
+
+        if (isset($args[1])) {
+            $tag = $args[1];
+
+            if (! in_array($tag, $tags)) {
+                throw new \Exception(static::$exception_strings['invalid_tag']);
+            }
+        } else {
+            $tag = $this->gitTagFor('HEAD');
+        }
+
+        $latest_tag = $tag;
+        $latest_result = null;
+
+        foreach ($tags as $key => $_tag) {
+
+            if (($result = strcmp($_tag, $tag)) > 1) {
+                $latest_tag = $_tag;
+                $latest_result = $result;
+            }
+        }
+
+        if ($latest_result) {
+            return sprintf('Later version %s available', $latest_tag);
+        } else {
+            return 'You have the most up to date version';
+        }
+    }
 
     /**
      * @return mixed
@@ -56,7 +102,7 @@ class VersionCommand extends Command
     protected function _switch()
     {
         if ($hash = $this->gitHashForTag($this->getData('version'))) {
-            Command::call(GitCommand::class, 'fetch');
+            Command::call(GitCommand::class, 'fetch -q');
             Command::call(GitCommand::class, sprintf('checkout %s -q', $hash));
             Command::call(ComposerCommand::class, 'install');
         }
