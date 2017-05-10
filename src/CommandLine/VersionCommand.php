@@ -37,7 +37,6 @@ class VersionCommand extends Command
         parent::run();
 
         BinaryCommand::collect_output();
-//        $currentCommitHash = $this->gitHashFor();
 
         if ($subcommand = $this->argument('subcommand')) {
             return $this->runSubcommand($subcommand);
