@@ -20,7 +20,8 @@ class GitCommand extends BinaryCommand
         'a' => ['req' => null, 'description' => 'Annotated tag'],
         'd' => ['req' => null, 'description' => 'Delete a tag'],
         'l' => ['req' => null, 'description' => 'Search for tags with a particular pattern'],
-        'm' => ['req' => true, 'description' => 'Message text']
+        'm' => ['req' => true, 'description' => 'Message text'],
+        'r' => ['req' => null, 'description' => 'Random flag.'],
     ];
 
     public static $arguments = [ 'subcommand' ];
@@ -37,7 +38,7 @@ class GitCommand extends BinaryCommand
             $this->registerSubcommand('revision');
             $this->registerSubcommand('status');
             $this->registerSubcommand('tag');
-            $this->registerSubcommand('versions');
+            $this->registerSubcommand('tags');
 
             parent::init();
         }
@@ -75,7 +76,7 @@ class GitCommand extends BinaryCommand
 
     protected function _diff()
     {
-        return Git::diff($this->arguments());
+        return Git::diff($this->arguments('diff'));
     }
 
     /**
@@ -83,19 +84,13 @@ class GitCommand extends BinaryCommand
      */
     protected function _record()
     {
-        $flags = $this->flags();
-
         // get last commit message
         $commit_message = Git::commit_message('HEAD');
 
         // cUrl silly commit message
-//        $output = unwrap($this->call(function($curl) {
-//            $curl->setRawCommand( 'curl -vs http://whatthecommit.com/index.txt 2> /dev/null', true);
-//            return $curl;
-//        }, BinaryCommand::class, false), false);
-//        if ($output) {
-//            $commit_message = $output;
-//        }
+        if ($this->flag('r') && $output = $this->getRandomCommitMessage()) {
+            $commit_message = $output;
+        }
 
         if (IS_CLI) {
             if ($input = Input::ask('Commit message'.($commit_message ? ' ('.$commit_message.')' : '').': ', $commit_message)) {
@@ -106,18 +101,16 @@ class GitCommand extends BinaryCommand
             }
         }
         
-//        $this->call('add .');
-        $this->call([ 'commit -a -m', escapeshellarg($commit_message) ]);
+        Git::commit($commit_message, true);
 
-        if (array_key_exists('p', $flags)) {
-            $this->call('push');
+        if ($this->flag('p')) {
+            Git::push();
         }
-
     }
 
-    protected function _status()
+    protected function _status($short = true)
     {
-        return $this->call('status --short');
+        return Git::status($short);
     }
 
     /**
@@ -125,8 +118,9 @@ class GitCommand extends BinaryCommand
      */
     protected function _tag()
     {
-        $arguments = $this->arguments();
-        $flags = $this->flags();
+        Git::fetch(true);
+
+        $arguments = $this->arguments('tag');
         $command = [ 'tag' ];
 
         $annotate = $this->flag('a') || ($this->flag('m') && (false === $this->flag('s') && false === $this->flag('u')));
@@ -136,28 +130,24 @@ class GitCommand extends BinaryCommand
         switch (true) {
             case (false !== $annotate):
                 $command[] = '-a';
-                if (isset($arguments[1])) { //      [0] assumed to be "tag"
-                    $command[] = $arguments[1]; //  [1] assumed to be the tag name
+                if ($tag = unwrap($arguments)) {
+                    $command[] = $tag;
                 }
-
                 if ($message = $this->flag('m')) {
                     $command[] = '-m '.escapeshellarg($message);
                 }
                 break;
             case (false !== $delete):
                 $command[] = '-d';
-                if (isset($arguments[1])) { //      [0] assumed to be "tag"
-                    $command[] = $arguments[1]; //  [1] assumed to be the tag name
+                if ($tag = unwrap($arguments)) {
+                    $command[] = $tag;
                 }
                 break;
             default:
-                foreach ($flags as $key => $flag) {
+                foreach ($this->flags() as $key => $flag) {
                     $command[] = '-'.ltrim($flag, '-');
                 }
                 foreach ($arguments as $key => $argument) {
-                    if ($key == 0 && $argument == 'tag') {
-                        continue;
-                    }
                     $command[] = $argument;
                 }
                 break;
@@ -174,7 +164,7 @@ class GitCommand extends BinaryCommand
 
         if (IS_CLI) {
             if ($annotate && ! isset($message)) {
-                $prompt = 'Annotated tag description'.(array_key_exists('a', $flags) ? '' :' (optional)').': ';
+                $prompt = 'Annotated tag description'.($this->flag('a') ? '' :' (optional)').': ';
                 if ($input = Input::ask($prompt)) {
                     $message = trim($input);
                     if (strlen($message)) {
@@ -190,8 +180,14 @@ class GitCommand extends BinaryCommand
     /**
      * @return mixed
      */
-    protected function _versions()
+    protected function _tags()
     {
-        return $this->call('tag');
+        Git::fetch(true);
+        return Git::tags($this->arguments('tags'));
+    }
+
+    private function getRandomCommitMessage()
+    {
+        return unwrap(BinaryCommand::call('curl -vs http://whatthecommit.com/index.txt 2> /dev/null'));
     }
 }

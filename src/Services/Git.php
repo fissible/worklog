@@ -54,7 +54,6 @@ class Git
         if (trim($commit_message)) {
             $arguments[] = sprintf('--message=%s', escapeshellarg(trim($commit_message)));
         }
-        if (! in_array('-m', $arguments))
         return static::call('commit', $arguments);
     }
 
@@ -66,9 +65,7 @@ class Git
     public static function fetch($quiet = false)
     {
         $arguments = [];
-        if (! DEVELOPMENT_MODE) {
-            $arguments = static::add_quiet_flag($arguments);
-        }
+        if (! DEVELOPMENT_MODE) $arguments = static::add_quiet_flag($arguments);
         return static::call('fetch', $arguments);
     }
 
@@ -79,12 +76,35 @@ class Git
 
     public static function push($arguments = [])
     {
-        return static::call('diff', $arguments);
+        return static::call('push', $arguments);
     }
 
-    public static function tags($arguments = [])
+    public static function status($short = false)
+    {
+        $arguments = [];
+        if ($short) $arguments = static::add_short_flag($arguments);
+        return static::call('status', $arguments);
+    }
+
+    public static function tag($arguments = [])
     {
         return static::call('tag', $arguments);
+    }
+
+    public static function tags($regex = null)
+    {
+        $tags = static::call('tag', '2>&1');
+
+        if ($regex = unwrap($regex)) {
+            foreach ($tags as $key => $tag) {
+                if (! preg_match($regex, $tag)) {
+                    unset($tags[$key]);
+                }
+            }
+            $tags = array_values($tags);
+        }
+
+        return $tags;
     }
 
     public static function call($subcommand = '', $arguments = [])
@@ -102,13 +122,23 @@ class Git
         return $arguments;
     }
 
+    public static function add_short_flag($arguments = [])
+    {
+        $arguments = (array)$arguments;
+        if (! in_array('-s', $arguments) && ! in_array('-l', $arguments)) {
+            $arguments[] = '-s';
+        }
+
+        return $arguments;
+    }
+
     public static function normalize_args($args = [], $subcommand = '')
     {
         $args = (array) $args;
-        if (isset($args[0]) && $args[0] == 'git') {
+        if (current($args) == 'git') {
             array_shift($args);
         }
-        if ($subcommand && (! isset($args[0]) || $args[0] !== $subcommand)) {
+        if (! empty($subcommand) && current($args) !== $subcommand) {
             array_unshift($args, $subcommand);
         }
 

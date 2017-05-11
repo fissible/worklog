@@ -249,7 +249,7 @@ class BinaryCommand extends Command
                     // redirect to stdout
                     if ((static::$collect_output && false !== strpos($command, 'tty')) || (! static::$collect_output) && false === strpos($command, 'tty')) {
                         $command = str_replace('tty', ' ', $command);
-                        $command .= ' > `tty`';
+                        $command .= ' > `tty` 2>&1';
                     }
                 }
             }
