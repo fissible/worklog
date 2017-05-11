@@ -357,6 +357,21 @@ class Command
         return static::$registry;
     }
 
+    /**
+     * @param array $args
+     * @param string $must_be
+     * @return mixed|null
+     */
+    public static function shift(&$args = [], $must_be = '')
+    {
+        $pulled = null;
+        if (empty($must_be) || (isset($args[0]) && $args[0] == $must_be)) {
+            $pulled = array_shift($args);
+        }
+
+        return $pulled;
+    }
+
     public static function normalize_args($args = [])
     {
         if (! is_array($args)) {
@@ -570,12 +585,16 @@ class Command
     	}
     }
 
-    protected function arguments()
+    protected function arguments($pull = '')
     {
         $args = [];
 
         if ($Options = $this->Options()) {
-        	$args = $this->Options()->args();
+        	if ($args = $this->Options()->args()) {
+                if (! empty($pull)) {
+                    Command::shift($args, $pull);
+                }
+            }
         }
 
         return $args;

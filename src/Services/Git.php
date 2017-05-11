@@ -63,6 +63,15 @@ class Git
         return static::call('diff', $arguments);
     }
 
+    public static function fetch($quiet = false)
+    {
+        $arguments = [];
+        if (! DEVELOPMENT_MODE) {
+            $arguments = static::add_quiet_flag($arguments);
+        }
+        return static::call('fetch', $arguments);
+    }
+
     public static function hash($revision = 'HEAD')
     {
         return static::call('rev-parse', $revision);
@@ -81,6 +90,16 @@ class Git
     public static function call($subcommand = '', $arguments = [])
     {
         return GitCommand::call(static::normalize_args($arguments, $subcommand));
+    }
+
+    public static function add_quiet_flag($arguments = [])
+    {
+        $arguments = (array)$arguments;
+        if (! in_array('-q', $arguments) && ! in_array('-v', $arguments)) {
+            $arguments[] = '-q';
+        }
+
+        return $arguments;
     }
 
     public static function normalize_args($args = [], $subcommand = '')

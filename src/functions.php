@@ -57,14 +57,14 @@ if (! function_exists('coalesce')) {
     function coalesce(...$inputs)
     {
         foreach ($inputs as $input) {
-            if (! is_null($input)) return $input;
+            if (! is_null($input) && ! empty($input)) return $input;
         }
     }
 }
 
 function debug($input = '', $color = 'yellow', $internally_invoked = false)
 {
-    if (DEVELOPMENT_MODE == true && ! empty($input)) {
+    if (DEVELOPMENT_MODE == true) {
         $bordr = Output::color(Output::uchar('ver', 'heavy'), $color);
         $width = floor(Output::cols() / 1.5);
 
@@ -280,8 +280,8 @@ if (! function_exists('unwrap')) {
     {
         $output = $input;
 
-        if (is_array($input) && isset($input[0]) && (true !== $check_if_one || count($input) === 1)) {
-            $output = $input[0];
+        if ((is_array($input) || $input instanceof \stdClass) && (true !== $check_if_one || count($input) === 1)) {
+            $output = current($input);
         }
 
         return $output;

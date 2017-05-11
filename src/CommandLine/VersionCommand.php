@@ -1,6 +1,8 @@
 <?php
 
 namespace Worklog\CommandLine;
+use Exception;
+use Worklog\Services\Git;
 
 /**
  * VersionCommand
@@ -38,6 +40,7 @@ class VersionCommand extends Command
     {
         if (! $this->initialized()) {
             $this->registerSubcommand('check');
+            $this->registerSubcommand('latest');
             $this->registerSubcommand('list');
             $this->registerSubcommand('switch');
 
@@ -60,77 +63,29 @@ class VersionCommand extends Command
 
 
     /**
-     * @return mixed
-     * @throws \Exception
-     */
-    protected function _current()
-    {
-        if ($tag = $this->gitTagFor('HEAD')) {
-            return $tag;
-        } else {
-            throw new \Exception(static::$exception_strings['detached_head']);
-        }
-    }
-
-
-    /**
-     * @return mixed
-     * @throws \Exception
-     */
-    protected function _list()
-    {
-        $tags = Command::call(GitCommand::class, 'tag');
-
-        foreach ($tags as $key => $tag) {
-            // self::MINIMUM_VERSION
-        }
-    }
-
-
-    /**
      * Check if a newer version is available
      * @param null $tag
      * @param bool $internally_invoked
      * @return mixed
-     * @throws \Exception
+     * @throws Exception
      */
     protected function _check($tag = null, $internally_invoked = false)
     {
-        Command::call(GitCommand::class, 'fetch -q');
+        $tags = $this->_list();
 
-        $tags = Command::call(GitCommand::class, 'tag');
-        $args = $this->arguments();
+        // check method input, command input, default to current version
+        $current = coalesce($tag, $this->getData('version'), $this->_current());
+        $latest = $this->_latest();
 
-        // Current version
-        if (is_null($tag)) {
-            if (isset($args[1])) {
-                $tag = $args[1];
-
-                if (! in_array($tag, $tags)) {
-                    throw new \Exception(static::$exception_strings['invalid_tag']);
-                }
-            } else {
-                $tag = $this->gitTagFor('HEAD');
-            }
-        }
-
-        $latest_tag = $tag;
-        $latest_result = null;
-
-        foreach ($tags as $key => $_tag) {
-            $comp = version_compare($tag, $_tag);
-
-            if ($comp > -1 || $comp > $latest_result) {
-                $latest_tag = $_tag;
-                $latest_result = $comp;
-            }
+        if (! in_array($current, $tags) || ! in_array($latest, $tags)) {
+            throw new Exception(static::$exception_strings['invalid_tag']);
         }
 
         if ($internally_invoked) {
-            return [$latest_tag, $latest_result];
+            return version_compare($current, $latest);
         } else {
-            if ($latest_result) {
-                return sprintf('Later version %s available', $latest_tag);
+            if (version_compare($current, $latest, '<')) {
+                return sprintf('Later version %s available', $latest);
             } else {
                 return 'You have the most up to date version';
             }
@@ -138,34 +93,74 @@ class VersionCommand extends Command
     }
 
     /**
-     * @param null $new
+     * @return mixed
+     * @throws Exception
+     */
+    protected function _current()
+    {
+        if ($tag = $this->gitTagFor('HEAD')) {
+            return $tag;
+        } else {
+            throw new Exception(static::$exception_strings['detached_head']);
+        }
+    }
+
+    /**
+     * @return array|null
+     * @internal param bool $return_diff
+     */
+    protected function _latest()
+    {
+        $tags = $this->_list();
+        return end($tags);
+    }
+
+    /**
+     * @return mixed
+     * @throws Exception
+     */
+    protected function _list()
+    {
+        Git::fetch(true);
+        $tags = Git::tags();
+        foreach ($tags as $key => $tag) {
+            if (version_compare($tag, self::MINIMUM_VERSION, '<')) {
+                unset($tags[$key]);
+            }
+        }
+        usort($tags, 'version_compare');
+
+        return $tags;
+    }
+
+    /**
+     * @param null $tag
      * @param bool $internally_invoked
      * @return mixed
      */
-    protected function _switch($new = null, $internally_invoked = false)
+    protected function _switch($tag = null, $internally_invoked = false)
     {
         $switched_to = false;
-        $new = coalesce($new, $this->getData('version'), $this->_check($new, true)[0]);
 
-        debug(compact('new', 'diff'), 'cyan');
-
-
-        if ($new) {
-            if ($hash = $this->gitHashForTag($new)) {
-                $switched_to = $new;
-
-                debug('$ git fetch -q'."\n".sprintf('       $ git checkout %s -q', $hash)."\n".'       $ composer install', 'green');
-//                Command::call(GitCommand::class, 'fetch -q');
-//                Command::call(GitCommand::class, sprintf('checkout %s -q', $hash));
-//                Command::call(ComposerCommand::class, 'install');
+        if ($tag = coalesce($tag, $this->getData('version'), $this->_latest())) {
+            if ($this->flag('f') || $this->valid($tag)) {
+                if ($hash = $this->gitHashForTag($tag)) {
+                    $switched_to = $tag;
+                    Command::call(GitCommand::class, 'fetch -q');
+                    Command::call(GitCommand::class, sprintf('checkout %s -q', $hash));
+                    Command::call(ComposerCommand::class, 'install');
+                }
+            } else {
+                throw new \InvalidArgumentException(static::$exception_strings['invalid_tag']);
             }
+        } else {
+            throw new \InvalidArgumentException(static::$exception_strings['invalid_tag']);
         }
 
         if ($internally_invoked) {
             return $switched_to;
         } else {
             if ($switched_to) {
-                debug($switched_to);
                 return sprintf('Switched to version %s', $switched_to);
             } else {
                 return 'You have the most up to date version';
@@ -180,7 +175,9 @@ class VersionCommand extends Command
      */
     private function gitHashFor($revision_specifier = 'HEAD')
     {
-        return unwrap(Command::call(GitCommand::class, sprintf('rev-parse %s', $revision_specifier)));
+        return unwrap(Git::call(
+            sprintf('rev-parse %s', $revision_specifier))
+        );
     }
 
     /**
@@ -190,14 +187,9 @@ class VersionCommand extends Command
      */
     private function gitHashForTag($tag)
     {
-        debug($tag);
-        return unwrap(
-            Command::call(
-            GitCommand::class, sprintf(
-            'rev-list -n 1 %s', unwrap($tag, false)
-            )
-        )
-        );
+        return unwrap(Git::call(
+            sprintf('rev-list -n 1 %s', unwrap($tag, false))
+        ));
     }
 
     /**
@@ -214,48 +206,16 @@ class VersionCommand extends Command
             $commitHash = $this->gitHashFor($revision_specifier);
         }
 
-        $result = Command::call(
-            GitCommand::class,
+        return unwrap(Git::call(
             sprintf(
                 "show-ref --tags -d | grep ^%s | sed -e 's,.* refs/tags/,,' -e 's/\\^{}//'",
                 $commitHash
             )
-        );
-
-        if ($result) {
-            return unwrap($result);
-        }
-
-        return false;
+        ));
     }
 
-    /**
-     * @param bool $return_diff
-     * @return array|null
-     */
-    private function gitLatestVersion($return_diff = false)
+    public function valid($version)
     {
-        $tags = Command::call(GitCommand::class, 'tag');
-
-        $latest_tag = null;
-        $latest_result = null;
-
-        foreach ($tags as $key => $_tag) {
-
-            if (is_null($latest_tag)) {
-                $latest_tag = $_tag;
-            }
-
-            if (($result = strcmp($_tag, $latest_tag)) > 0) {
-                $latest_tag = $_tag;
-                $latest_result = $result;
-            }
-        }
-
-        if ($return_diff) {
-            return [ $latest_tag, $latest_result ];
-        } else {
-            return $latest_tag;
-        }
+        return in_array($version, $this->_list());
     }
 }
