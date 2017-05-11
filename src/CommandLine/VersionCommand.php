@@ -171,11 +171,11 @@ class VersionCommand extends Command
                         $message = $prompt_commit_message($annotation);
                     }
 
-                    // get tag -a <tag> -m "<message>"
-                    Git::call('tag '.($annotation ? '-a -m '.escapeshellarg($annotation).' ' : '').$new);
-
                     // get commit -a -m "<message>"
                     Git::call('commit -a '.($message ? '-m '.escapeshellarg($message).' ' : ''));
+
+                    // get tag -a <tag> -m "<message>"
+                    Git::call('tag '.($annotation ? '-a -m '.escapeshellarg($annotation).' ' : '').$new);
 
                     // get push origin master --tags
                     Git::call('push origin master --tags');
