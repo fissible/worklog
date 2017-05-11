@@ -79,6 +79,11 @@ class Git
         return static::call('push', $arguments);
     }
 
+    public static function show_origin()
+    {
+        return static::call('remote show origin');
+    }
+
     public static function status($short = false)
     {
         $arguments = [];
