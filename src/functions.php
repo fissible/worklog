@@ -24,6 +24,36 @@ function App()
     return $App;
 }
 
+if (! function_exists('banner')) {
+    function banner($input, $title = null, $color = 'white', $indent = '', $print_horizontal_borders = true) {
+        $bordr = Output::color(Output::uchar('ver', 'heavy'), $color);
+        $width = floor(Output::cols() / 1.5);
+
+        if ($print_horizontal_borders) {
+            Output::line(Output::color(Output::horizontal_line('top', $width, 'heavy'), $color), '', $width);
+
+        }
+        if ($title) {
+            Output::line(Output::color($title, $color), $bordr, $width);
+        }
+
+        if (is_array($input)) {
+            $input = print_r($input, true);
+            $input = explode("\n", $input);
+            foreach ($input as $str) {
+                if (! empty($str)) {
+                    banner($str, null, $indent, $color, false);
+                }
+            }
+        } elseif (! empty($input)) {
+            Output::line($indent.$input, $bordr, $width);
+        }
+        if ($print_horizontal_borders) {
+            Output::line(Output::color(Output::horizontal_line('bot', $width, 'heavy'), $color), '', $width);
+        }
+    }
+}
+
 function caller($key = null, $index = 0)
 {
     $trace = debug_backtrace(false);

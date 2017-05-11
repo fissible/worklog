@@ -41,6 +41,7 @@ class VersionCommand extends Command
         if (! $this->initialized()) {
             $this->registerSubcommand('check');
             $this->registerSubcommand('latest');
+            $this->registerSubcommand('increment');
             $this->registerSubcommand('list');
             $this->registerSubcommand('switch');
 
@@ -102,6 +103,115 @@ class VersionCommand extends Command
             return $tag;
         } else {
             throw new Exception(static::$exception_strings['detached_head']);
+        }
+    }
+
+    /**
+     * @throws Exception
+     */
+    protected function _increment()
+    {
+        if (DEVELOPMENT_MODE) {
+
+            if (! $this->gitTagFor('HEAD')) {
+                // on a commit with no TAG
+                $status = trim(end(Git::show_origin()));
+
+                if (false !== strpos($status, 'up to date')) {
+                    $new = null;
+
+                    $prompt_version = function($guess) {
+                        $new = false;
+                        if ($input = Input::ask('What is the new version? ('.$guess.'): ', $guess)) {
+                            $input = trim($input);
+                            if (strlen($input)) {
+                                $new = $input;
+                            }
+                        }
+                        return $new;
+                    };
+
+                    $prompt_commit_message = function($message = null) {
+                        if ($input = Input::ask('Commit message'.($message ? ' ('.$message.')' : '').': ', $message)) {
+                            $input = trim($input);
+                            if (strlen($input)) {
+                                $message = $input;
+                            }
+                        }
+                        return $message;
+                    };
+
+                    banner(
+                        "Given a version number MAJOR.MINOR.PATCH, increment the:\n".
+                        "    MAJOR version when you make incompatible API changes,\n".
+                        "    MINOR version when you add functionality in a backwards-compatible manner, and\n".
+                        "    PATCH version when you make backwards-compatible bug fixes.",
+                        'Semantic Versioning', 'blue');
+
+                    // get latest, increment
+                    $latest = $this->_latest();
+                    $parts = explode('.', $latest);
+                    $parts[2]++;
+                    $guess = implode('.', $parts);
+
+                    $new = $prompt_version($guess);
+                    while (! preg_match('/^(\d+\.)?(\d+\.)?(\*|\d+)$/', $new)) {
+                        printl('You must enter a valid version string, eg. MAJOR.MINOR.PATCH');
+                        $new = $prompt_version($guess);
+                    }
+
+                    $annotation = '';
+                    if ($input = Input::ask('Annotated tag description: ')) {
+                        $annotation = trim($input);
+                    }
+
+                    $message = $prompt_commit_message($annotation);
+                    while (empty($message)) {
+                        printl('You must enter a commit message');
+                        $message = $prompt_commit_message($annotation);
+                    }
+
+                    // get tag -a <tag> -m "<message>"
+                    Git::call('tag '.($annotation ? '-a -m '.escapeshellarg($annotation).' ' : '').$new);
+
+                    // get commit -a -m "<message>"
+                    Git::call('commit -a '.($message ? '-m '.escapeshellarg($message).' ' : ''));
+
+                    // get push origin master --tags
+                    Git::call('push origin master --tags');
+
+                    return $this->_current();
+
+                } else {
+                    $exception_message = 'Cannot increment, local branch is in an invalid state';
+                    $paren_start = strpos($status, '(') + 1;
+                    $paren_end = strpos($status, '(', $paren_start);
+                    if (false !== $paren_start && false !== $paren_end) {
+                        $status = substr($status, $paren_start, ($paren_end - $paren_start));
+                        $exception_message .= ': '.$status;
+                    }
+
+                    throw new \Exception($exception_message);
+                }
+            } else {
+                $result = $this->_check($this->_current(), true);
+                switch ($result) {
+                    case -1:
+                        // current version lower than the latest
+                        throw new \Exception('You are on an older version and cannot increment');
+                        break;
+                    case 0:
+                        // current version same as the latest
+                        throw new \Exception('You are not on the latest version');
+                        break;
+                    case 1:
+                        // current version higher than the latest
+                        throw new \Exception('You are on a newer version... Are you a wizard?');
+                        break;
+                }
+            }
+        } else {
+            throw new \Exception('You cannot increment the version number in production mode');
         }
     }
 
@@ -175,6 +285,7 @@ class VersionCommand extends Command
      */
     private function gitHashFor($revision_specifier = 'HEAD')
     {
+        Git::fetch(true);
         return unwrap(Git::call(
             sprintf('rev-parse %s', $revision_specifier))
         );
@@ -187,6 +298,7 @@ class VersionCommand extends Command
      */
     private function gitHashForTag($tag)
     {
+        Git::fetch(true);
         return unwrap(Git::call(
             sprintf('rev-list -n 1 %s', unwrap($tag, false))
         ));
@@ -200,6 +312,8 @@ class VersionCommand extends Command
      */
     private function gitTagFor($revision_specifier = 'HEAD', $skip_rev_parse = false)
     {
+        Git::fetch(true);
+
         if ($skip_rev_parse) {
             $commitHash = $revision_specifier;
         } else {
