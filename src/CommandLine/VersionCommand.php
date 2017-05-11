@@ -28,11 +28,17 @@ class VersionCommand extends Command
         'invalid_tag' => 'The supplied version does not exist'
     ];
 
+    const MINIMUM_VERSION = '2.1.8';
 
+
+    /**
+     * Register sub-commands
+     */
     public function init()
     {
         if (! $this->initialized()) {
             $this->registerSubcommand('check');
+            $this->registerSubcommand('list');
             $this->registerSubcommand('switch');
 
             parent::init();
@@ -49,6 +55,16 @@ class VersionCommand extends Command
             return $this->runSubcommand($subcommand);
         }
 
+        return $this->_current();
+    }
+
+
+    /**
+     * @return mixed
+     * @throws \Exception
+     */
+    protected function _current()
+    {
         if ($tag = $this->gitTagFor('HEAD')) {
             return $tag;
         } else {
@@ -61,7 +77,24 @@ class VersionCommand extends Command
      * @return mixed
      * @throws \Exception
      */
-    protected function _check($internally_invoked = false, $tag = null)
+    protected function _list()
+    {
+        $tags = Command::call(GitCommand::class, 'tag');
+
+        foreach ($tags as $key => $tag) {
+            // self::MINIMUM_VERSION
+        }
+    }
+
+
+    /**
+     * Check if a newer version is available
+     * @param null $tag
+     * @param bool $internally_invoked
+     * @return mixed
+     * @throws \Exception
+     */
+    protected function _check($tag = null, $internally_invoked = false)
     {
         Command::call(GitCommand::class, 'fetch -q');
 
@@ -105,20 +138,14 @@ class VersionCommand extends Command
     }
 
     /**
-     * @param bool $internally_invoked
      * @param null $new
+     * @param bool $internally_invoked
      * @return mixed
      */
-    protected function _switch($internally_invoked = false, $new = null)
+    protected function _switch($new = null, $internally_invoked = false)
     {
         $switched_to = false;
-        $force_newest = is_null($new);
-
-        if ($force_newest) {
-            $new = $this->getData('version');
-        } else {
-            list($new, $diff) = $this->_check(true, $new);
-        }
+        $new = coalesce($new, $this->getData('version'), $this->_check($new, true)[0]);
 
         debug(compact('new', 'diff'), 'cyan');
 
@@ -126,9 +153,11 @@ class VersionCommand extends Command
         if ($new) {
             if ($hash = $this->gitHashForTag($new)) {
                 $switched_to = $new;
-                Command::call(GitCommand::class, 'fetch -q');
-                Command::call(GitCommand::class, sprintf('checkout %s -q', $hash));
-                Command::call(ComposerCommand::class, 'install');
+
+                debug('$ git fetch -q'."\n".sprintf('       $ git checkout %s -q', $hash)."\n".'       $ composer install', 'green');
+//                Command::call(GitCommand::class, 'fetch -q');
+//                Command::call(GitCommand::class, sprintf('checkout %s -q', $hash));
+//                Command::call(ComposerCommand::class, 'install');
             }
         }
 
@@ -136,6 +165,7 @@ class VersionCommand extends Command
             return $switched_to;
         } else {
             if ($switched_to) {
+                debug($switched_to);
                 return sprintf('Switched to version %s', $switched_to);
             } else {
                 return 'You have the most up to date version';
@@ -160,7 +190,14 @@ class VersionCommand extends Command
      */
     private function gitHashForTag($tag)
     {
-        return unwrap(Command::call(GitCommand::class, sprintf('rev-list -n 1 %s', $tag)));;
+        debug($tag);
+        return unwrap(
+            Command::call(
+            GitCommand::class, sprintf(
+            'rev-list -n 1 %s', unwrap($tag, false)
+            )
+        )
+        );
     }
 
     /**

@@ -53,6 +53,15 @@ function caller($key = null, $index = 0)
     return $caller;
 }
 
+if (! function_exists('coalesce')) {
+    function coalesce(...$inputs)
+    {
+        foreach ($inputs as $input) {
+            if (! is_null($input)) return $input;
+        }
+    }
+}
+
 function debug($input = '', $color = 'yellow', $internally_invoked = false)
 {
     if (DEVELOPMENT_MODE == true && ! empty($input)) {
