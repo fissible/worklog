@@ -12,7 +12,6 @@ try {
     error_exit(Output::color($e->getMessage(), 'red'));
 }
 if (DEVELOPMENT_MODE && IS_CLI) {
-    print "\n".Application::timer().' seconds'."\n";
-    print "Done.\n";
+    banner(Application::timer().' seconds', '', 'dark_gray');
 }
 exit(0);

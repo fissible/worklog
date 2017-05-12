@@ -10,9 +10,9 @@ class FileStore extends Cache
 {
     private $registry = [];
 
-    private static $DO_NOT_PURGE = false;
-
     private $Item;
+
+    protected static $DO_NOT_PURGE = false;
 
     protected static $file_type = 'json';
 

@@ -224,7 +224,8 @@ function show_errors()
 {
     global $errors;
     if (count($errors)) {
-        printl(implode("\n", Output::color($errors, 'red')));
+        banner(implode("\n", Output::color($errors, 'red')), '', 'red');
+        // printl(implode("\n", Output::color($errors, 'red')));
     }
 }
 

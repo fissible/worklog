@@ -18,7 +18,7 @@ class Cache
 
     private static $store = [];
 
-    private static $DO_NOT_PURGE = false;
+    protected static $DO_NOT_PURGE = false;
 
     const DRIVER_ARRAY = 'array';
 

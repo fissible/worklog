@@ -389,7 +389,14 @@ class Report
         $Query = Task::query();
 
         if (isset($this->issue)) {
-            $Query->where('issue', $this->issue);
+            if (false !== strpos($this->issue, '*')) {
+                $this->issue = str_replace('*', '%', $this->issue);
+            }
+            if (false !== strpos($this->issue, '%')) {
+                $Query->where('issue', 'LIKE', $this->issue);
+            } else {
+                $Query->where('issue', $this->issue);
+            }
         }
 
         if ($this->DateRange[1]->lt($this->DateRange[0])) {
