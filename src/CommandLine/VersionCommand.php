@@ -115,9 +115,12 @@ class VersionCommand extends Command
 
             if (! $this->gitTagFor('HEAD')) {
                 // on a commit with no TAG
-                $status = trim(end(Git::show_origin()));
+                $output = Git::show_origin();
+                $output = end($output);
+                debug($output, 'green');
+                $status = (is_string($output) ? trim($output) : '');
 
-                if (false !== strpos($status, 'up to date')) {
+                if (false !== stripos($status, 'up to date')) {
                     $new = null;
 
                     $prompt_version = function($guess) {
@@ -184,12 +187,18 @@ class VersionCommand extends Command
 
                 } else {
                     $exception_message = 'Cannot increment, local branch is in an invalid state';
-                    $paren_start = strpos($status, '(') + 1;
-                    $paren_end = strpos($status, '(', $paren_start);
-                    if (false !== $paren_start && false !== $paren_end) {
-                        $status = substr($status, $paren_start, ($paren_end - $paren_start));
-                        $exception_message .= ': '.$status;
+
+                    if (false !== stripos($status, 'fast-forwardable')) {
+                        $exception_message .= ': push your local changes to the remote branch';
+                    } else {
+                        $paren_start = strpos($status, '(') + 1;
+                        $paren_end = strpos($status, '(', $paren_start);
+                        if (false !== $paren_start && false !== $paren_end) {
+                            $status = substr($status, $paren_start, ($paren_end - $paren_start));
+                            $exception_message .= ': '.$status;
+                        }
                     }
+                    
 
                     throw new \Exception($exception_message);
                 }
