@@ -44,6 +44,9 @@ class ReportCommand extends Command
     {
         parent::run();
 
+//        $output = Input::text();
+//        debug($output, 'red');
+
         $clear_cache = (bool) $this->option('c');
         $group_by_overidden = false;
         $group_by = $this->option('g');

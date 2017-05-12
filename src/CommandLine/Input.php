@@ -70,4 +70,47 @@ class Input
 
         return $line;
     }
+
+    public static function text()
+    {
+        $output = null;
+        if (env('BINARY_TEXT_EDITOR')) {
+            $temp_dir = '/tmp';
+            $temp_file = md5(rand(111, 999)).'.tmp';
+            $file = $temp_dir.'/'.$temp_file;
+            $temp_dir_exists = is_dir($temp_dir);
+            $temp_file_exists = file_exists($file);
+
+            if (! $temp_dir_exists) {
+                mkdir($temp_dir);
+            }
+
+            file_put_contents($file, [ '', '# Lines starting with \'#\' will be ignored.' ]);
+
+            $Command = new LaunchEditorCommand();
+            $Command->set_invocation_flag();
+            $Command->setData('file', $file);
+            $Command->run();
+
+            if (file_exists($file)) {
+                $output = file($file);
+                while ($line = current($output)) {
+                    if (substr($line, 0, 1) == '#') {
+                        $key = key($output);
+                        unset($output[$key]);
+                    }
+                    next($output);
+                }
+                $output = implode("\n", $output);
+            }
+
+            if (! $temp_file_exists) {
+                unlink($temp_file_exists);
+            }
+            if (! $temp_dir_exists) {
+                rmdir($temp_dir);
+            }
+        }
+        return $output;
+    }
 }

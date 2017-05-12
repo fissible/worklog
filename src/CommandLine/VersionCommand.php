@@ -211,7 +211,7 @@ class VersionCommand extends Command
                         break;
                     case 0:
                         // current version same as the latest
-                        throw new \Exception('You are not on the latest version');
+                        throw new \Exception('You are on the latest version');
                         break;
                     case 1:
                         // current version higher than the latest
