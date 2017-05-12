@@ -258,7 +258,7 @@ function handle_result($result = null)
             print json_encode($result);
         }
     } elseif ($result) {
-        dump($result);
+        dump($result."\n");
     }
 }
 
