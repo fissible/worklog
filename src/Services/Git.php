@@ -12,6 +12,8 @@ use Worklog\CommandLine\GitCommand;
 
 class Git
 {
+    protected static $fetched = false;
+
     public function __construct()
     {
         if (! env('BINARY_GIT')) {
@@ -64,9 +66,17 @@ class Git
 
     public static function fetch($quiet = false)
     {
+        $result = null;
         $arguments = [];
         if (! DEVELOPMENT_MODE) $arguments = static::add_quiet_flag($arguments);
-        return static::call('fetch', $arguments);
+
+        // debounce... kinda
+        if (! static::$fetched || (strtotime('now') - static::$fetched) > 30) {
+            $result = static::call('fetch', $arguments);
+            static::$fetched = strtotime('now');
+        }
+        
+        return $result;
     }
 
     public static function hash($revision = 'HEAD')
