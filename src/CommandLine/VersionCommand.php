@@ -30,7 +30,7 @@ class VersionCommand extends Command
         'invalid_tag' => 'The supplied version does not exist'
     ];
 
-    const MINIMUM_VERSION = '2.1.8';
+    const MINIMUM_VERSION = '3.0.0';
 
 
     /**
@@ -168,10 +168,10 @@ class VersionCommand extends Command
                         $annotation = trim($input);
                     }
 
-                    $message = $prompt_commit_message($annotation);
+                    $message = $prompt_commit_message('['.$new.'] '.$annotation);
                     while (empty($message)) {
                         printl('You must enter a commit message');
-                        $message = $prompt_commit_message($annotation);
+                        $message = $prompt_commit_message('['.$new.'] '.$annotation);
                     }
 
                     // get commit -a -m "<message>"
