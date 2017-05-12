@@ -255,7 +255,7 @@ class BinaryCommand extends Command
             }
             
 
-//            debug($command, 'red');
+           debug($command, 'red');
             $this->output = [];
             exec($command, $this->output);
 

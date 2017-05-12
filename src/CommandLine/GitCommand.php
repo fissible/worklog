@@ -24,7 +24,7 @@ class GitCommand extends BinaryCommand
         'r' => ['req' => null, 'description' => 'Random flag.'],
     ];
 
-    public static $arguments = [ 'subcommand', 'message' ];
+    public static $arguments = [ 'subcommand' ];
 
     protected $subcommands;
     
@@ -85,7 +85,7 @@ class GitCommand extends BinaryCommand
     protected function _record()
     {
         // get last commit message
-        $commit_message = coalesce($this->getData('message'), Git::commit_message('HEAD'));
+        $commit_message = coalesce($this->getData('message'), $this->flag('m'), Git::commit_message('HEAD'));
 
         // cUrl silly commit message
         if ($this->flag('r') && $output = $this->getRandomCommitMessage()) {
