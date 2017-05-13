@@ -76,7 +76,36 @@ class GitCommand extends BinaryCommand
 
     protected function _diff()
     {
-        return Git::diff($this->arguments('diff'));
+        // return Git::diff($this->arguments('diff'));
+        $args = $this->arguments();
+        $args[] = '|';
+        $args[] = APPLICATION_PATH.'/diff-lines';
+        static::collect_output();
+        $output = static::call($args);
+        $last_file = null;
+
+        foreach ($output as $key => $line) {
+            list($file, $line_num, $line) = explode(":", $line, 3);
+            $first_char = substr($line, 0, 1);
+
+            if ($first_char == '+') {
+                $line = Output::color($line, 'light_green');
+            }
+            if ($first_char == '-') {
+                $line = Output::color($line, 'red');
+            }
+            
+            if (is_null($last_file) || $last_file !== $file) {
+                $last_file = $file;
+                $colored_filed = Output::color($file, 'cyan');
+                printl("\n".$colored_filed);
+
+            }
+            printl(sprintf("  %s%s",
+                mb_str_pad(Output::color($line_num, 'dark_gray'), 16, ' ', STR_PAD_RIGHT),
+                $line
+            ));
+        }
     }
 
     /**

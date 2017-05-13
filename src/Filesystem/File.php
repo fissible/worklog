@@ -87,7 +87,7 @@ class File
     {
         if (! $this->exists()) {
             if ($this->is_dir) {
-                printl($this->path);
+                // printl($this->path);
 
                 return mkdir($this->path, $perms, true);
             } else {

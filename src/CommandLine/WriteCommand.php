@@ -20,7 +20,8 @@ class WriteCommand extends Command
     public static $options = [
         'i' => ['req' => true, 'description' => 'The Jira Issue key'],
         'd' => ['req' => true, 'description' => 'The task description'],
-        'e' => ['req' => true, 'description' => 'The task ID to edit']
+        'e' => ['req' => true, 'description' => 'The task ID to edit'],
+        't' => ['req' => null, 'description' => 'Use text editor']
     ];
     public static $arguments = [ 'issue', 'description' ];
 
@@ -86,14 +87,27 @@ class WriteCommand extends Command
                     if ($field === $this->Task->getKeyName()) continue;
 
                     if ($this->is_update() || strlen($this->Task->{$field}) < 1) {
+                        $use_text_editor = (bool)$this->option('t');
 
-                        $default = $this->Task->defaultValue($field);;
+                        // Get the default value
+                        $default = $this->Task->defaultValue($field);
                         if ($this->Task->hasAttribute($field)) {
                             $default = $this->Task->{$field};
                         }
 
-                        // Prompt user for values...
-                        $response = Input::ask($this->Task->promptForAttribute($field, $default));
+                        // Determine whether to invoke vim
+                        if (! $use_text_editor && $this->is_update() && strlen($default) > 10) {
+                            if (! $use_text_editor && isset($config['text']) && $config['text'] == true) {
+                                $use_text_editor = true;
+                            }
+                        }
+
+                        // Prompt user for value
+                        if ($use_text_editor) {
+                            $response = Input::text($default, $this->Task->promptForAttribute($field));
+                        } else {
+                            $response = Input::ask($this->Task->promptForAttribute($field, $default));
+                        }
 
                         if (strlen($response) > 0) {
                             $response = trim($response);

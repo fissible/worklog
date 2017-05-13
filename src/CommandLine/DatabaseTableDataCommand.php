@@ -164,14 +164,6 @@ class DatabaseTableDataCommand extends Command
             }
         }
 
-//        print "\n\r";
-//        // DEV
-//        for ($i = 1; $i <= 300; $i++) {
-//            print str_pad($i, 3, ' ', STR_PAD_LEFT)."\r";
-//            sleep(0.25);
-//        }
-//        print "\n";
-
         return $output;
     }
 }

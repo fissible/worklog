@@ -50,17 +50,18 @@ class Task extends Model
             'type' => 'integer',
             'auto_increment' => true
         ],
+        'description' => [
+            'type' => 'string',
+            'default' => null,
+            'prompt' => 'What did you do?',
+            'required' => true,
+            'text' => true
+        ],
         'issue' => [
             'type' => 'string',
             'default' => null,
             'prompt' => 'What is the JIRA Issue key?',
             'required' => false
-        ],
-        'description' => [
-            'type' => 'string',
-            'default' => null,
-            'prompt' => 'What did you do?',
-            'required' => true
         ],
         'date' => [
             'type' => 'string',

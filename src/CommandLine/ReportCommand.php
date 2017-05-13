@@ -44,14 +44,13 @@ class ReportCommand extends Command
     {
         parent::run();
 
-//        $output = Input::text();
-//        debug($output, 'red');
-
         $clear_cache = (bool) $this->option('c');
         $group_by_overidden = false;
         $group_by = $this->option('g');
         $json = $this->option('j');
         $Report = new Report();
+
+        debug(compact('clear_cache', 'group_by', 'json'), 'green');
 
         // -i [jira_issue_key]
         if ($issue = $this->option('i')) {

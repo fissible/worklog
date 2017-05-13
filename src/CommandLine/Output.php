@@ -162,15 +162,30 @@ class Output
         return $out;
     }
 
+    protected static function foreground_colors()
+    {
+        return static::$foreground_colors;
+    }
+
+    protected static function background_colors()
+    {
+        return static::$background_colors;
+    }
+
     protected static function control_chars()
     {
         $chars = static::$control_chars;
-        foreach (static::$foreground_colors as $name => $code) {
+        foreach (static::foreground_colors() as $name => $code) {
             $chars['fg'.$name] = [ "\033[".$code."m", "\033[0m" ];
         }
-        foreach (static::$background_colors as $name => $code) {
+        foreach (static::background_colors() as $name => $code) {
             $chars['bg'.$name] = [ "\033[".$code."m", "\033[0m" ];
         }
+        // foreach (static::$unicode_borders as $variant => $charset) {
+        //     foreach ($charset as $name => $code) {
+        //         $chars['ub'.$variant.$name] = [ $code ];
+        //     }
+        // }
 
         return $chars;
     }
@@ -378,6 +393,72 @@ class Output
         }
 
         print $string."\n";
+    }
+
+    protected static function count_mb_extra_length()
+    {
+        $extra_length = 0;
+        $control_chars = static::control_chars();
+        foreach ($control_chars as $cc_name => $cc_delims) {
+            if (false !== mb_strpos($str, $cc_delims[0])) {
+                $extra_length += mb_strlen($cc_delims[0]);
+            }
+        }
+        foreach (static::$background_colors as $key => $cc) {
+            if (false !== mb_strpos($str, $cc)) {
+                $extra_length += mb_strlen($cc);
+            }
+        }
+        foreach (static::$foreground_colors as $key => $cc) {
+            if (false !== mb_strpos($str, $cc)) {
+                $extra_length += mb_strlen($cc);
+            }
+        }
+        if (false !== mb_strpos($str, "\033[0m")) {
+            $extra_length += mb_strlen("\033[0m");
+        }
+
+        return $extra_length;
+    }
+
+    public static function carriage_return($mult = 1)
+    {
+        print str_repeat("\r", $mult);
+    }
+
+    public static function loading($is_loading = true)
+    {
+        static $loading;
+        $is_on = (isset($loading) && true === $loading);
+        $turned_off = false;
+        $toggled = false;
+
+        if (! isset($loading) || is_bool($is_loading)) {
+            $loading = (is_bool($is_loading) ? $is_loading : true);
+            if (loading !== $is_on) {
+                $toggled = true;
+                $turned_off = $is_on === true;
+            }
+        }
+        
+        if ($toggled) {
+            if (! $turned_off) {
+                print "\n\r";
+            }
+
+            //
+
+            if ($turned_off) {
+
+            }
+        }
+        
+//        // DEV
+//        for ($i = 1; $i <= 300; $i++) {
+//            print str_pad($i, 3, ' ', STR_PAD_LEFT)."\r";
+//            sleep(0.25);
+//        }
+//        print "\n";
     }
 
     public static function set_allow_unicode($allow = true)

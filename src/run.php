@@ -5,13 +5,14 @@ use Worklog\CommandLine\Output;
 if (DEVELOPMENT_MODE && IS_CLI)
     Application::timer();
 try {
-    $result = App()->run();
-    show_errors();
-    handle_result($result);
+    handle_result(App()->run());
 } catch (Exception $e) {
-    error_exit(Output::color($e->getMessage(), 'red'));
+    error_exit($e->getMessage());
 }
 if (DEVELOPMENT_MODE && IS_CLI) {
-    banner(Application::timer().' seconds', '', 'dark_gray');
+    printl(Output::color(
+    	Application::timer().' seconds',
+    	'dark_gray', 'black'
+    ));
 }
 exit(0);

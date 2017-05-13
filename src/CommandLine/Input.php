@@ -8,6 +8,8 @@
 
 namespace Worklog\CommandLine;
 
+use Worklog\Filesystem\File;
+
 class Input
 {
     /**
@@ -71,46 +73,72 @@ class Input
         return $line;
     }
 
-    public static function text()
+    public static function text($lines = [], $prefix_lines = [], $suffix_lines = [])
     {
         $output = null;
         if (env('BINARY_TEXT_EDITOR')) {
             $temp_dir = '/tmp';
             $temp_file = md5(rand(111, 999)).'.tmp';
-            $file = $temp_dir.'/'.$temp_file;
-            $temp_dir_exists = is_dir($temp_dir);
-            $temp_file_exists = file_exists($file);
+            $Dir = new File($temp_dir, true);
+            $File = new File($temp_dir.'/'.$temp_file);
+            $cursor = [1, 1];
+            $created_directory = false;
+            $created_file = false;
+            $file_written = false;
+            array_unshift($suffix_lines, '#', '# Lines starting with \'#\' will be ignored.');
 
-            if (! $temp_dir_exists) {
-                mkdir($temp_dir);
+            if (! $Dir->exists()) {
+                $Dir->touch();
+                $created_directory = $Dir->exists();
+            }
+            if (! $File->exists()) {
+                $File->touch();
+                $created_file = $File->exists();
             }
 
-            file_put_contents($file, [ '', '# Lines starting with \'#\' will be ignored.' ]);
+            $lines = (array)$lines;
+            if (empty($lines)) {
+                $lines[] = ''; // user input goes here
+            }
+            $line_count = count($lines);
+            $cursor = [ ($line_count + 1), strlen($lines[($line_count - 1)]) ];
 
-            $Command = new LaunchEditorCommand();
-            $Command->set_invocation_flag();
-            $Command->setData('file', $file);
-            $Command->run();
 
-            if (file_exists($file)) {
-                $output = file($file);
-                while ($line = current($output)) {
+            if ($prefix_lines) {
+                foreach ((array)$prefix_lines as $key => $line) {
+                    array_unshift($lines, '# '.trim(trim($line, '#')));
+                }
+            }
+
+            if ($suffix_lines) {
+                foreach ((array)$suffix_lines as $key => $line) {
+                    $lines[] = '# '.trim(trim($line, '#'));
+                }
+            }
+
+            $file_written = $File->write($lines, LOCK_EX, "\n");
+
+            // vim +startinsert :cal cursor(row:30, col:5) <path>
+            BinaryCommand::call([ env('BINARY_TEXT_EDITOR'), vsprintf('"+cal cursor(%d, %d)"', $cursor), '+startinsert', $File->path() ]);
+
+            if ($created_file && $file_written) {
+                $output = $File->lines();
+                foreach ($output as $key => $line) {
                     if (substr($line, 0, 1) == '#') {
-                        $key = key($output);
                         unset($output[$key]);
                     }
-                    next($output);
                 }
                 $output = implode("\n", $output);
             }
 
-            if (! $temp_file_exists) {
-                unlink($temp_file_exists);
+            if ($created_file) {
+                $File->delete();
             }
-            if (! $temp_dir_exists) {
-                rmdir($temp_dir);
+            if ($created_directory) {
+                $Dir->delete();
             }
         }
+
         return $output;
     }
 }

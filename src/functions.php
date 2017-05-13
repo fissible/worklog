@@ -24,22 +24,28 @@ function App()
     return $App;
 }
 
+function get_banner_width()
+{
+    return $width = floor(Output::cols() / 1.5);
+}
+
 if (! function_exists('banner')) {
     function banner($input, $title = null, $color = 'white', $indent = '', $print_horizontal_borders = true) {
         $bordr = Output::color(Output::uchar('ver', 'heavy'), $color);
-        $width = floor(Output::cols() / 1.5);
+        $width = get_banner_width();
 
         if ($print_horizontal_borders) {
             Output::line(Output::color(Output::horizontal_line('top', $width, 'heavy'), $color), '', $width);
 
         }
         if ($title) {
-            Output::line(Output::color($title, $color), $bordr, $width);
+            Output::line(Output::color($title, 'black', $color), $bordr, $width);
         }
 
         if (is_array($input)) {
             $input = print_r($input, true);
             $input = explode("\n", $input);
+
             foreach ($input as $str) {
                 if (! empty($str)) {
                     banner($str, null, $indent, $color, false);
@@ -96,7 +102,7 @@ function debug($input = '', $color = 'yellow', $internally_invoked = false)
 {
     if (DEVELOPMENT_MODE == true) {
         $bordr = Output::color(Output::uchar('ver', 'heavy'), $color);
-        $width = floor(Output::cols() / 1.5);
+        $width = get_banner_width();
 
         if (! $internally_invoked) {
             Output::line(Output::color(Output::horizontal_line('top', $width, 'heavy'), $color), '', $width);
@@ -189,14 +195,19 @@ function env($key, $default = null)
  * @param null $error_msg
  * @param null $command
  */
-function error($error_msg = null, $command = null)
+function error($error = null, $command = null)
 {
-    global $errors;
-    if (!is_null($error_msg)) {
+    // handle Event?
+
+    $type = 'Error';
+    $width = get_banner_width();
+    $title = ' '.$type.' ';
+
+    if (is_string($error)) {
         if (IS_CLI) {
-            printl($error_msg);
+            banner($error, $title, 'red', '   ');
         } else {
-            $errors[] = $error_msg;
+            throw new \Exception($error);
         }
     }
     if (! is_null($command) && IS_CLI) {
