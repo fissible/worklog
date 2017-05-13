@@ -319,7 +319,7 @@ class Task extends Model
         }
 
         // UPDATE default values
-        if ($this->exists) {
+        if (false !== $default && $this->exists) {
             switch ($field) {
                 case 'start':
                     $default = $this->start_string;

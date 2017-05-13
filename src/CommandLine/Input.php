@@ -85,7 +85,7 @@ class Input
             $created_directory = false;
             $created_file = false;
             $file_written = false;
-            array_unshift($suffix_lines, '#', '# Lines starting with \'#\' will be ignored.');
+            array_unshift($suffix_lines, '', '# Lines starting with \'#\' will be ignored.');
 
             if (! $Dir->exists()) {
                 $Dir->touch();
@@ -112,19 +112,28 @@ class Input
 
             if ($suffix_lines) {
                 foreach ((array)$suffix_lines as $key => $line) {
-                    $lines[] = '# '.trim(trim($line, '#'));
+                    $line = trim(trim($line, '#'));
+                    $lines[] = (strlen($line) > 0 ? '# ' : '').$line;
                 }
             }
 
             $file_written = $File->write($lines, LOCK_EX, "\n");
 
+
             // vim +startinsert :cal cursor(row:30, col:5) <path>
-            BinaryCommand::call([ env('BINARY_TEXT_EDITOR'), vsprintf('"+cal cursor(%d, %d)"', $cursor), '+startinsert', $File->path() ]);
+            BinaryCommand::call([
+                env('BINARY_TEXT_EDITOR'),                      // vim
+                vsprintf('"+cal cursor(%d, %d)"', $cursor),     // set cursor to end of last input line
+                '+startinsert',                                 // start vim in insert mode
+                '"+highlight Comment ctermfg=green"',           // define a color group
+                '"+match Comment /^#.*/"',                      // color regex matches
+                $File->path()                                   // temporary file path
+            ]);
 
             if ($created_file && $file_written) {
                 $output = $File->lines();
                 foreach ($output as $key => $line) {
-                    if (substr($line, 0, 1) == '#') {
+                    if (substr($line, 0, 1) == '#' || strlen($line) < 1) {
                         unset($output[$key]);
                     }
                 }
