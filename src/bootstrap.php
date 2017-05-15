@@ -8,11 +8,13 @@
 use Worklog\Application;
 use Worklog\CommandLine\Command;
 use Worklog\CommandLine\Output;
+use Worklog\Services\Service;
 
 date_default_timezone_set('America/Los_Angeles');
 
 define('APPLICATION_PATH', __DIR__);
 define('ROOT_PATH', dirname(APPLICATION_PATH));
+define('LOGS_PATH', ROOT_PATH.'/logs');
 define('TESTS_PATH', ROOT_PATH.'/tests');
 define('VENDOR_PATH', ROOT_PATH.'/vendor');
 $cache_dir = '/'.trim((getenv('CACHE_DIRECTORY') ?: 'cache'), '/');
@@ -30,6 +32,7 @@ define('CACHE_PATH', ROOT_PATH.$cache_dir);
 define('DATABASE_PATH', dirname(APPLICATION_PATH).'/database');
 define('DATABASE_MIGRATIONS', DATABASE_PATH.'/migrations');
 define('DEFAULT_COMMAND', 'today');
+define('APP_LOGGER_NAME', 'APP_GENERAL');
 define('IS_CLI', php_sapi_name() == "cli");
 define('ONE_HOUR_IN_SECONDS', 60*60);
 define('SCRIPT_NAME', $script);
@@ -99,6 +102,15 @@ Command::bind('version', 'Worklog\CommandLine\VersionCommand');
 Command::bind('table-data', 'Worklog\CommandLine\DatabaseTableDataCommand');
 
 $db = database(getenv('DATABASE_DRIVER'));
+
+Service::register(\Worklog\Services\Log::class, function() {
+    $log = \Worklog\Services\Log::Monolog();
+    foreach (Monolog\Logger::getLevels() as $level => $value) {
+        $log->pushHandler(new Monolog\Handler\StreamHandler(sprintf('%s/%s.log', LOGS_PATH, strtolower($level)), $value));
+    }
+
+    return $log;
+});
 
 // Check the .env file
 if (Application::check_env_file()) {

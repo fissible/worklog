@@ -2,6 +2,7 @@
 namespace Worklog\Cache;
 
 use Worklog\Application;
+use Worklog\Services\Log;
 
 /**
  * Cache file wrapper class
@@ -143,8 +144,8 @@ class Cache
                 $this->registry[$CacheItem->name] = $CacheItem;
                 $CacheItem->register($this);
             } else {
-                // @todo: log this somewhere
-                throw new \Exception('Invalid cache item: missing "'.$reason.'"');
+                Log::warn('Invalid cache item: missing/invalid "'.$reason.'"');
+                throw new \Exception('Invalid cache item');
             }
         }
     }

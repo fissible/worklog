@@ -11,9 +11,24 @@ class Service
     public static function register($class, $callable = null)
     {
         if (is_null($callable)) {
-            static::get_for($class);
-        } else {
-            static::set_for($class, $callable);
+            if (method_exists($class, 'instance')) {
+                $callable = function() use ($class) {
+                    return $class::instance();
+                };
+            } elseif (method_exists($class, 'getInstance')) {
+                $callable = function() use ($class) {
+                    return $class::getInstance();
+                };
+            }
+        }
+
+        static::set_for($class, $callable);
+    }
+
+    public function make($class)
+    {
+        if ($callable = static::get_for($class)) {
+            return $callable();
         }
     }
 
