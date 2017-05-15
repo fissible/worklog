@@ -138,11 +138,13 @@ class Cache
         }
 
         if (! $CacheItem->is_registered()) {
-            if ($CacheItem->is_valid()) {
+
+            if (true === ($reason = $CacheItem->is_valid(true))) {
                 $this->registry[$CacheItem->name] = $CacheItem;
                 $CacheItem->register($this);
             } else {
-                throw new \Exception('Invalid cache item.');
+                // @todo: log this somewhere
+                throw new \Exception('Invalid cache item: missing "'.$reason.'"');
             }
         }
     }
@@ -172,11 +174,12 @@ class Cache
 
     /**
      * Get/set cached data
-     * @param  string     $name               Name of cache key
-     * @param  mixed      $new_data           callable to set (and get)
-     * @param  array      $tags               Array of tags to save to the cache item
-     * @param  integer    $expires_in_seconds Number of seconds from "now" when it expires, 0 for never
-     * @return null|mixed
+     * @param  string $name Name of cache key
+     * @param null $data
+     * @param  array $tags Array of tags to save to the cache item
+     * @param  integer $expires_in_seconds Number of seconds from "now" when it expires, 0 for never
+     * @return mixed|null
+     * @internal param mixed $new_data callable to set (and get)
      */
     public function data($name, $data = null, $tags = [], $expires_in_seconds = 0)
     {

@@ -293,15 +293,15 @@ class CacheItem
         return $deleted;
     }
 
-    public function is_valid()
+    public function is_valid($return_reason = false)
     {
         $valid = true;
         if (! isset($this->name)) {
-            $valid = false;
-        } elseif (! isset($this->expiry)) {
-            $valid = false;
+            $valid = ($return_reason ? 'name' : false);
+        } elseif (! isset($this->expiry) || $this->expiry < 0) {
+            $valid = ($return_reason ? 'expiry' : false);
         } elseif (! isset($this->data)) {
-            $valid = false;
+            $valid = ($return_reason ? 'data' : false);
         }
 
         return $valid;
