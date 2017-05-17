@@ -181,6 +181,7 @@ class VersionCommand extends Command
                         $new = $prompt_version($guess);
                     }
 
+                    $annotation = '';
                     if ($input = $prompt_message_text(null, 'Annotated tag description: ')) {
                         $annotation = trim($input);
                     }
