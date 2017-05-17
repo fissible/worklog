@@ -286,17 +286,17 @@ class VersionCommand extends Command
         $switched_to = false;
 
         if ($tag = coalesce($tag, $this->getData('version'), $this->_latest())) {
-            if ($this->flag('f') || $this->_check($tag, true) > 0) {
-                if ($this->flag('f') || $this->valid($tag)) {
+            if ($this->flag('f') || $this->valid($tag)) {
+                if ($this->flag('f') || $this->_check($this->_current(), true) < 0) { // version_compare($current, $latest)
                     if ($hash = $this->gitHashForTag($tag)) {
                         $switched_to = $tag;
                         Command::call(GitCommand::class, 'fetch -q');
                         Command::call(GitCommand::class, sprintf('checkout %s -q', $hash));
                         Command::call(ComposerCommand::class, 'install');
                     }
-                } else {
-                    throw new \InvalidArgumentException(static::$exception_strings['invalid_tag']);
                 }
+            } else {
+                throw new \InvalidArgumentException(static::$exception_strings['invalid_tag']);
             }
         } else {
             throw new \InvalidArgumentException(static::$exception_strings['invalid_tag']);
