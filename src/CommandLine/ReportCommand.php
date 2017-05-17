@@ -50,8 +50,6 @@ class ReportCommand extends Command
         $json = $this->option('j');
         $Report = new Report();
 
-        debug(compact('clear_cache', 'group_by', 'json'), 'green');
-
         // -i [jira_issue_key]
         if ($issue = $this->option('i')) {
             $Report->setIssue($issue);
