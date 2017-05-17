@@ -785,4 +785,15 @@ class Output
             }
         }
     }
+
+    public static function text_response($response, $prompt = '')
+    {
+        $prompt_str_len = strlen($prompt);
+        $response_display = Output::str_shorten($response, (static::line_length() - $prompt_str_len));
+        if ($prompt_str_len > 0) {
+            Output::line(sprintf("%s%s", $prompt, $response_display));
+        } else {
+            Output::line($response_display);
+        }
+    }
 }

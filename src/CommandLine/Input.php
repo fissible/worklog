@@ -73,7 +73,7 @@ class Input
         return $line;
     }
 
-    public static function text($lines = [], $prefix_lines = [], $suffix_lines = [])
+    public static function text($prefix_lines = [], $lines = [], $suffix_lines = [])
     {
         $output = null;
         if (env('BINARY_TEXT_EDITOR')) {
@@ -109,6 +109,7 @@ class Input
                 }
             }
 
+            $lines = (array)$lines;
             if (empty($lines)) {
                 $lines[] = ''; // user input goes here
             }

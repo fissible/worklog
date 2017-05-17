@@ -3,7 +3,6 @@ namespace Worklog\CommandLine;
 
 use Carbon\Carbon;
 use Worklog\Report;
-use Worklog\CommandLine\Command as Command;
 
 /**
  * Created by PhpStorm.
@@ -114,10 +113,10 @@ class ReportCommand extends Command
         } catch (\InvalidArgumentException $e) {
             throw $e;
         } catch (\Exception $e) {
-            if ($e->getMessage() == 'No items') {
+            if ($e->getMessage() == 'No entries') {
                 return sprintf('%s here%s...', $e->getMessage(), (rand(0, 99) > 96 ? (rand(0, 1) ? ', pal' : ', mate') : ''));
             } else {
-                throw $e;
+                return $e->getMessage();
             }
         }
     }

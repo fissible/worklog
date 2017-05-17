@@ -86,7 +86,12 @@ class VersionCommand extends Command
             return version_compare($current, $latest);
         } else {
             if (version_compare($current, $latest, '<')) {
-                return sprintf('Later version %s available', $latest);
+                $response = sprintf('Later version %s available', $latest);
+
+                if ($revision_message = Git::commit_message($latest)) {
+                    $response .= "\n".$revision_message;
+                }
+                return $response;
             } else {
                 return 'You have the most up to date version';
             }
@@ -118,6 +123,7 @@ class VersionCommand extends Command
                 $output = Git::show_origin();
                 $output = end($output);
                 $status = (is_string($output) ? trim($output) : '');
+                $use_text_editor = true;
 
                 if (false !== stripos($status, 'up to date')) {
                     $new = null;
@@ -133,8 +139,23 @@ class VersionCommand extends Command
                         return $new;
                     };
 
-                    $prompt_commit_message = function($message = null) {
-                        if ($input = Input::ask('Commit message'.($message ? ' ('.$message.')' : '').': ', $message)) {
+                    $prompt_commit_message = function($message = null) use ($use_text_editor) {
+                        $prompt = 'Commit message: ';
+
+                        if ($use_text_editor) {
+                            $input = Input::text($prompt, $message);
+                            if ($input !== $message) {
+                                Output::text_response($input, $prompt);
+                            }
+                        } else {
+                            if ($message) {
+                                $prompt = 'Commit message ('.$message.'): ';
+                            }
+
+                            $input = Input::ask($prompt, $message);
+                        }
+
+                        if ($input/* = Input::ask($prompt, $message)*/) {
                             $input = trim($input);
                             if (strlen($input)) {
                                 $message = $input;

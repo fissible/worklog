@@ -192,7 +192,7 @@ class Options implements \ArrayAccess
 
         if (! ($this->Command instanceof BinaryCommand) || isset($this->command)) {
 
-            if (isset($this->command)) {
+            if (isset($this->command) && ! empty($this->command)) {
                 if (array_key_exists($this->command, $this->command_registry)) {
                     $config = $this->command_registry[$this->command];
                 } else {

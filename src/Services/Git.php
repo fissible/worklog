@@ -32,14 +32,28 @@ class Git
         return static::call('add', $arguments);
     }
 
+    /**
+     * @param string $revision
+     * @return string
+     */
     public static function commit_message($revision = 'HEAD')
     {
         $message = '';
 
         if ($revision) {
-            if ($output = unwrap(static::call('rev-parse --verify '.$revision.' 2> /dev/null'), false)) {
-                if ($output = unwrap(static::call([ 'show -s --format=%s 2> /dev/null', escapeshellarg($output) ]), false)) {
-                    $message = $output;
+            $matches_tag = preg_match('/^(\d+\.)?(\d+\.)?(\d+)$/', $revision);
+            GitCommand::collect_output();
+
+            if ($matches_tag && ($output = unwrap(static::call(sprintf('tag -n -l %s', $revision))))) {
+                $message = $output;
+                if (false !== ($tag_pos = strpos($output, $revision))) {
+                    $message = trim(substr_replace($output, '', strpos($output, $revision), strlen($revision)));
+                }
+            } else {
+                if ($output = unwrap(static::call('rev-parse --verify '.$revision.' 2> /dev/null'), false)) {
+                    if ($output = unwrap(static::call([ 'show -s --format=%s 2> /dev/null', escapeshellarg($output) ]), false)) {
+                        $message = $output;
+                    }
                 }
             }
         }

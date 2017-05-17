@@ -104,7 +104,11 @@ class WriteCommand extends Command
 
                         // Prompt user for value
                         if ($use_text_editor) {
-                            $response = Input::text($default, $this->Task->promptForAttribute($field, false));
+                            $prompt = $this->Task->promptForAttribute($field, false);
+                            $response = Input::text($prompt, $default);
+                            if ($response !== $default) {
+                                Output::text_response($response, $prompt);
+                            }
                         } else {
                             $response = Input::ask($this->Task->promptForAttribute($field, $default));
                         }
