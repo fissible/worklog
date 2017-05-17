@@ -182,7 +182,7 @@ class VersionCommand extends Command
                     }
 
                     $annotation = '';
-                    if ($input = $prompt_message_text(null, 'Annotated tag description: ')) {
+                    if ($input = $prompt_message_text(Git::commit('HEAD'), 'Annotated tag description: ')) {
                         $annotation = trim($input);
                     }
 
