@@ -473,11 +473,20 @@ class Report
         $Cache = App()->Cache();
         $Query = $this->query();
         $QueryBuilder = $Query->getQuery();
-        $cache_name = base64_encode($QueryBuilder->toSql());
+        $SQL = $QueryBuilder->toSql();
+        $bindings = $QueryBuilder->getBindings();
+        $last_pos = 0;
+
+        while (false !== ($last_pos = strpos($SQL, '?', $last_pos)) && ! empty($bindings)) {
+            if ($val = array_shift($bindings)) {
+                $SQL = substr_replace($SQL, $val, $last_pos, 1);
+            }
+        }
+        $cache_name = base64_encode($SQL);
 
         // -c to bust/clear cache
         if ($clear) {
-            $deleted = $Cache->clear($cache_name);
+            $Cache->clear($cache_name);
         }
 
         // Do retrieve or exe/store/return
@@ -504,6 +513,7 @@ class Report
     }
 
     /**
+     * @param bool $clear_cache
      * @return array
      * @throws \Exception
      */
