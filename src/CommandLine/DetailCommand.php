@@ -50,7 +50,7 @@ class DetailCommand extends Command
 
             if ($Task->start && $Task->stop) {
                 if ($Today->toDateString() === $Date->toDateString()) {
-                    $period_duration[] = $Task->start.' - '.$Task->stop;
+                    $period_duration[] = $Task->startTime.' - '.$Task->stopTime;
                 } else {
                     $period_duration[] = $Task->friendly_date_string;
                 }
@@ -85,6 +85,14 @@ class DetailCommand extends Command
                         $headers[] = Str::title($key);
                     }
                 }
+
+                // replace \n's
+                $attributes = array_map(function($value) {
+                    if (is_string($value) && false !== strpos($value, "\n")) {
+                        $value = preg_replace('/\s+/', ' ', $value);
+                    }
+                    return $value;
+                }, $attributes);
 
                 printl(Output::data_grid($headers, [ array_values($attributes) ]));
             }

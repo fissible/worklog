@@ -96,13 +96,24 @@ class Input
                 $created_file = $File->exists();
             }
 
-            $lines = (array)$lines;
+            foreach ((array)$lines as $lkey => $_line) {
+                if (false !== strpos($_line, "\n")) {
+                    $tokens = explode("\n", $_line);
+                    foreach ($tokens as $tkey => $token) {
+                        if ($tkey === 0) {
+                            $lines[$lkey] = $token;
+                        } else {
+                            array_splice($lines, ($tkey + $lkey), 0, $token);
+                        }
+                    }
+                }
+            }
+
             if (empty($lines)) {
                 $lines[] = ''; // user input goes here
             }
             $line_count = count($lines);
             $cursor = [ ($line_count + 1), strlen($lines[($line_count - 1)]) ];
-
 
             if ($prefix_lines) {
                 foreach ((array)$prefix_lines as $key => $line) {

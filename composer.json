@@ -16,7 +16,8 @@
     "illuminate/filesystem": "^5.4",
     "illuminate/pagination": "^5.4",
     "illuminate/events": "^5.4",
-    "illuminate/console": "^5.4"
+    "illuminate/console": "^5.4",
+    "monolog/monolog": "^1.22"
   },
   "autoload": {
     "psr-4": {
