@@ -190,7 +190,7 @@ class Options implements \ArrayAccess
     {
         $config = (isset($this->config) ? $this->config : []);
 
-        if (! ($this->Command instanceof BinaryCommand) || isset($this->command)) {
+        if (! ($this->Command instanceof BinaryCommand) || (isset($this->command) && ! empty($this->command))) {
 
             if (isset($this->command) && ! empty($this->command)) {
                 if (array_key_exists($this->command, $this->command_registry)) {
