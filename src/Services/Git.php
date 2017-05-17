@@ -42,7 +42,7 @@ class Git
 
         if ($revision) {
             $matches_tag = preg_match('/^(\d+\.)?(\d+\.)?(\d+)$/', $revision);
-            GitCommand::collect_output();
+            $original = GitCommand::collect_output();
 
             if ($matches_tag && ($output = unwrap(static::call(sprintf('tag -n -l %s', $revision))))) {
                 $message = $output;
@@ -56,6 +56,8 @@ class Git
                     }
                 }
             }
+
+            GitCommand::collect_output($original);
         }
 
         return $message;
