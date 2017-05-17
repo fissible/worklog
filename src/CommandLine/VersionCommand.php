@@ -117,7 +117,6 @@ class VersionCommand extends Command
                 // on a commit with no TAG
                 $output = Git::show_origin();
                 $output = end($output);
-                debug($output, 'green');
                 $status = (is_string($output) ? trim($output) : '');
 
                 if (false !== stripos($status, 'up to date')) {
