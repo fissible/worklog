@@ -139,9 +139,7 @@ class VersionCommand extends Command
                         return $new;
                     };
 
-                    $prompt_commit_message = function($message = null) use ($use_text_editor) {
-                        $prompt = 'Commit message: ';
-
+                    $prompt_message_text = function($message = null, $prompt = 'Commit message: ') use ($use_text_editor) {
                         if ($use_text_editor) {
                             $input = Input::text($prompt, $message);
                             if ($input !== $message) {
@@ -183,15 +181,14 @@ class VersionCommand extends Command
                         $new = $prompt_version($guess);
                     }
 
-                    $annotation = '';
-                    if ($input = Input::ask('Annotated tag description: ')) {
+                    if ($input = $prompt_message_text(null, 'Annotated tag description: ')) {
                         $annotation = trim($input);
                     }
 
-                    $message = $prompt_commit_message('['.$new.'] '.$annotation);
+                    $message = $prompt_message_text('['.$new.'] '.$annotation);
                     while (empty($message)) {
                         printl('You must enter a commit message');
-                        $message = $prompt_commit_message('['.$new.'] '.$annotation);
+                        $message = $prompt_message_text('['.$new.'] '.$annotation);
                     }
 
                     // get commit -a -m "<message>"
