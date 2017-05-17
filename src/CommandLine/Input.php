@@ -112,7 +112,7 @@ class Input
                 $lines[] = ''; // user input goes here
             }
             $line_count = count($lines);
-            $cursor = [ ($line_count + 1), strlen($lines[($line_count - 1)]) ];
+            $cursor = [ ($line_count + 1), strlen($lines[($line_count - 1)]) + 1 ];
 
             if ($prefix_lines) {
                 foreach ((array)$prefix_lines as $key => $line) {
@@ -129,7 +129,11 @@ class Input
 
             $file_written = $File->write($lines, LOCK_EX, "\n");
 
-
+//            $command = [ env('BINARY_TEXT_EDITOR') ];
+//
+//            if ($cursor) {
+//
+//            }
             // vim +startinsert :cal cursor(row:30, col:5) <path>
             BinaryCommand::call([
                 env('BINARY_TEXT_EDITOR'),                      // vim
