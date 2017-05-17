@@ -129,11 +129,7 @@ class Input
 
             $file_written = $File->write($lines, LOCK_EX, "\n");
 
-//            $command = [ env('BINARY_TEXT_EDITOR') ];
-//
-//            if ($cursor) {
-//
-//            }
+
             // vim +startinsert :cal cursor(row:30, col:5) <path>
             BinaryCommand::call([
                 env('BINARY_TEXT_EDITOR'),                      // vim
@@ -141,7 +137,8 @@ class Input
                 '+startinsert',                                 // start vim in insert mode
                 '"+highlight Comment ctermfg=green"',           // define a color group
                 '"+match Comment /^#.*/"',                      // color regex matches
-                $File->path()                                   // temporary file path
+                $File->path(),                                   // temporary file path
+                '> /dev/tty'
             ]);
 
             if ($created_file && $file_written) {

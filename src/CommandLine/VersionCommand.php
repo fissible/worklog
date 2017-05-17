@@ -186,11 +186,19 @@ class VersionCommand extends Command
                         $annotation = trim($input);
                     }
 
-                    $message = $prompt_message_text('['.$new.'] '.$annotation);
+                    $commit_default = $annotation;
+
+                    if (false !== strpos($commit_default, "\n")) {
+                        $parts = explode("\n", $commit_default);
+                        $commit_default = current($parts);
+                    }
+                    $message = $prompt_message_text('['.$new.'] '.$commit_default);
                     while (empty($message)) {
                         printl('You must enter a commit message');
-                        $message = $prompt_message_text('['.$new.'] '.$annotation);
+                        $message = $prompt_message_text('['.$new.'] '.$commit_default);
                     }
+
+                    return false;
 
                     // get commit -a -m "<message>"
                     Git::call('commit -a '.($message ? '-m '.escapeshellarg($message).' ' : ''));
