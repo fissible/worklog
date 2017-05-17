@@ -400,15 +400,16 @@ class Options implements \ArrayAccess
                 $this->options = getopt($shortopts, $longopts);
 
                 // drop the command string
+                $command_string_dropped = false;
                 foreach ($argv as $akey => $arg) {
-                    if ($arg == $this->command) {
+                    if (!$command_string_dropped && $arg == $this->command) {
                         unset($argv[$akey]);
+                        $command_string_dropped = true;
                         break;
                     }
                 }
                 $argv = array_values($argv);
                 $argv_count = count($argv);
-//				$args = $this->parse_args(implode(' ', $argv));
                 $args = $this->parse_args($argv);
 
                 if (count($args) > 0) {
@@ -464,7 +465,7 @@ class Options implements \ArrayAccess
                             $last_arg = $option;
                             continue;
 
-                        } elseif ($argument !== $this->Command->name()) {
+                        } elseif ($command_string_dropped || $argument !== $this->Command->name()) {
                             if (! $last_arg_was_option || (! in_array($last_arg, $flags_with_values) && ! $last_flag_gets_value)) {
                                 $this->arguments[] = $argument;
 
@@ -527,7 +528,7 @@ class Options implements \ArrayAccess
     }
 
     /**
-     * Throws exception if an invalid (wrong param) or illegal (non-existant) option
+     * Throws exception if an invalid (wrong param) or illegal (non-existent) option
      * @param $option
      * @param  bool $configuring
      * @return bool
