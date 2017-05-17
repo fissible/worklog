@@ -198,8 +198,6 @@ class VersionCommand extends Command
                         $message = $prompt_message_text('['.$new.'] '.$commit_default);
                     }
 
-                    return false;
-
                     // get commit -a -m "<message>"
                     Git::call('commit -a '.($message ? '-m '.escapeshellarg($message).' ' : ''));
 
