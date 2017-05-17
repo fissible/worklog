@@ -37,8 +37,9 @@ class ModelService extends Service
         static::$entity_class = $entity_class;
     }
 
-    public function make(array $data = [])
+    public function make()
     {
+        $data = func_get_args();
         if (static::$entity_class == '\stdClass') {
             $obj = new static::$entity_class($this->db);
             foreach ($data as $key => $value) {

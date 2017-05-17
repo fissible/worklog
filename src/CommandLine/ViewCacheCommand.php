@@ -1,6 +1,8 @@
 <?php
 namespace Worklog\CommandLine;
 
+use Carbon\Carbon;
+
 /**
  * ViewCacheCommand
  * Lists options this script takes (CLI)
@@ -21,8 +23,9 @@ class ViewCacheCommand extends Command
     public function run()
     {
         $output = "No cached data.";
+        $tags = $this->option('t');
 
-        if ($this->option('t')) {
+        if ($tags) {
             $tags = (array) $this->getData('query');
         } elseif ($query = $this->getData('query')) {
             // wlog view-cache -k data ea2b2676c28c0db26d39331a336c6b92.json
@@ -69,41 +72,56 @@ class ViewCacheCommand extends Command
             }
         }
         
-        $grid_data = [];
+        $grid_data = $raw_cache_data = [];
         $registry = $this->App()->Cache()->registry();
-        $template = null;
+        $template = [ 40, 38, 40, 19, 21 ];
+        // $template = [ 40, 38, null, null, null ];
 
         if (count($registry)) {
-            foreach ($registry as $cache_name => $CacheItem) {
-                $path = $CacheItem->filepath();
+            foreach ($registry as $cache_name => $path) {
+                $CacheItem = $this->App()->Cache()->load($cache_name);
 
-                if (isset($tags) && ! empty($tags) && ! array_intersect($tags, $CacheItem->tags)) {
+                if ($tags && (! isset($CacheItem->tags) || ! array_intersect($tags, $CacheItem->tags))) {
                     continue;
                 }
 
                 $data_out = '-';
-                if (is_scalar($CacheItem->data)) {
-                    $data_out = $CacheItem->data;
-                } elseif (is_array($CacheItem->data)) {
-                    $data_out = print_r($CacheItem->data, true);
-                } elseif ($CacheItem->data instanceof \stdClass) {
-                    $data_out = print_r(json_decode(json_encode($CacheItem->data), true), true);
-                } else {
-                    $data_out = get_class($CacheItem->data);
+                if (isset($CacheItem->data)) {
+                    if (is_scalar($CacheItem->data)) {
+                        $data_out = $CacheItem->data;
+                    } elseif (is_array($CacheItem->data)) {
+                        $data_out = print_r($CacheItem->data, 1);
+                    } else {
+                        $data_out = get_class($CacheItem->data);
+                    }
+                    $data_out = preg_replace('/[\r\n\s]+/', ' ', $data_out);
                 }
-                $data_out = preg_replace('/[\r\n\s]+/', ' ', $data_out);
+
+                $expiry = 0;
+                if ($CacheItem->expiry) {
+
+                    debug($CacheItem->expiry, 'blue');
+
+                    $Expiry = Carbon::parse($CacheItem->expiry);
+                    if ($Expiry->gt(Carbon::tomorrow())) {
+                        $expiry = $Expiry->toDateString();
+                    } else {
+                        $expiry = $Expiry->format('g:i a');
+                    }
+                }
 
                 $grid_data[] = [
-                    $CacheItem->name,
+                    (isset($CacheItem->name) ? $CacheItem->name : ''),
                     basename($path),
                     $data_out,
-                    ($CacheItem->expiry > 0 ? date("Y-m-d g:i a", $CacheItem->expiry) : '-'),
-                    implode(', ', $CacheItem->tags)
+                    $expiry,
+                    (isset($CacheItem->tags) ? implode(', ', $CacheItem->tags) : '')
                 ];
             }
 
             if (count($grid_data)) {
-                $output = Output::data_grid([ 'name', 'file', 'data', 'expiry', 'tags' ], $grid_data, $template);
+                Output::set_line_length(260);
+                $output = Output::data_grid([ 'Name', 'File', 'Data', 'Expiry', 'Tags' ], $grid_data, $template);
             }
         }
 

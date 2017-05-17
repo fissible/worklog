@@ -25,13 +25,6 @@ class Service
         static::set_for($class, $callable);
     }
 
-    public function make($class)
-    {
-        if ($callable = static::get_for($class)) {
-            return $callable();
-        }
-    }
-
     private static function get_for($class)
     {
         return static::$for[$class];
@@ -44,6 +37,14 @@ class Service
         }
 
         static::$for[$class] = $callable;
+    }
+
+    public static function __callStatic($name, $args)
+    {
+        $class = $args[0];
+        if ($callable = static::get_for($class)) {
+            return $callable();
+        }
     }
 
 }
