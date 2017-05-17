@@ -147,7 +147,7 @@ class VersionCommand extends Command
                             }
                         } else {
                             if ($message) {
-                                $prompt = 'Commit message ('.$message.'): ';
+                                $prompt = str_replace(': ', ' ('.$message.'): ', $prompt);
                             }
 
                             $input = Input::ask($prompt, $message);

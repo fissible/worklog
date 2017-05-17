@@ -81,10 +81,8 @@ class Input
             $temp_file = md5(rand(111, 999)).'.tmp';
             $Dir = new File($temp_dir, true);
             $File = new File($temp_dir.'/'.$temp_file);
-            $cursor = [1, 1];
             $created_directory = false;
             $created_file = false;
-            $file_written = false;
             array_unshift($suffix_lines, '', '# Lines starting with \'#\' will be ignored.');
 
             if (! $Dir->exists()) {
