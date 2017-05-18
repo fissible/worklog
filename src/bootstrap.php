@@ -103,14 +103,18 @@ Command::bind('table-data', 'Worklog\CommandLine\DatabaseTableDataCommand');
 
 $db = database(getenv('DATABASE_DRIVER'));
 
-Service::register(\Worklog\Services\Log::class, function() {
-    $log = \Worklog\Services\Log::Monolog();
+Service::register(\Worklog\Services\Log::class, function($name = null) {
+    $Logger = new \Monolog\Logger($name ?: APP_LOGGER_NAME);
     foreach (Monolog\Logger::getLevels() as $level => $value) {
-        $log->pushHandler(new Monolog\Handler\StreamHandler(sprintf('%s/%s.log', LOGS_PATH, strtolower($level)), $value));
+        $Logger->pushHandler(
+            new Monolog\Handler\StreamHandler(sprintf('%s/%s.log', LOGS_PATH, strtolower($level)), $value, $bubbles = false)
+        );
     }
 
-    return $log;
+    return $Logger;
 });
+
+//\Worklog\Services\Log::info('Test '.rand(0,99));
 
 // Check the .env file
 if (Application::check_env_file()) {

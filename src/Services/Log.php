@@ -8,41 +8,52 @@
 
 namespace Worklog\Services;
 
-use Monolog\Logger;
-
 class Log
 {
 
     /**
-     * @var Logger
+     * App Logger
+     * @var
      */
     private static $instance;
 
     /**
-     * Return a configured Logger instance
-     * @return Logger
+     * Channel Logger
+     * @var
      */
-    public static function instance() {
-        if (! isset(static::$instance)) {
-            if ($Log = Service::make(get_class())) {
-                static::$instance = $Log;
-            } else {
-                static::$instance = static::Monolog();
-            }
-        }
+    private static $instances = [];
 
-        return static::$instance;
+
+    /**
+     * Return a configured Logger instance
+     * @param null $name
+     * @return mixed
+     */
+    public static function instance($name = null) {
+        if (is_null($name)) {
+            if (! isset(static::$instance)) {
+                static::$instance = Service::instance(get_class());
+            }
+
+            return static::$instance;
+        } else {
+            if (! array_key_exists($name, static::$instances)) {
+                if ($instance = Service::instance(get_class(), $name)) {
+                    static::$instances[$name] = $instance;
+                } elseif ($AppLogger = static::instance()) {
+                    static::$instances[$name] = $AppLogger->withName($name);
+                }
+            }
+
+            return static::$instances[$name];
+        }
     }
 
     /**
-     * Return a Monolog\Logger instance
-     * @return Logger
+     * @param $name
+     * @param $arguments
+     * @return mixed
      */
-    public static function Monolog()
-    {
-        return new \Monolog\Logger(APP_LOGGER_NAME);
-    }
-
     public function __call($name, $arguments) {
         $instance = static::instance();
         if (isset(static::$instance)) {
@@ -50,6 +61,11 @@ class Log
         }
     }
 
+    /**
+     * @param $name
+     * @param $arguments
+     * @return mixed
+     */
     public static function __callStatic($name, $arguments) {
         $instance = static::instance();
         if (isset(static::$instance)) {
