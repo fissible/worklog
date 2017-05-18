@@ -111,6 +111,11 @@ class VersionCommand extends Command
         }
     }
 
+    protected function _test()
+    {
+        // test harness method
+    }
+
     /**
      * @throws Exception
      */
@@ -120,9 +125,11 @@ class VersionCommand extends Command
 
             if (! $this->gitTagFor('HEAD')) {
                 // on a commit with no TAG
+                //
                 $output = Git::show_origin();
                 $output = end($output);
                 $status = (is_string($output) ? trim($output) : '');
+                //
                 $use_text_editor = true;
 
                 if (false !== stripos($status, 'up to date')) {

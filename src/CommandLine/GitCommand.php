@@ -16,7 +16,7 @@ class GitCommand extends BinaryCommand
     public static $description = 'Run composer';
 
     public static $options = [
-        'p' => ['req' => null, 'description' => 'Push the commit after recording it.'],
+        'p' => ['req' => null, 'description' => 'Push the commit after committing it.'],
         'a' => ['req' => null, 'description' => 'Annotated tag'],
         'd' => ['req' => null, 'description' => 'Delete a tag'],
         'l' => ['req' => null, 'description' => 'Search for tags with a particular pattern'],
@@ -33,12 +33,13 @@ class GitCommand extends BinaryCommand
     {
         if (! $this->initialized()) {
             $this->setBinary(env('BINARY_GIT'));
-            $this->registerSubcommand('diff');
-            $this->registerSubcommand('record');
-            $this->registerSubcommand('revision');
-            $this->registerSubcommand('status');
-            $this->registerSubcommand('tag');
-            $this->registerSubcommand('tags');
+            $this->registerSubcommand('branch');
+            $this->registerSubcommand('commit');    // git commit -m <prompt> [&& git push]
+            $this->registerSubcommand('diff');      // show changed files
+            $this->registerSubcommand('status');    // lists changed files
+
+            $this->registerSubcommand('tag');       // create/query git repo tags
+            $this->registerSubcommand('revision');  // show current commit hash
 
             parent::init();
         }
@@ -55,19 +56,14 @@ class GitCommand extends BinaryCommand
         return parent::run();
     }
 
-//    public function getCommitMessageAtRevision($revision = 'HEAD')
-//    {
-//        if ($output = $this->call('rev-parse --verify '.$revision.' 2> /dev/null')) {
-//            $hash = $output[0];
-//            $output = $this->call([ 'show -s --format=%s 2> /dev/null', escapeshellarg($hash) ]);
-//            $message = $output[0];
-//        }
-//
-//        return $message;
-//    }
+    /*------------------------------------------*\
+      subcommand implementations _{subcommand}()
+    \*------------------------------------------*/
 
-
-    // subcommand implementations _{subcommand}()
+    protected function _branch($name = null)
+    {
+        // return Git::status($short);
+    }
 
     protected function _revision()
     {
@@ -111,7 +107,7 @@ class GitCommand extends BinaryCommand
     /**
      * Stage all files and commit to git repository
      */
-    protected function _record()
+    protected function _commit()
     {
         // get last commit message
         $commit_message = coalesce($this->getData('message'), $this->flag('m'), Git::commit_message('HEAD'));
@@ -204,15 +200,6 @@ class GitCommand extends BinaryCommand
         }
 
         return $this->call($command);
-    }
-
-    /**
-     * @return mixed
-     */
-    protected function _tags()
-    {
-        Git::fetch(true);
-        return Git::tags($this->arguments('tags'));
     }
 
     private function getRandomCommitMessage()
