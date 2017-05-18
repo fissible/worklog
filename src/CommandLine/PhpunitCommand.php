@@ -25,15 +25,30 @@ class PhpunitCommand extends BinaryCommand
 
     public function init()
     {
+        parent::init();
         $this->setBinary(env('BINARY_PHPUNIT'));
         if ($config_file = $this->option('configuration')) {
             $this->config['file'] = $config_file;
         }
     }
 
+    public function compile()
+    {
+        if (! $this->initialized()) {
+            $this->init();
+        }
+        $this->pushCommand('--configuration="'.ROOT_PATH.'/'.$this->config['file'].'"');
+        return $this->command(true);
+    }
+
     public function run()
     {
-        $this->pushCommand('--configuration="../'.$this->config['file'].'"');
-        $this->raw();
+        $this->compile();
+
+        if ($this->internally_invoked()) {
+            static::collect_output();
+        }
+
+        return parent::run();
     }
 }

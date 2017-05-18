@@ -426,32 +426,21 @@ class Output
         print str_repeat("\r", $mult);
     }
 
-    public static function loading($is_loading = true)
+    public static function cursor_up($count = 1)
     {
-        static $loading;
-        $is_on = (isset($loading) && true === $loading);
-        $turned_off = false;
-        $toggled = false;
+        printf("\033[%dA", $count);
+    }
 
-        if (! isset($loading) || is_bool($is_loading)) {
-            $loading = (is_bool($is_loading) ? $is_loading : true);
-            if (loading !== $is_on) {
-                $toggled = true;
-                $turned_off = $is_on === true;
-            }
-        }
-        
-        if ($toggled) {
-            if (! $turned_off) {
-                print "\n\r";
-            }
-
-            //
-
-            if ($turned_off) {
-
-            }
-        }
+    public static function loading($text = 'Loading', $interval = 250000)
+    {
+        static::line(sprintf("%s.", $text));
+        usleep($interval);
+        static::cursor_up();
+        static::line(sprintf("\r%s..", $text));
+        usleep($interval * 0.8);
+        static::cursor_up();
+        static::line(sprintf("\r%s...", $text));
+        usleep($interval * 0.5);
         
 //        // DEV
 //        for ($i = 1; $i <= 300; $i++) {

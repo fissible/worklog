@@ -255,7 +255,7 @@ class BinaryCommand extends Command
             }
             
 
-//          debug($command, 'red');
+//         debug($command, 'red');
             $this->output = [];
             exec($command, $this->output);
 
@@ -279,9 +279,9 @@ class BinaryCommand extends Command
     {
         chdir(dirname(APPLICATION_PATH));
 
-         if (! $this->executed()) {
-             $this->raw();
-         }
+        if (! $this->executed()) {
+            $this->raw();
+        }
 
         return parent::run();
     }

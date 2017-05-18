@@ -1,9 +1,9 @@
 <?php
 
 namespace Worklog\CommandLine;
+
 use Exception;
 use Worklog\Services\Git;
-
 /**
  * VersionCommand
  * Created by PhpStorm.
@@ -112,78 +112,118 @@ class VersionCommand extends Command
     protected function _increment()
     {
         if (DEVELOPMENT_MODE) {
-
             if (! $this->gitTagFor('HEAD')) {
+                
                 // on a commit with no TAG
+                Output::loading("Checking branch status");
                 $output = Git::show_origin();
                 $output = end($output);
-                debug($output, 'green');
                 $status = (is_string($output) ? trim($output) : '');
 
                 if (false !== stripos($status, 'up to date')) {
                     $new = null;
 
-                    $prompt_version = function($guess) {
-                        $new = false;
-                        if ($input = Input::ask('What is the new version? ('.$guess.'): ', $guess)) {
-                            $input = trim($input);
-                            if (strlen($input)) {
-                                $new = $input;
-                            }
+                    // open thread for phpunit?
+                    
+
+                    // Run tests
+                    $Command = new PhpunitCommand();
+                    $Command->set_invocation_flag();
+                    BinaryCommand::collect_output();
+
+                    $commands = [ implode(' ', $Command->compile())/*.' > `tty` 2>&1'*/ ];
+
+                    debug($commands, 'red');
+
+                    $threads = new Multithread($commands);
+                    debug($threads->run(), 'cyan');
+
+                    while (true) {
+                        if ($threads->thread[0]->isRunning()) {
+                            Output::loading("Running tests");
+                        } else {
+                            break;
                         }
-                        return $new;
-                    };
+                    }
 
-                    $prompt_commit_message = function($message = null) {
-                        if ($input = Input::ask('Commit message'.($message ? ' ('.$message.')' : '').': ', $message)) {
-                            $input = trim($input);
-                            if (strlen($input)) {
-                                $message = $input;
+                    debug($threads->output);
+                    // $output = $Command->run();
+                    // $last_line = end($output);
+
+                    return false;
+
+                    if (false !== strpos($last_line, 'OK')) {
+
+                        Output::cursor_up();
+                        printl($last_line);
+
+                        $prompt_version = function($guess) {
+                            $new = false;
+                            if ($input = Input::ask('What is the new version? ('.$guess.'): ', $guess)) {
+                                $input = trim($input);
+                                if (strlen($input)) {
+                                    $new = $input;
+                                }
                             }
-                        }
-                        return $message;
-                    };
+                            return $new;
+                        };
 
-                    banner(
-                        "Given a version number MAJOR.MINOR.PATCH, increment the:\n".
-                        "    MAJOR version when you make incompatible API changes,\n".
-                        "    MINOR version when you add functionality in a backwards-compatible manner, and\n".
-                        "    PATCH version when you make backwards-compatible bug fixes.",
-                        'Semantic Versioning', 'blue');
+                        $prompt_commit_message = function($message = null) {
+                            if ($input = Input::ask('Commit message'.($message ? ' ('.$message.')' : '').': ', $message)) {
+                                $input = trim($input);
+                                if (strlen($input)) {
+                                    $message = $input;
+                                }
+                            }
+                            return $message;
+                        };
 
-                    // get latest, increment
-                    $latest = $this->_latest();
-                    $parts = explode('.', $latest);
-                    $parts[2]++;
-                    $guess = implode('.', $parts);
+                        banner(
+                            "Given a version number MAJOR.MINOR.PATCH, increment the:\n".
+                            "    MAJOR version when you make incompatible API changes,\n".
+                            "    MINOR version when you add functionality in a backwards-compatible manner, and\n".
+                            "    PATCH version when you make backwards-compatible bug fixes.",
+                            'Semantic Versioning', 'blue');
 
-                    $new = $prompt_version($guess);
-                    while (! preg_match('/^(\d+\.)?(\d+\.)?(\*|\d+)$/', $new)) {
-                        printl('You must enter a valid version string, eg. MAJOR.MINOR.PATCH');
+                        // get latest, increment
+                        $latest = $this->_latest();
+                        $parts = explode('.', $latest);
+                        $parts[2]++;
+                        $guess = implode('.', $parts);
+
                         $new = $prompt_version($guess);
-                    }
+                        while (! preg_match('/^(\d+\.)?(\d+\.)?(\*|\d+)$/', $new)) {
+                            printl('You must enter a valid version string, eg. MAJOR.MINOR.PATCH');
+                            $new = $prompt_version($guess);
+                        }
 
-                    $annotation = '';
-                    if ($input = Input::ask('Annotated tag description: ')) {
-                        $annotation = trim($input);
-                    }
+                        $annotation = '';
+                        if ($input = Input::ask('Annotated tag description: ')) {
+                            $annotation = trim($input);
+                        }
 
-                    $message = $prompt_commit_message('['.$new.'] '.$annotation);
-                    while (empty($message)) {
-                        printl('You must enter a commit message');
                         $message = $prompt_commit_message('['.$new.'] '.$annotation);
+                        while (empty($message)) {
+                            printl('You must enter a commit message');
+                            $message = $prompt_commit_message('['.$new.'] '.$annotation);
+                        }
+
+                        // get commit -a -m "<message>"
+                        Git::call('commit -a '.($message ? '-m '.escapeshellarg($message).' ' : ''));
+
+                        // get tag -a <tag> -m "<message>"
+                        Git::call('tag '.($annotation ? '-a -m '.escapeshellarg($annotation).' ' : '').$new);
+
+                        // get push origin master --tags
+                        Git::call('push origin master --tags');
+
+                        return $this->_current();
+                    } else {
+                        // teasts fail
+                        debug(implode($output));
+
+                        throw new \Exception('Tests must pass before versioning.');
                     }
-
-                    // get commit -a -m "<message>"
-                    Git::call('commit -a '.($message ? '-m '.escapeshellarg($message).' ' : ''));
-
-                    // get tag -a <tag> -m "<message>"
-                    Git::call('tag '.($annotation ? '-a -m '.escapeshellarg($annotation).' ' : '').$new);
-
-                    // get push origin master --tags
-                    Git::call('push origin master --tags');
-
-                    return $this->_current();
 
                 } else {
                     $exception_message = 'Cannot increment, local branch is in an invalid state';
@@ -191,17 +231,19 @@ class VersionCommand extends Command
                     if (false !== stripos($status, 'fast-forwardable')) {
                         $exception_message .= ': push your local changes to the remote branch';
                     } else {
-                        $paren_start = strpos($status, '(') + 1;
-                        $paren_end = strpos($status, '(', $paren_start);
-                        if (false !== $paren_start && false !== $paren_end) {
-                            $status = substr($status, $paren_start, ($paren_end - $paren_start));
-                            $exception_message .= ': '.$status;
+                        if ( false !== ($paren_start = strpos($status, '(') + 1)) {
+                            $paren_end = strpos($status, '(', $paren_start);
+                            if (false !== $paren_start && false !== $paren_end) {
+                                $status = substr($status, $paren_start, ($paren_end - $paren_start));
+                                $exception_message .= ': '.$status;
+                            }
                         }
+                        
                     }
-                    
 
                     throw new \Exception($exception_message);
                 }
+
             } else {
                 $result = $this->_check($this->_current(), true);
                 switch ($result) {
@@ -219,6 +261,7 @@ class VersionCommand extends Command
                         break;
                 }
             }
+
         } else {
             throw new \Exception('You cannot increment the version number in production mode');
         }
