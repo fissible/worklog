@@ -1,14 +1,18 @@
 <?php
 namespace Worklog\CommandLine;
 
-use Worklog\Application;
 use Carbon\Carbon;
+use Worklog\Application;
+use Worklog\Concerns\LogTrait;
 
 /**
  * Command
  */
 class Command
 {
+    use LogTrait;
+
+
     public $command_name;
 
     protected $App;
