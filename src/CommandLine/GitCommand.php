@@ -13,7 +13,7 @@ use Worklog\Services\Git;
 
 class GitCommand extends BinaryCommand
 {
-    public static $description = 'Run composer';
+    public static $description = 'Run git commands';
 
     public static $options = [
         'p' => ['req' => null, 'description' => 'Push the commit after committing it.'],
@@ -21,7 +21,8 @@ class GitCommand extends BinaryCommand
         'd' => ['req' => null, 'description' => 'Delete a tag'],
         'l' => ['req' => null, 'description' => 'Search for tags with a particular pattern'],
         'm' => ['req' => true, 'description' => 'Message text'],
-        'r' => ['req' => null, 'description' => 'Random flag.'],
+        'r' => ['req' => null, 'description' => 'Random flag'],
+        't' => ['req' => null, 'description' => 'Push tags'],
     ];
 
     public static $arguments = [ 'subcommand' ];
@@ -37,6 +38,7 @@ class GitCommand extends BinaryCommand
             $this->registerSubcommand('commit');    // git commit -m <prompt> [&& git push]
             $this->registerSubcommand('diff');      // show changed files
             $this->registerSubcommand('status');    // lists changed files
+            $this->registerSubcommand('push');
 
             $this->registerSubcommand('tag');       // create/query git repo tags
             $this->registerSubcommand('revision');  // show current commit hash
@@ -60,9 +62,14 @@ class GitCommand extends BinaryCommand
       subcommand implementations _{subcommand}()
     \*------------------------------------------*/
 
-    protected function _branch($name = null)
+    protected function _branch($name = null, $type = null)
     {
-        // return Git::status($short);
+        $Command = new GitBranchCommand;
+        $Command->resolve();
+        $Command->setData('name', $name);
+        $Command->setData('type', $type);
+
+        return $Command->run();
     }
 
     protected function _revision()
@@ -131,6 +138,12 @@ class GitCommand extends BinaryCommand
         if ($this->flag('p')) {
             Git::push();
         }
+    }
+
+    protected function _push($tags = false)
+    {
+        $tags = coalesce($tags, $this->flag('t'), $this->getData('tags'));
+        return Git::push(($tags ? '--tags' : ''));
     }
 
     protected function _status($short = true)

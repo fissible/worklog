@@ -780,6 +780,8 @@ class Command
     {
         if (isset(static::$registry)) {
             $this->Options = new Options(static::$registry, $this);
+        } else {
+            $this->Options = new Options([], $this);
         }
 
         return $this->Options;
