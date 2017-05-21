@@ -55,6 +55,8 @@ class Git
 
     public static function branch(/* str $name, str $type */)
     {
+        $num = func_num_args();
+
         if (! isset(static::$current_branch) || ! isset(static::$branches)) {
             $current = '';
             $branches = [];
@@ -77,8 +79,8 @@ class Git
         }
         
         // git branch "<name>"
-        if ($name = func_get_arg(0)) {
-            $type = self::BRANCH_TYPE_FEATURE;
+        if ($num > 0 && ($name = func_get_arg(0))) {
+            $type = ($num > 1  ? func_get_arg(1) : self::BRANCH_TYPE_FEATURE);
 
             // git branch "<type>/<name>"
             if (false !== strpos($name, '/')) {
@@ -103,7 +105,7 @@ class Git
                 $types = [ self::BRANCH_TYPE_FEATURE, self::BRANCH_TYPE_RELEASE, self::BRANCH_TYPE_HOTFIX ];
 
                 // git branch "<name>" "<type>"
-                $type = func_get_arg(1) ?: $type;
+                $type = ($num > 1 ? func_get_arg(1) : $type);
 
                 if (false === $type || ! in_array($type, $types)) {
                     if (IS_CLI) {
