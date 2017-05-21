@@ -64,10 +64,12 @@ class GitCommand extends BinaryCommand
 
     protected function _branch($name = null, $type = null)
     {
+        $args = $this->arguments('branch');
         $Command = new GitBranchCommand;
+        $Command->setData('name', coalesce($name, array_shift($args)));
+        $Command->setData('type', coalesce($type, array_shift($args)));
         $Command->resolve();
-        $Command->setData('name', $name);
-        $Command->setData('type', $type);
+        BinaryCommand::collect_output();
 
         return $Command->run();
     }

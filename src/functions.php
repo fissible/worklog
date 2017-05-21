@@ -31,15 +31,22 @@ function get_banner_width()
 
 if (! function_exists('banner')) {
     function banner($input, $title = null, $color = 'white', $indent = '', $print_horizontal_borders = true) {
-        $bordr = Output::color(Output::uchar('ver', 'heavy'), $color);
+        $bordr = color(Output::uchar('ver', 'heavy'), $color);
         $width = get_banner_width();
+        $text_knockout_color = 'black';
+
+        switch ($color) {
+            case 'red':
+                $text_knockout_color = 'white';
+                break;
+        }
 
         if ($print_horizontal_borders) {
-            Output::line(Output::color(Output::horizontal_line('top', $width, 'heavy'), $color), '', $width);
+            Output::line(color(Output::horizontal_line('top', $width, 'heavy'), $color), '', $width);
 
         }
         if ($title) {
-            Output::line(Output::color($title, 'black', $color), $bordr, $width);
+            Output::line(color($title, $text_knockout_color, $color), $bordr, $width);
         }
 
         if (is_array($input)) {
@@ -95,6 +102,22 @@ if (! function_exists('coalesce')) {
         foreach ($inputs as $input) {
             if (! is_null($input) && ! empty($input)) return $input;
         }
+    }
+}
+
+if (! function_exists('color')) {
+    function color($input, ...$colors)
+    {
+        $output = $input;
+        if ($color = array_shift($colors)) {
+            if ($bg_color = array_shift($colors)) {
+                $output = Output::color($input, $color, $bg_color);
+            } else {
+                $output = Output::color($input, $color);
+            }
+        }
+
+        return $output;
     }
 }
 
@@ -205,7 +228,7 @@ function error($error = null, $command = null)
 
     if (is_string($error)) {
         if (IS_CLI) {
-            banner($error, $title, 'red', '   ');
+            banner($error, $title, 'red');
         } else {
             throw new \Exception($error);
         }

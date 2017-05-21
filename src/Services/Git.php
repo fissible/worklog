@@ -10,6 +10,7 @@ namespace Worklog\Services;
 
 use Worklog\CommandLine\Input;
 use Worklog\CommandLine\GitCommand;
+use Worklog\CommandLine\BinaryCommand;
 
 class Git
 {
@@ -48,20 +49,23 @@ class Git
     {
         if (! isset(static::$current_branch) || ! isset(static::$branches)) {
             $current = '';
+            $branches = [];
             foreach (static::call('branch') as $key => $branch) {
                 if (false !== ($pos = strpos($branch, '*'))) {
-                    $current = substr_replace($branch, '', $pos, 1);
+                    $current = substr_replace($branch, '', $pos, 2);
                 } else {
-                    if (! isset(static::$branches)) {
-                        static::$branches = [];
+                    if (! isset($branches)) {
+                        $branches = [];
                     }
-                    static::$branches[] = trim($branch);
+                    $branches[] = trim($branch);
                 }
             }
             if ($current) {
                 static::$current_branch = $current;
-                array_unshift(static::$branches, $current);
+                array_unshift($branches, $current);
             }
+
+            static::$branches = $branches;
         }
         
         // git branch "<name>"
@@ -73,6 +77,13 @@ class Git
                 $parts = explode('/', $name, 2);
                 $name = $parts[1];
                 $type = $parts[0];
+            }
+
+            // git status
+            $status = static::status(false, true);
+
+            if (in_array('Changes not staged for commit:', $status)) {
+                throw new \Exception("Changes not staged for commit!\nPlease, commit your changes or stash them before you can switch branches.\nAborting");
             }
 
             if (! in_array($name, static::$branches)) {
@@ -113,7 +124,8 @@ class Git
 
                     debug(compact('new_branch_name'), 'green');
 
-                    static::call('checkout -b '.$checkout_branch);
+                    // checkout out the source branch, ensure it is up to date
+                    static::call('checkout '.$checkout_branch);
                     static::call('pull');
 
                     if (IS_CLI) {
@@ -156,6 +168,8 @@ class Git
                 }
             }
         }
+
+
 
         return $branches;
     }
@@ -243,10 +257,13 @@ class Git
         return $output;
     }
 
-    public static function status($short = false)
+    public static function status($short = false, $collect_output = false)
     {
         $arguments = [];
         if ($short) $arguments = static::add_short_flag($arguments);
+        if ($collect_output) {
+            BinaryCommand::collect_output();
+        }
         return static::call('status', $arguments);
     }
 
