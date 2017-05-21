@@ -21,19 +21,79 @@ class GitBranchCommand extends GitCommand
     ];
 
     public static $arguments = [ 'name', 'type' ];
-    
+
+    private $branch;
+
+    private $type;
+
 
     public function run()
     {
         $this->init();
 
-        $name = coalesce($this->argument('name'), $this->getData('name'));
-        $type = coalesce($this->argument('type'), $this->getData('type'), $this->flag('t'));
+        $this->branch = coalesce($this->argument('name'), $this->getData('name'));
+    	$this->type = coalesce($this->argument('type'), $this->getData('type'), $this->flag('t'));
+        
+        return $this->branch();
+    }
 
-        if (false === ($branch = Git::branch($name, $type))) {
+    protected function close()
+    {
+    	$Command = Command::instance('vcr');
+    	$Command->init();
+        return $Command->runSubcommand('close');
+    }
+
+    private function branch()
+    {
+    	if (false === ($branch = Git::branch($this->branch, $this->type))) {
         	throw new \Exception("Canceled. Branch not created...");
         }
         
         return $branch;
     }
+
+    protected function commit()
+    {
+    	$Command = Command::instance('vcr');
+    	$Command->init();
+        return $Command->runSubcommand('commit');
+    }
+
+    protected function merge()
+    {
+    	$Command = Command::instance('vcr');
+    	$Command->init();
+        return $Command->runSubcommand('merge');
+    }
+
+    /*
+	wlog feature <name>
+	    wlog vcr branch <name> feature
+	        switched to a new branch 'development-feature-test'
+
+	wlog feature
+	    wlog vcr commit -p
+	    wlog vcr merge
+	    wlog vcr close
+
+	wlog hotfix <name>
+	    wlog vcr branch <name> hotifx
+
+	wlog hotfix
+	    wlog vcr commit -p
+	    wlog vcr merge
+	    wlog vcr close
+
+	wlog release <name>
+	    wlog vcr branch <name> release
+
+	wlog release
+	    wlog vcr commit -p
+	    wlog version increment
+	        > 4.0.0
+	        > Release new feature
+	    wlog vcr merge
+	    wlog vcr close
+    */
 }

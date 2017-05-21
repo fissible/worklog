@@ -26,7 +26,7 @@ class UpdateEnvCommand extends Command
 
     public function run()
     {
-        parent::run();
+        // parent::run();
 
         $env = $env_example = [ 'file' => null, 'data' => [] ];
         $base_path = dirname(APPLICATION_PATH);

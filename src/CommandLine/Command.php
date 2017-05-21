@@ -427,27 +427,6 @@ class Command
     }
 
     /**
-     * Parse command arguments and return a Command object
-     * @param  array   $args The command and command arguments
-     * @return Command
-     */
-    public function resolve($args = [])
-    {
-        $args = static::normalize_args($args);
-
-        if ($command = $this->infer($args)) {
-            $Command = static::instance($command);
-            $Command->setOptions();
-            $Command->parse_static_data();
-            // $Command->parse_arguments($args);
-        } else {
-            throw new \InvalidArgumentException(sprintf("Invalid command \"%s\"", $args[0]));
-        }
-
-        return $Command;
-    }
-
-    /**
      * Parse command arguments into Command data
      * @param array $args The $argv array
      * @param array $keys An array of keys to map values against
@@ -578,11 +557,15 @@ class Command
     }
 
     protected function argument($name) {
-    	foreach ($this->Options()->args() as $key => $value) {
-    		if ($key == $name) {
-    			return $value;
-    		}
-    	}
+        if ($Options = $this->Options()) {
+            foreach ($Options->args() as $key => $value) {
+                if ($key == $name) {
+                    return $value;
+                }
+            }
+        } else {
+            debug_print_backtrace();
+        }
     }
 
     protected function arguments($pull = '')
@@ -698,6 +681,42 @@ class Command
         }
     }
 
+
+
+/*
+        try {
+            $this->Command = (new CommandLine\Command())->resolve();
+            $this->Command->scan();
+
+            return $this->Command->run();
+        } catch (\Exception $e) {
+            throw $e;
+        }
+*/
+
+
+
+    /**
+     * Parse command arguments and return a Command object
+     * @param  array   $args The command and command arguments
+     * @return Command
+     */
+    public function resolve($args = [])
+    {
+        $args = static::normalize_args($args);
+
+        if ($command = $this->infer($args)) {
+            $Command = static::instance($command);
+            $Command->setOptions();
+            $Command->parse_static_data();
+            // // $Command->parse_arguments($args);
+        } else {
+            throw new \InvalidArgumentException(sprintf("Invalid command \"%s\"", $args[0]));
+        }
+
+        return $Command;
+    }
+
     public function scan()
     {
         if (! $this->Options()->Command()) {
@@ -779,8 +798,10 @@ class Command
     public function setOptions()
     {
         if (isset(static::$registry)) {
+            debug('static::$registry['.count(static::$registry).']', 'purple');
             $this->Options = new Options(static::$registry, $this);
         } else {
+            debug('static::$registry[0]', 'purple');
             $this->Options = new Options([], $this);
         }
 

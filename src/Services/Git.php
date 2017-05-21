@@ -94,7 +94,7 @@ class Git
                 throw new \Exception("Changes not staged for commit!\nPlease, commit your changes or stash them before you can switch branches.\nAborting");
             }
 
-            if (! in_array($name, static::$branches)) {
+            if (! static::branch_exists($name)) {
                 // branch does not exist
 
                 debug($name.' does not exist', 'purple');
@@ -109,23 +109,6 @@ class Git
                     if (IS_CLI) {
                         $type = Input::ask('What type of branch ([f]eature, [r]elease, [h]otfix)?', $type);
                     }
-                }
-
-                // current branch type
-                $current_branch = static::current_branch();
-                $current_branch_type = 'other';
-
-                if (false !== strpos($current_branch, self::BRANCH_NAME_DEVELOPMENT)) {
-                    $current_branch_type = self::BRANCH_TYPE_DEVELOPMENT;
-                }
-                if (false !== strpos($current_branch, self::BRANCH_TYPE_FEATURE)) {
-                    $current_branch_type = self::BRANCH_TYPE_FEATURE;
-                }
-                if (false !== strpos($current_branch, self::BRANCH_TYPE_RELEASE)) {
-                    $current_branch_type = self::BRANCH_TYPE_RELEASE;
-                }
-                if (false !== strpos($current_branch, self::BRANCH_TYPE_HOTFIX)) {
-                    $current_branch_type = self::BRANCH_TYPE_HOTFIX;
                 }
 
                 switch ($type) {
@@ -146,7 +129,7 @@ class Git
                 if (in_array($type, $types)) {
                     /* eg. master-hotfix-login-exception
                      *     development-feature-versioning
-                     *     release-development-v4.0.0
+                     *     development-release-v4.0.0
                      */
                     $new_branch_name = sprintf('%s-%s-%s', $base_branch, $type, $name);
                     $create = true;
@@ -180,6 +163,110 @@ class Git
         }
 
         return static::$branches;
+    }
+
+    public static function branch_exists($branch)
+    {
+        $branches = static::branch();
+        return in_array($branch, $branches);
+    }
+
+    public static function branch_type($branch)
+    {
+        $branch_type = 'other';
+
+        if (false !== strpos($branch, self::BRANCH_TYPE_FEATURE)) {
+            $branch_type = self::BRANCH_TYPE_FEATURE;
+        }
+        if (false !== strpos($branch, self::BRANCH_TYPE_RELEASE)) {
+            $branch_type = self::BRANCH_TYPE_RELEASE;
+        }
+        if (false !== strpos($branch, self::BRANCH_TYPE_HOTFIX)) {
+            $branch_type = self::BRANCH_TYPE_HOTFIX;
+        }
+        if (false !== strpos($branch, self::BRANCH_NAME_MASTER)) {
+            $branch_type = self::BRANCH_TYPE_MASTER;
+        }
+        if (false !== strpos($branch, self::BRANCH_NAME_DEVELOPMENT)) {
+            $branch_type = self::BRANCH_TYPE_DEVELOPMENT;
+        }
+
+        return $branch_type;
+    }
+
+    public static function branch_upstream($branch, $destination = null)
+    {
+        if (static::branch_exists($branch)) {
+            switch (static::branch_type($branch)) {
+                case self::BRANCH_TYPE_FEATURE:
+                    $destination = self::BRANCH_NAME_DEVELOPMENT;
+                    break;
+                case self::BRANCH_TYPE_RELEASE:
+                    $base_branch = self::BRANCH_TYPE_DEVELOPMENT;
+                    $destination = self::BRANCH_NAME_DEVELOPMENT;
+                    break;
+                case self::BRANCH_TYPE_HOTFIX:
+                    $base_branch = self::BRANCH_TYPE_MASTER;
+                    $destination = self::BRANCH_NAME_MASTER;
+                    break;
+                case self::BRANCH_TYPE_DEVELOPMENT:
+                    $destination = self::BRANCH_NAME_MASTER;
+                    break;
+                case self::BRANCH_TYPE_MASTER:
+                    throw new \InvalidArgumentException('Branch "master" has no upstream branch.');
+                    break;
+            }
+
+            return $destination;
+        } else {
+            throw new \InvalidArgumentException(sprintf("Branch \"%s\" not found", $branch));
+        }
+    }
+
+    /**
+     * Merge a branch into its defautl destinatio
+     */
+    public static function merge_branch($branch, $destination = null)
+    {
+        if ($destination = static::branch_upstream($branch, $destination)) {
+            /*
+            git checkout <feature-branch>
+            git pull
+            git checkout <release-branch>
+            git pull
+            git merge --no-ff <feature-branch>
+            git push
+            */
+            static::call('checkout '.$branch);
+            static::call('pull');
+            static::call('checkout '.$destination);
+            static::call('pull');
+            static::call('merge --no-ff '.$branch);
+            static::call('push');
+
+            return $destination;
+        } else {
+            throw new \RuntimeException(sprintf("No destination branch found for \"%s\"", $branch));
+        }
+        
+    }
+
+    public static function close_branch($branch, $destination = null)
+    {
+        if ($destination = static::merge_branch($branch, $destination)) {
+            /*
+            git tag -a branch-<feature-branch> -m "Merge <feature-branch> into <release-branch>"
+            git push --tags
+            git branch -d <feature-branch>
+            git push origin :<feature-branch>
+            */
+            static::call('tag -a branch-'.$branch.' -m "Merge '.$branch.' into '.$destination.'"');
+            static::call('push --tags');
+            static::call('branch -d '.$branch);
+            static::call('push origin :'.$branch);
+        }
+
+        return $destination;
     }
 
     /**

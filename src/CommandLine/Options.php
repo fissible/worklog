@@ -199,6 +199,7 @@ class Options implements \ArrayAccess
                     throw new \InvalidArgumentException($this->error_message('COMMAND_NAME_INVALID', __METHOD__, $this->command));
                 }
             } else {
+                debug_print_backtrace();
                 throw new \Exception(static::$error_messages['COMMAND_NAME_UNSET']);
             }
         }

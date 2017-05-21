@@ -33,17 +33,19 @@ class GitCommand extends BinaryCommand
     public function init()
     {
         if (! $this->initialized()) {
+            parent::init();
+            
             $this->setBinary(env('BINARY_GIT'));
             $this->registerSubcommand('branch');
+            $this->registerSubcommand('close');
             $this->registerSubcommand('commit');    // git commit -m <prompt> [&& git push]
             $this->registerSubcommand('diff');      // show changed files
             $this->registerSubcommand('status');    // lists changed files
+            $this->registerSubcommand('merge');
             $this->registerSubcommand('push');
 
             $this->registerSubcommand('tag');       // create/query git repo tags
             $this->registerSubcommand('revision');  // show current commit hash
-
-            parent::init();
         }
     }
 
@@ -74,9 +76,18 @@ class GitCommand extends BinaryCommand
         return $Command->run();
     }
 
-    protected function _revision()
+    /**
+     * Merge and delete a branch
+     */
+    protected function _close()
     {
-        return Git::hash('HEAD');
+        $branch = Git::current_branch();
+        $destination = coalesce($this->getData('destination'), static::branch_upstream($branch));
+        if (Input::confirm(sprintf('Are you sure you want to merge "%s" into %s and delete it?', $branch, $destination))) {
+            return Git::close_branch($branch, $destination);
+        } else {
+            return 'Merge aborted';
+        }
     }
 
     protected function _diff()
@@ -142,10 +153,26 @@ class GitCommand extends BinaryCommand
         }
     }
 
+    protected function _merge()
+    {
+        $branch = Git::current_branch();
+        $destination = coalesce($this->getData('destination'), static::branch_upstream($branch));
+        if (Input::confirm(sprintf('Are you sure you want to merge "%s" into %s?', $branch, $destination))) {
+            return Git::merge_branch($branch, $destination);
+        } else {
+            return 'Merge aborted';
+        }
+    }
+
     protected function _push($tags = false)
     {
         $tags = coalesce($tags, $this->flag('t'), $this->getData('tags'));
         return Git::push(($tags ? '--tags' : ''));
+    }
+
+    protected function _revision()
+    {
+        return Git::hash('HEAD');
     }
 
     protected function _status($short = true)
@@ -154,7 +181,7 @@ class GitCommand extends BinaryCommand
     }
 
     /**
-     *
+     * Create a new tag or get current tags
      */
     protected function _tag()
     {
