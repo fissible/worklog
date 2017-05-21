@@ -34,7 +34,7 @@ class GitCommand extends BinaryCommand
     {
         if (! $this->initialized()) {
             parent::init();
-            
+
             $this->setBinary(env('BINARY_GIT'));
             $this->registerSubcommand('branch');
             $this->registerSubcommand('close');
@@ -82,7 +82,7 @@ class GitCommand extends BinaryCommand
     protected function _close()
     {
         $branch = Git::current_branch();
-        $destination = coalesce($this->getData('destination'), static::branch_upstream($branch));
+        $destination = coalesce($this->getData('destination'), Git::branch_upstream($branch));
         if (Input::confirm(sprintf('Are you sure you want to merge "%s" into %s and delete it?', $branch, $destination))) {
             return Git::close_branch($branch, $destination);
         } else {
