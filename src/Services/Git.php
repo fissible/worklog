@@ -240,7 +240,11 @@ class Git
             git merge --no-ff <feature-branch>
             git push
             */
-            static::call('checkout '.$branch);
+            if (static::current_branch() !== $branch) {
+                static::call('checkout '.$branch);
+            } else {
+                static::call('push');
+            }
             static::call('pull');
             static::call('checkout '.$destination);
             static::call('pull');
