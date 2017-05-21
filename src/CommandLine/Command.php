@@ -798,10 +798,8 @@ class Command
     public function setOptions()
     {
         if (isset(static::$registry)) {
-            debug('static::$registry['.count(static::$registry).']', 'purple');
             $this->Options = new Options(static::$registry, $this);
         } else {
-            debug('static::$registry[0]', 'purple');
             $this->Options = new Options([], $this);
         }
 

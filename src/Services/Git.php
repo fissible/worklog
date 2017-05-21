@@ -60,6 +60,7 @@ class Git
         if (! isset(static::$current_branch) || ! isset(static::$branches)) {
             $current = '';
             $branches = [];
+            BinaryCommand::collect_output();
             foreach (static::call('branch') as $key => $branch) {
                 if (false !== ($pos = strpos($branch, '*'))) {
                     $current = substr_replace($branch, '', $pos, 2);
