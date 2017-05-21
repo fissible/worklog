@@ -91,6 +91,9 @@ Command::bind('table-search', 'Worklog\CommandLine\DatabaseTableSearchCommand');
 Command::bind('vcr', 'Worklog\CommandLine\GitCommand');
 Command::bind('test', 'Worklog\CommandLine\PhpunitCommand');
 Command::bind('vendor', 'Worklog\CommandLine\ComposerCommand');
+Command::bind('feature', 'Worklog\CommandLine\GitBranchFeatureCommand');
+Command::bind('release', 'Worklog\CommandLine\GitBranchReleaseCommand');
+Command::bind('hotfix', 'Worklog\CommandLine\GitBranchHotfixCommand');
 
 // Usage/autocompletion commands
 Command::bind('listopts', 'Worklog\CommandLine\ListOptionsCommand');

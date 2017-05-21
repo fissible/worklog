@@ -13,15 +13,16 @@ use Worklog\Services\Git;
 
 class GitCommand extends BinaryCommand
 {
-    public static $description = 'Run composer';
+    public static $description = 'Run git commands';
 
     public static $options = [
-        'p' => ['req' => null, 'description' => 'Push the commit after recording it.'],
+        'p' => ['req' => null, 'description' => 'Push the commit after committing it.'],
         'a' => ['req' => null, 'description' => 'Annotated tag'],
         'd' => ['req' => null, 'description' => 'Delete a tag'],
         'l' => ['req' => null, 'description' => 'Search for tags with a particular pattern'],
         'm' => ['req' => true, 'description' => 'Message text'],
-        'r' => ['req' => null, 'description' => 'Random flag.'],
+        'r' => ['req' => null, 'description' => 'Random flag'],
+        't' => ['req' => null, 'description' => 'Push tags'],
     ];
 
     public static $arguments = [ 'subcommand' ];
@@ -32,15 +33,19 @@ class GitCommand extends BinaryCommand
     public function init()
     {
         if (! $this->initialized()) {
-            $this->setBinary(env('BINARY_GIT'));
-            $this->registerSubcommand('diff');
-            $this->registerSubcommand('record');
-            $this->registerSubcommand('revision');
-            $this->registerSubcommand('status');
-            $this->registerSubcommand('tag');
-            $this->registerSubcommand('tags');
-
             parent::init();
+
+            $this->setBinary(env('BINARY_GIT'));
+            $this->registerSubcommand('branch');
+            $this->registerSubcommand('close');
+            $this->registerSubcommand('commit');    // git commit -m <prompt> [&& git push]
+            $this->registerSubcommand('diff');      // show changed files
+            $this->registerSubcommand('status');    // lists changed files
+            $this->registerSubcommand('merge');
+            $this->registerSubcommand('push');
+
+            $this->registerSubcommand('tag');       // create/query git repo tags
+            $this->registerSubcommand('revision');  // show current commit hash
         }
     }
 
@@ -55,23 +60,34 @@ class GitCommand extends BinaryCommand
         return parent::run();
     }
 
-//    public function getCommitMessageAtRevision($revision = 'HEAD')
-//    {
-//        if ($output = $this->call('rev-parse --verify '.$revision.' 2> /dev/null')) {
-//            $hash = $output[0];
-//            $output = $this->call([ 'show -s --format=%s 2> /dev/null', escapeshellarg($hash) ]);
-//            $message = $output[0];
-//        }
-//
-//        return $message;
-//    }
+    /*------------------------------------------*\
+      subcommand implementations _{subcommand}()
+    \*------------------------------------------*/
 
-
-    // subcommand implementations _{subcommand}()
-
-    protected function _revision()
+    protected function _branch($name = null, $type = null)
     {
-        return Git::hash('HEAD');
+        $args = $this->arguments('branch');
+        $Command = new GitBranchCommand;
+        $Command->setData('name', coalesce($name, array_shift($args)));
+        $Command->setData('type', coalesce($type, array_shift($args)));
+        $Command->resolve();
+        BinaryCommand::collect_output();
+
+        return $Command->run();
+    }
+
+    /**
+     * Merge and delete a branch
+     */
+    protected function _close()
+    {
+        $branch = Git::current_branch();
+        $destination = coalesce($this->getData('destination'), Git::branch_upstream($branch));
+        if (Input::confirm(sprintf('Are you sure you want to merge "%s" into %s and delete it?', $branch, $destination))) {
+            return Git::close_branch($branch, $destination);
+        } else {
+            return 'Merge aborted';
+        }
     }
 
     protected function _diff()
@@ -111,7 +127,7 @@ class GitCommand extends BinaryCommand
     /**
      * Stage all files and commit to git repository
      */
-    protected function _record()
+    protected function _commit()
     {
         // get last commit message
         $commit_message = coalesce($this->getData('message'), $this->flag('m'), Git::commit_message('HEAD'));
@@ -137,13 +153,35 @@ class GitCommand extends BinaryCommand
         }
     }
 
+    protected function _merge()
+    {
+        $branch = Git::current_branch();
+        $destination = coalesce($this->getData('destination'), static::branch_upstream($branch));
+        if (Input::confirm(sprintf('Are you sure you want to merge "%s" into %s?', $branch, $destination))) {
+            return Git::merge_branch($branch, $destination);
+        } else {
+            return 'Merge aborted';
+        }
+    }
+
+    protected function _push($tags = false)
+    {
+        $tags = coalesce($tags, $this->flag('t'), $this->getData('tags'));
+        return Git::push(($tags ? '--tags' : ''));
+    }
+
+    protected function _revision()
+    {
+        return Git::hash('HEAD');
+    }
+
     protected function _status($short = true)
     {
         return Git::status($short);
     }
 
     /**
-     *
+     * Create a new tag or get current tags
      */
     protected function _tag()
     {
@@ -204,15 +242,6 @@ class GitCommand extends BinaryCommand
         }
 
         return $this->call($command);
-    }
-
-    /**
-     * @return mixed
-     */
-    protected function _tags()
-    {
-        Git::fetch(true);
-        return Git::tags($this->arguments('tags'));
     }
 
     private function getRandomCommitMessage()

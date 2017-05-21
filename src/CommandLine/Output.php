@@ -144,6 +144,7 @@ class Output
             }
             $out = trim($out, "\n");
         } else {
+
             if (array_key_exists($color, static::$foreground_colors)) {
                 $out .= "\033[" . static::$foreground_colors[$color] . "m";
             }
@@ -155,7 +156,8 @@ class Output
             }
 
             if (is_string($input)) {
-                $out .= $input . "\033[0m";
+                $out .= static::clean_control_chars($input) . "\033[0m";
+                // $out .= $input . "\033[0m";
             }
         }
 
@@ -211,6 +213,24 @@ class Output
         }
 
         return $length;
+    }
+
+    public static function clean_control_chars($input)
+    {
+        foreach (static::control_chars() as $name => $chars) {
+            if (isset($chars[0]) && ($len = mb_strlen($chars[0]))) {
+                if (false !== ($pos = mb_strpos($input, $chars[0]))) {
+                    $input = substr_replace($input, '', $pos, $len);
+                }
+            }
+            if (isset($chars[1]) && ($len = mb_strlen($chars[1]))) {
+                if (false !== ($pos = mb_strpos($input, $chars[1]))) {
+                    $input = substr_replace($input, '', $pos, $len);
+                }
+            }
+        }
+
+        return $input;
     }
 
     public static function uchar($char, $variant = null, $override_allow_unicode = false)
