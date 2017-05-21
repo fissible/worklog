@@ -10,7 +10,7 @@ use Worklog\Concerns\LogTrait;
  */
 class Command
 {
-    use LogTrait;
+    // use LogTrait;
 
 
     public $command_name;
