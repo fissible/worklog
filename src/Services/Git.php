@@ -20,11 +20,19 @@ class Git
 
     protected static $branches;
 
+    const BRANCH_TYPE_MASTER = 'master';
+
+    const BRANCH_TYPE_DEVELOPMENT = 'development';
+
     const BRANCH_TYPE_FEATURE = 'feature';
 
     const BRANCH_TYPE_RELEASE = 'release';
 
     const BRANCH_TYPE_HOTFIX = 'hotfix';
+
+    const BRANCH_NAME_MASTER = 'master';
+
+    const BRANCH_NAME_DEVELOPMENT = 'master-development';
 
 
     public function __construct()
@@ -103,22 +111,43 @@ class Git
                     }
                 }
 
+                // current branch type
+                $current_branch = static::current_branch();
+                $current_branch_type = 'other';
+
+                if (false !== strpos($current_branch, self::BRANCH_NAME_DEVELOPMENT)) {
+                    $current_branch_type = self::BRANCH_TYPE_DEVELOPMENT;
+                }
+                if (false !== strpos($current_branch, self::BRANCH_TYPE_FEATURE)) {
+                    $current_branch_type = self::BRANCH_TYPE_FEATURE;
+                }
+                if (false !== strpos($current_branch, self::BRANCH_TYPE_RELEASE)) {
+                    $current_branch_type = self::BRANCH_TYPE_RELEASE;
+                }
+                if (false !== strpos($current_branch, self::BRANCH_TYPE_HOTFIX)) {
+                    $current_branch_type = self::BRANCH_TYPE_HOTFIX;
+                }
+
                 switch ($type) {
                     case self::BRANCH_TYPE_FEATURE:
-                        $base_branch = 'development';
-                        $checkout_branch = 'master-development';
+                        $base_branch = self::BRANCH_TYPE_DEVELOPMENT;
+                        $checkout_branch = self::BRANCH_NAME_DEVELOPMENT;
                         break;
                     case self::BRANCH_TYPE_RELEASE:
-                        $base_branch = 'development';
-                        $checkout_branch = 'master-development';
+                        $base_branch = self::BRANCH_TYPE_DEVELOPMENT;
+                        $checkout_branch = self::BRANCH_NAME_DEVELOPMENT;
                         break;
                     case self::BRANCH_TYPE_HOTFIX:
-                        $base_branch = 'master';
-                        $checkout_branch = 'master';
+                        $base_branch = self::BRANCH_TYPE_MASTER;
+                        $checkout_branch = self::BRANCH_NAME_MASTER;
                         break;
                 }
 
                 if (in_array($type, $types)) {
+                    /* eg. master-hotfix-login-exception
+                     *     development-feature-versioning
+                     *     release-development-v4.0.0
+                     */
                     $new_branch_name = sprintf('%s-%s-%s', $base_branch, $type, $name);
                     $create = true;
 
@@ -169,12 +198,20 @@ class Git
             }
         }
 
-
-
         return $branches;
     }
 
+    public static function current_branch()
+    {
+        if (! isset(static::$current_branch)) {
+            static::branch();
+        }
+
+        return static::$current_branch;
+    }
+
     /**
+     * Get the commit message for the given revison
      * @param string $revision
      * @return string
      */
